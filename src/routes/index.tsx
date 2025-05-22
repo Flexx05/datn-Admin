@@ -1,0 +1,71 @@
+import { Header, ThemedLayoutV2, ThemedSiderV2 } from "@refinedev/antd";
+import { Authenticated, ErrorComponent } from "@refinedev/core";
+import { CatchAllNavigate, NavigateToResource } from "@refinedev/react-router";
+import { Outlet, Route, Routes } from "react-router";
+import {
+  BlogPostCreate,
+  BlogPostEdit,
+  BlogPostList,
+  BlogPostShow,
+} from "../pages/blog-posts";
+import {
+  CategoryCreate,
+  CategoryEdit,
+  CategoryList,
+  CategoryShow,
+} from "../pages/categories";
+import { ForgotPassword } from "../pages/forgotPassword";
+import { Login } from "../pages/login";
+import { Register } from "../pages/register";
+
+const AppRoutes = () => {
+  return (
+    <div>
+      <Routes>
+        <Route
+          element={
+            <Authenticated
+              key="authenticated-inner"
+              fallback={<CatchAllNavigate to="/login" />}
+            >
+              <ThemedLayoutV2
+                Header={Header}
+                Sider={(props) => <ThemedSiderV2 {...props} fixed />}
+              >
+                <Outlet />
+              </ThemedLayoutV2>
+            </Authenticated>
+          }
+        >
+          <Route index element={<NavigateToResource resource="blog_posts" />} />
+          <Route path="/blog-posts">
+            <Route index element={<BlogPostList />} />
+            <Route path="create" element={<BlogPostCreate />} />
+            <Route path="edit/:id" element={<BlogPostEdit />} />
+            <Route path="show/:id" element={<BlogPostShow />} />
+          </Route>
+          <Route path="/categories">
+            <Route index element={<CategoryList />} />
+            <Route path="create" element={<CategoryCreate />} />
+            <Route path="edit/:id" element={<CategoryEdit />} />
+            <Route path="show/:id" element={<CategoryShow />} />
+          </Route>
+          <Route path="*" element={<ErrorComponent />} />
+        </Route>
+        <Route
+          element={
+            <Authenticated key="authenticated-outer" fallback={<Outlet />}>
+              <NavigateToResource />
+            </Authenticated>
+          }
+        >
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+        </Route>
+      </Routes>
+    </div>
+  );
+};
+
+export default AppRoutes;
