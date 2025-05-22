@@ -17,6 +17,12 @@ import {
 import { ForgotPassword } from "../pages/forgotPassword";
 import { Login } from "../pages/login";
 import { Register } from "../pages/register";
+import {
+  AttributeCreate,
+  AttributeEdit,
+  AttributeList,
+  AttributeShow,
+} from "../pages/attributes";
 
 const AppRoutes = () => {
   return (
@@ -44,9 +50,15 @@ const AppRoutes = () => {
             <Route path="edit/:id" element={<BlogPostEdit />} />
             <Route path="show/:id" element={<BlogPostShow />} />
           </Route>
+          <Route path="/attribute">
+            <Route index element={<AttributeList />} />
+            <Route path="create" element={<AttributeCreate />} />
+            <Route path="edit/:id" element={<AttributeEdit />} />
+            <Route path="id/:id" element={<AttributeShow />} />
+          </Route>
           <Route path="/categories">
             <Route index element={<CategoryList />} />
-            <Route path="create" element={<CategoryCreate />} />
+            <Route path="add" element={<CategoryCreate />} />
             <Route path="edit/:id" element={<CategoryEdit />} />
             <Route path="show/:id" element={<CategoryShow />} />
           </Route>

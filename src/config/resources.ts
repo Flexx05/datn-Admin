@@ -19,4 +19,15 @@ export const resources = [
       canDelete: true,
     },
   },
+  {
+    name: "attribute",
+    list: "/attribute",
+    create: "/attribute/add",
+    edit: "/attribute/edit/:id",
+    show: "/attribute/id/:id",
+    meta: {
+      canDelete: true,
+      label: "Quản lý thuộc tính",
+    },
+  },
 ];
