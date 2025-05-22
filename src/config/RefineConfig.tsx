@@ -6,7 +6,7 @@ import routerBindings, {
   UnsavedChangesNotifier,
 } from "@refinedev/react-router";
 import dataProvider from "@refinedev/simple-rest";
-import { authProvider } from "../authProvider";
+import { authProvider } from "./authProvider";
 import AppRoutes from "../routes";
 import { resources } from "./resources";
 

@@ -8,20 +8,25 @@ export const USER_KEY = "user";
 export const authProvider: AuthProvider = {
   login: async ({ email, password }) => {
     try {
-      const { data } = await axios.post(`http://localhost:8080/api/login`, {
+      const res = await axios.post(`http://localhost:8080/api/login`, {
         email,
         password,
       });
+      console.log(res);
 
-      // Assuming the token is in res.data.token
-      if (data && data.accessToken && data.user.isActive === true) {
-        localStorage.setItem(TOKEN_KEY, data.accessToken);
-        localStorage.setItem(USER_KEY, JSON.stringify(data.user));
+      if (
+        res.data &&
+        res.data.accessToken &&
+        res.data.user.isActive === true &&
+        res.data.user.role !== "user"
+      ) {
+        localStorage.setItem(TOKEN_KEY, res.data.accessToken);
+        localStorage.setItem(USER_KEY, JSON.stringify(res.data.user));
         return {
           success: true,
           redirectTo: "/",
           successNotification: {
-            message: data.message || "Đăng nhập thành công",
+            message: res.data.message || "Đăng nhập thành công",
           },
         };
       } else {
@@ -38,7 +43,10 @@ export const authProvider: AuthProvider = {
         success: false,
         error: {
           name: "LoginError",
-          message: error.message || "Đăng nhập thất bại",
+          message:
+            error.response?.data?.error ||
+            error.message ||
+            "Đăng nhập thất bại",
         },
       };
     }
