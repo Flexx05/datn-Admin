@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Show, TextField } from "@refinedev/antd";
 import { useShow } from "@refinedev/core";
 import { Typography } from "antd";
@@ -11,11 +12,15 @@ export const AttributeShow = () => {
   const record = data?.data;
 
   return (
-    <Show isLoading={isLoading}>
-      <Title level={5}>{"ID"}</Title>
-      <TextField value={record?.id} />
-      <Title level={5}>{"Title"}</Title>
-      <TextField value={record?.title} />
+    <Show title={"Chi tiết thuộc tính"} isLoading={isLoading}>
+      <Title level={5}>{"Tên thuộc tính"}</Title>
+      <TextField value={record?.name} />
+      <Title level={5}>{"Giá trị thuộc tính"}</Title>
+      <TextField
+        value={record?.values
+          ?.map((item: { name: string }) => item.name)
+          .join(", ")}
+      />
     </Show>
   );
 };
