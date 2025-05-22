@@ -74,7 +74,9 @@ export const authProvider: AuthProvider = {
   },
   check: async () => {
     const token = localStorage.getItem(TOKEN_KEY);
-    if (token) {
+    const user = localStorage.getItem(USER_KEY);
+    const parsedUser = user ? JSON.parse(user) : null;
+    if (token && parsedUser?.role !== "user") {
       return {
         authenticated: true,
       };
