@@ -32,14 +32,14 @@ export const Header: React.FC<RefineThemedLayoutV2HeaderProps> = ({
     display: "flex",
     justifyContent: "flex-end",
     alignItems: "center",
-    padding: "0px 24px",
+    padding: "0px 30px",
     height: "64px",
   };
 
   if (sticky) {
     headerStyles.position = "sticky";
     headerStyles.top = 0;
-    headerStyles.zIndex = 1;
+    headerStyles.zIndex = 10;
   }
 
   return (
