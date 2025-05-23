@@ -25,7 +25,25 @@ export const AttributeList = () => {
         <Table.Column
           dataIndex="values"
           title={"Giá trị"}
-          render={(value) => value?.map((item: string) => item).join(", ")}
+          render={(_: unknown, record: IAttribute) => {
+            return record.isColor ? (
+              <div style={{ display: "flex", gap: 4 }}>
+                {record.values.map((item: string, idx: number) => (
+                  <div
+                    key={idx}
+                    style={{
+                      width: 20,
+                      height: 20,
+                      backgroundColor: item,
+                      borderRadius: "50%",
+                    }}
+                  ></div>
+                ))}
+              </div>
+            ) : (
+              record.values.map((item: string) => item).join(", ")
+            );
+          }}
         />
         <Table.Column
           title={"Actions"}
