@@ -3,4 +3,5 @@ export interface IAttribute {
   name: string;
   isColor: boolean;
   values: string[];
+  isActive: boolean;
 }

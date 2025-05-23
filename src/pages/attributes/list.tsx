@@ -46,13 +46,22 @@ export const AttributeList = () => {
           }}
         />
         <Table.Column
+          dataIndex="isActive"
+          title={"Trạng thái"}
+          render={(value: boolean) =>
+            value ? "Có hiệu lực" : "Không có hiệu lực"
+          }
+        />
+        <Table.Column
           title={"Actions"}
           dataIndex="actions"
           render={(_, record: IAttribute) => (
             <Space>
               <EditButton hideText size="small" recordItemId={record._id} />
               <ShowButton hideText size="small" recordItemId={record._id} />
-              <DeleteButton hideText size="small" recordItemId={record._id} />
+              {record.isActive ? (
+                <DeleteButton hideText size="small" recordItemId={record._id} />
+              ) : null}
             </Space>
           )}
         />

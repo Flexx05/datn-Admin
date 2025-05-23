@@ -13,7 +13,7 @@ export const AttributeShow = () => {
   const record = data?.data as IAttribute | undefined;
 
   return (
-    <Show title={"Chi tiết thuộc tính"} isLoading={isLoading}>
+    <Show title={"Chi tiết thuộc tính"} isLoading={isLoading} canDelete={false}>
       <Title level={5}>{"Tên thuộc tính"}</Title>
       <TextField value={record?.name} />
       <Title level={5}>{"Giá trị thuộc tính"}</Title>

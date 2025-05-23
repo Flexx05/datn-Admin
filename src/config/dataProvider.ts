@@ -1,7 +1,7 @@
 import { DataProvider } from "@refinedev/core";
 import axios from "axios";
 
-const API_URL = "http://localhost:8080/api";
+export const API_URL = "http://localhost:8080/api";
 
 const dataProvider: DataProvider = {
   getApiUrl: () => API_URL,

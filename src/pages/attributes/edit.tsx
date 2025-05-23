@@ -24,7 +24,11 @@ export const AttributeEdit = () => {
   }
 
   return (
-    <Edit title="Chỉnh sửa thuộc tính" saveButtonProps={saveButtonProps}>
+    <Edit
+      title="Chỉnh sửa thuộc tính"
+      saveButtonProps={saveButtonProps}
+      canDelete={false}
+    >
       <Form {...formProps} layout="vertical">
         <Form.Item
           label="Tên thuộc tính"
