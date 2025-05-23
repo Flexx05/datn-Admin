@@ -52,7 +52,7 @@ const AppRoutes = () => {
           </Route>
           <Route path="/attribute">
             <Route index element={<AttributeList />} />
-            <Route path="create" element={<AttributeCreate />} />
+            <Route path="add" element={<AttributeCreate />} />
             <Route path="edit/:id" element={<AttributeEdit />} />
             <Route path="id/:id" element={<AttributeShow />} />
           </Route>

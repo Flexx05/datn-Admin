@@ -18,17 +18,17 @@ const dataProvider: DataProvider = {
   },
   update: async ({ resource, id, variables }) => {
     const { data } = await axios.patch(
-      `${API_URL}/${resource}/${id}`,
+      `${API_URL}/${resource}/edit/${id}`,
       variables
     );
     return { data };
   },
   create: async ({ resource, variables }) => {
-    const { data } = await axios.post(`${API_URL}/${resource}`, variables);
+    const { data } = await axios.post(`${API_URL}/${resource}/add`, variables);
     return { data };
   },
   deleteOne: async ({ resource, id }) => {
-    const { data } = await axios.delete(`${API_URL}/${resource}/${id}`);
+    const { data } = await axios.delete(`${API_URL}/${resource}/delete/${id}`);
     return { data };
   },
 };

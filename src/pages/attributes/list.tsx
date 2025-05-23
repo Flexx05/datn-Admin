@@ -25,9 +25,7 @@ export const AttributeList = () => {
         <Table.Column
           dataIndex="values"
           title={"Giá trị"}
-          render={(value) =>
-            value?.map((item: { name: string }) => item.name).join(", ")
-          }
+          render={(value) => value?.map((item: string) => item).join(", ")}
         />
         <Table.Column
           title={"Actions"}

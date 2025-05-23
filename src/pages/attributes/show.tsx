@@ -17,9 +17,7 @@ export const AttributeShow = () => {
       <TextField value={record?.name} />
       <Title level={5}>{"Giá trị thuộc tính"}</Title>
       <TextField
-        value={record?.values
-          ?.map((item: { name: string }) => item.name)
-          .join(", ")}
+        value={record?.values?.map((item: string) => item).join(", ")}
       />
     </Show>
   );
