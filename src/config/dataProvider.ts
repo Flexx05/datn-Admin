@@ -10,27 +10,12 @@ const dataProvider: DataProvider = {
     let endpoint = `${API_URL}/${resource}`;
     const params: Record<string, any> = {};
 
-    // Xử lý phân trang
-    if (pagination) {
-      params._page = pagination.current;
-      params._limit = pagination.pageSize;
-    }
-
-    // Xử lý tìm kiếm và lọc
-    if (filters && filters.length > 0) {
-      for (const filter of filters) {
-        if (filter.operator === "eq") {
-          params[filter.field] = filter.value;
-        }
-      }
-    }
-
     // Nếu resource hỗ trợ tìm kiếm (ví dụ: "attribute", "product"...)
     const resourcesWithSearchApi = ["attribute", "product", "category"];
     if (resourcesWithSearchApi.includes(resource)) {
       endpoint += "/search";
     }
-
+    endpoint += "";
     const { data } = await axios.get(endpoint, { params });
 
     return {
