@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { DataProvider } from "@refinedev/core";
 import axios from "axios";
 
@@ -5,13 +6,39 @@ export const API_URL = "http://localhost:8080/api";
 
 const dataProvider: DataProvider = {
   getApiUrl: () => API_URL,
-  getList: async ({ resource, pagination, filters, sorters, meta }) => {
-    const { data } = await axios.get(`${API_URL}/${resource}`);
+  getList: async ({ resource, filters, pagination, sorters, meta }) => {
+    let endpoint = `${API_URL}/${resource}`;
+    const params: Record<string, any> = {};
+
+    // Xử lý phân trang
+    if (pagination) {
+      params._page = pagination.current;
+      params._limit = pagination.pageSize;
+    }
+
+    // Xử lý tìm kiếm và lọc
+    if (filters && filters.length > 0) {
+      for (const filter of filters) {
+        if (filter.operator === "eq") {
+          params[filter.field] = filter.value;
+        }
+      }
+    }
+
+    // Nếu resource hỗ trợ tìm kiếm (ví dụ: "attribute", "product"...)
+    const resourcesWithSearchApi = ["attribute", "product", "category"];
+    if (resourcesWithSearchApi.includes(resource)) {
+      endpoint += "/search";
+    }
+
+    const { data } = await axios.get(endpoint, { params });
+
     return {
       data,
       total: data.length,
     };
   },
+
   getOne: async ({ resource, id }) => {
     const { data } = await axios.get(`${API_URL}/${resource}/id/${id}`);
     return { data };

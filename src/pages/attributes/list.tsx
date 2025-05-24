@@ -5,21 +5,57 @@ import {
   ShowButton,
   useTable,
 } from "@refinedev/antd";
-import { Space, Table } from "antd";
+import { Input, Space, Table, message } from "antd";
 import { IAttribute } from "../../interface/attribute";
+import { PlusCircleOutlined } from "@ant-design/icons";
+import axios from "axios";
+import { API_URL } from "../../config/dataProvider";
+import { useState } from "react";
+import { useInvalidate } from "@refinedev/core";
 
 export const AttributeList = () => {
-  const { tableProps } = useTable({
+  const { tableProps, setFilters } = useTable({
     syncWithLocation: true,
   });
+  const invalidate = useInvalidate();
+  const [loadingId, setLoadingId] = useState<string | number | null>(null);
+
+  const handleChangeStatus = async (record: IAttribute) => {
+    setLoadingId(record._id);
+    try {
+      await axios.patch(`${API_URL}/attribute/edit/${record._id}`, {
+        values: record.values,
+        name: record.name,
+        isActive: !record.isActive,
+      });
+
+      message.success("Cập nhật trạng thái thành công");
+      await invalidate({
+        resource: "attribute",
+        invalidates: ["list"],
+      });
+    } catch (error) {
+      message.error("Cập nhật trạng thái thất bại");
+    } finally {
+      setLoadingId(null);
+    }
+  };
 
   return (
     <List title={"Quản lý thuộc tính"}>
-      <Table {...tableProps} rowKey="id">
+      <Input.Search
+        placeholder="Tìm kiếm tên thuộc tính"
+        allowClear
+        onSearch={(value) =>
+          setFilters([{ field: "name_like", operator: "eq", value }], "replace")
+        }
+        style={{ marginBottom: 16, maxWidth: 300 }}
+      />
+      <Table {...tableProps} rowKey="_id">
         <Table.Column
           dataIndex="stt"
           title={"STT"}
-          render={(_: unknown, record: IAttribute, index: number) => index + 1}
+          render={(_: unknown, __: IAttribute, index: number) => index + 1}
         />
         <Table.Column dataIndex="name" title={"Tên thuộc tính"} />
         <Table.Column
@@ -41,13 +77,18 @@ export const AttributeList = () => {
                 ))}
               </div>
             ) : (
-              record.values.map((item: string) => item).join(", ")
+              record.values.join(", ")
             );
           }}
         />
         <Table.Column
           dataIndex="isActive"
           title={"Trạng thái"}
+          filters={[
+            { text: "Có hiệu lực", value: true },
+            { text: "Không có hiệu lực", value: false },
+          ]}
+          onFilter={(value, record) => record.isActive === value}
           render={(value: boolean) =>
             value ? "Có hiệu lực" : "Không có hiệu lực"
           }
@@ -60,8 +101,24 @@ export const AttributeList = () => {
               <EditButton hideText size="small" recordItemId={record._id} />
               <ShowButton hideText size="small" recordItemId={record._id} />
               {record.isActive ? (
-                <DeleteButton hideText size="small" recordItemId={record._id} />
-              ) : null}
+                <DeleteButton
+                  hideText
+                  size="small"
+                  recordItemId={record._id}
+                  loading={loadingId === record._id}
+                />
+              ) : (
+                <PlusCircleOutlined
+                  style={{
+                    border: "1px solid #404040",
+                    borderRadius: "20%",
+                    padding: 4,
+                    cursor: "pointer",
+                    opacity: loadingId === record._id ? 0.5 : 1,
+                  }}
+                  onClick={() => handleChangeStatus(record)}
+                />
+              )}
             </Space>
           )}
         />
