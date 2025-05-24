@@ -5,16 +5,16 @@ import routerBindings, {
   DocumentTitleHandler,
   UnsavedChangesNotifier,
 } from "@refinedev/react-router";
-import dataProvider from "@refinedev/simple-rest";
-import { authProvider } from "./authProvider";
 import AppRoutes from "../routes";
+import { authProvider } from "./authProvider";
 import { resources } from "./resources";
+import dataProvider from "./dataProvider";
 
 const RefineConfig = () => {
   return (
     <div>
       <Refine
-        dataProvider={dataProvider("http://localhost:8080/api")}
+        dataProvider={dataProvider}
         notificationProvider={useNotificationProvider}
         routerProvider={routerBindings}
         authProvider={authProvider}
