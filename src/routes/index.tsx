@@ -13,7 +13,7 @@ import {
   CategoryEdit,
   CategoryList,
   CategoryShow,
-} from "../pages/categories";
+} from "../pages/category";
 import { ForgotPassword } from "../pages/forgotPassword";
 import { Login } from "../pages/login";
 import { Register } from "../pages/register";
@@ -56,7 +56,7 @@ const AppRoutes = () => {
             <Route path="edit/:id" element={<AttributeEdit />} />
             <Route path="id/:id" element={<AttributeShow />} />
           </Route>
-          <Route path="/categories">
+          <Route path="/category">
             <Route index element={<CategoryList />} />
             <Route path="add" element={<CategoryCreate />} />
             <Route path="edit/:id" element={<CategoryEdit />} />

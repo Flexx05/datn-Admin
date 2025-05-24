@@ -7,6 +7,7 @@ import {
 } from "@refinedev/antd";
 import type { BaseRecord } from "@refinedev/core";
 import { Space, Table } from "antd";
+import { ICategory } from "../../interface/category";
 
 export const CategoryList = () => {
   const { tableProps } = useTable({
@@ -14,10 +15,14 @@ export const CategoryList = () => {
   });
 
   return (
-    <List>
+    <List title={"Quản lý danh mục"}>
       <Table {...tableProps} rowKey="id">
-        <Table.Column dataIndex="id" title={"ID"} />
-        <Table.Column dataIndex="title" title={"title"} />
+        <Table.Column
+          dataIndex="stt"
+          title={"STT"}
+          render={(_: unknown, __: ICategory, index: number) => index + 1}
+        />
+        <Table.Column dataIndex="name" title={"Tên danh mục"} />
         <Table.Column
           title={"Actions"}
           dataIndex="actions"

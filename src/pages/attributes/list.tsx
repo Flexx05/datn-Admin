@@ -94,7 +94,7 @@ export const AttributeList = () => {
           }
         />
         <Table.Column
-          title={"Actions"}
+          title={"Hành động"}
           dataIndex="actions"
           render={(_, record: IAttribute) => (
             <Space>

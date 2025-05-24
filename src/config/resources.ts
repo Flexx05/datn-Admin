@@ -10,13 +10,14 @@ export const resources = [
     },
   },
   {
-    name: "categories",
-    list: "/categories",
-    create: "/categories/create",
-    edit: "/categories/edit/:id",
-    show: "/categories/show/:id",
+    name: "category",
+    list: "/category",
+    create: "/category/add",
+    edit: "/category/edit/:id",
+    show: "/category/show/:id",
     meta: {
       canDelete: true,
+      label: "Quản lý danh mục",
     },
   },
   {
