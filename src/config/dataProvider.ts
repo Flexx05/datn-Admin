@@ -11,7 +11,12 @@ const dataProvider: DataProvider = {
     const params: Record<string, any> = {};
 
     // Nếu resource hỗ trợ tìm kiếm (ví dụ: "attribute", "product"...)
-    const resourcesWithSearchApi = ["attribute", "product", "category"];
+    const resourcesWithSearchApi = [
+      "attribute",
+      "product",
+      "category",
+      "brand",
+    ];
     if (resourcesWithSearchApi.includes(resource)) {
       endpoint += "/search";
     }

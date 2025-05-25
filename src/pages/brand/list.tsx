@@ -1,3 +1,4 @@
+import { PlusCircleOutlined } from "@ant-design/icons";
 import {
   DeleteButton,
   EditButton,
@@ -5,17 +6,51 @@ import {
   ShowButton,
   useTable,
 } from "@refinedev/antd";
-import type { BaseRecord } from "@refinedev/core";
-import { Space, Table } from "antd";
+import { useInvalidate } from "@refinedev/core";
+import { Input, message, Space, Table } from "antd";
+import axios from "axios";
+import { useState } from "react";
+import { API_URL } from "../../config/dataProvider";
 import { IBrand } from "../../interface/brand";
 
 export const BrandList = () => {
-  const { tableProps } = useTable({
+  const { tableProps, setFilters } = useTable({
     syncWithLocation: true,
   });
 
+  const invalidate = useInvalidate();
+  const [loadingId, setLoadingId] = useState<string | number | null>(null);
+
+  const handleChangeStatus = async (record: IBrand) => {
+    setLoadingId(record._id);
+    try {
+      await axios.patch(`${API_URL}/attribute/edit/${record._id}`, {
+        name: record.name,
+        isActive: !record.isActive,
+      });
+
+      message.success("Cập nhật trạng thái thành công");
+      await invalidate({
+        resource: "attribute",
+        invalidates: ["list"],
+      });
+    } catch (error) {
+      message.error("Cập nhật trạng thái thất bại");
+    } finally {
+      setLoadingId(null);
+    }
+  };
+
   return (
     <List title={"Quản lý thương hiệu"}>
+      <Input.Search
+        placeholder="Tìm kiếm tên thuộc tính"
+        allowClear
+        onSearch={(value) =>
+          setFilters([{ field: "name_like", operator: "eq", value }], "replace")
+        }
+        style={{ marginBottom: 16, maxWidth: 300 }}
+      />
       <Table {...tableProps} rowKey="_id">
         <Table.Column
           dataIndex="stt"
@@ -38,18 +73,32 @@ export const BrandList = () => {
         <Table.Column
           title={"Hành động"}
           dataIndex="actions"
-          render={(_, record: BaseRecord) => (
+          render={(_, record: IBrand) => (
             <Space>
-              <EditButton hideText size="small" recordItemId={record.id} />
-              <ShowButton hideText size="small" recordItemId={record.id} />
-              <DeleteButton
-                hideText
-                size="small"
-                recordItemId={record.id}
-                confirmTitle="Bạn chắc chắn xóa không ?"
-                confirmCancelText="Hủy"
-                confirmOkText="Xóa"
-              />
+              <EditButton hideText size="small" recordItemId={record._id} />
+              <ShowButton hideText size="small" recordItemId={record._id} />
+              {record.isActive ? (
+                <DeleteButton
+                  hideText
+                  size="small"
+                  recordItemId={record._id}
+                  confirmTitle="Bạn chắc chắn xóa không ?"
+                  confirmCancelText="Hủy"
+                  confirmOkText="Xóa"
+                  loading={loadingId === record._id}
+                />
+              ) : (
+                <PlusCircleOutlined
+                  style={{
+                    border: "1px solid #404040",
+                    borderRadius: "20%",
+                    padding: 4,
+                    cursor: "pointer",
+                    opacity: loadingId === record._id ? 0.5 : 1,
+                  }}
+                  onClick={() => handleChangeStatus(record)}
+                />
+              )}
             </Space>
           )}
         />
