@@ -1,8 +1,20 @@
-import { Create, useForm } from "@refinedev/antd";
+import { Create, useForm, useSelect } from "@refinedev/antd";
 import { Form, Input, Select } from "antd";
 
 export const CategoryCreate = () => {
   const { formProps, saveButtonProps } = useForm({});
+  const { selectProps: categorySelectProps } = useSelect({
+    resource: "category",
+    optionLabel: "name",
+    optionValue: "id",
+    filters: [
+      {
+        field: "parentId",
+        operator: "eq",
+        value: null,
+      },
+    ],
+  });
 
   return (
     <Create saveButtonProps={saveButtonProps} title={"Tạo danh mục"}>
@@ -21,11 +33,16 @@ export const CategoryCreate = () => {
         <Form.Item label={"Mô tả"} name={["description"]}>
           <Input />
         </Form.Item>
-        <Form.Item label={"Danh mục cha"} name={["parentId"]}>
-          <Select defaultValue={null}>
-            <Select.Option value={null}>Không chọn danh mục cha</Select.Option>
-            <Select.Option value={0}>Danh mục cha</Select.Option>
-          </Select>
+        <Form.Item
+          label={"Danh mục cha"}
+          name={["parentId"]}
+          rules={[
+            {
+              required: true,
+            },
+          ]}
+        >
+          <Select {...categorySelectProps} />
         </Form.Item>
         <Form.Item label={"Thứ tự danh mục"} name={["categorySort"]}>
           <Select>
