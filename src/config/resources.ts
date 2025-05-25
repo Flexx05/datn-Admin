@@ -21,6 +21,17 @@ export const resources = [
     },
   },
   {
+    name: "brand",
+    list: "/brand",
+    create: "/brand/add",
+    edit: "/brand/edit/:id",
+    show: "/brand/show/:id",
+    meta: {
+      canDelete: true,
+      label: "Quản lý thương hiệu",
+    },
+  },
+  {
     name: "attribute",
     list: "/attribute",
     create: "/attribute/add",

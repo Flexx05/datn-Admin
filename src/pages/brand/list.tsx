@@ -7,24 +7,36 @@ import {
 } from "@refinedev/antd";
 import type { BaseRecord } from "@refinedev/core";
 import { Space, Table } from "antd";
-import { ICategory } from "../../interface/category";
+import { IBrand } from "../../interface/brand";
 
-export const CategoryList = () => {
+export const BrandList = () => {
   const { tableProps } = useTable({
     syncWithLocation: true,
   });
 
   return (
-    <List title={"Quản lý danh mục"}>
+    <List title={"Quản lý thương hiệu"}>
       <Table {...tableProps} rowKey="_id">
         <Table.Column
           dataIndex="stt"
           title={"STT"}
-          render={(_: unknown, __: ICategory, index: number) => index + 1}
+          render={(_: unknown, __: IBrand, index: number) => index + 1}
         />
-        <Table.Column dataIndex="name" title={"Tên danh mục"} />
         <Table.Column
-          title={"Actions"}
+          dataIndex="logoURL"
+          title={"Ảnh thương hiệu"}
+          render={(value: string) => (
+            <img
+              src={value}
+              width={50}
+              height={50}
+              style={{ objectFit: "contain" }}
+            />
+          )}
+        />
+        <Table.Column dataIndex="name" title={"Tên thương hiệu"} />
+        <Table.Column
+          title={"Hành động"}
           dataIndex="actions"
           render={(_, record: BaseRecord) => (
             <Space>

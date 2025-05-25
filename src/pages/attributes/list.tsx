@@ -105,6 +105,9 @@ export const AttributeList = () => {
                   hideText
                   size="small"
                   recordItemId={record._id}
+                  confirmTitle="Bạn chắc chắn xóa không ?"
+                  confirmCancelText="Hủy"
+                  confirmOkText="Xóa"
                   loading={loadingId === record._id}
                 />
               ) : (
