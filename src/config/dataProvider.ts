@@ -14,7 +14,7 @@ const dataProvider: DataProvider = {
     const resourcesWithSearchApi = [
       "attribute",
       "product",
-      "category",
+      // "category",
       "brand",
     ];
     if (resourcesWithSearchApi.includes(resource)) {

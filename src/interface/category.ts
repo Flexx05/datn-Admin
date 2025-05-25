@@ -3,6 +3,7 @@ export interface ICategory {
   name: string;
   description: string;
   parentId: string | number;
+  subCategories: ICategory[];
   categorySort: number;
   isActive: boolean;
 }
