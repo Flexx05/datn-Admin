@@ -24,14 +24,13 @@ export const BrandList = () => {
   const handleChangeStatus = async (record: IBrand) => {
     setLoadingId(record._id);
     try {
-      await axios.patch(`${API_URL}/attribute/edit/${record._id}`, {
-        name: record.name,
+      await axios.patch(`${API_URL}/brand/edit/${record._id}`, {
         isActive: !record.isActive,
       });
 
       message.success("Cập nhật trạng thái thành công");
       await invalidate({
-        resource: "attribute",
+        resource: "brand",
         invalidates: ["list"],
       });
     } catch (error) {
@@ -70,6 +69,18 @@ export const BrandList = () => {
           )}
         />
         <Table.Column dataIndex="name" title={"Tên thương hiệu"} />
+        <Table.Column
+          dataIndex="isActive"
+          title={"Trạng thái"}
+          filters={[
+            { text: "Có hiệu lực", value: true },
+            { text: "Không có hiệu lực", value: false },
+          ]}
+          onFilter={(value, record) => record.isActive === value}
+          render={(value: boolean) =>
+            value ? "Có hiệu lực" : "Không có hiệu lực"
+          }
+        />
         <Table.Column
           title={"Hành động"}
           dataIndex="actions"
