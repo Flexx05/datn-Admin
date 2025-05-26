@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { PlusCircleOutlined } from "@ant-design/icons";
 import {
   DeleteButton,
@@ -16,6 +17,12 @@ import { ICategory } from "../../interface/category";
 export const CategoryList = () => {
   const { tableProps } = useTable<ICategory>({
     syncWithLocation: true,
+    errorNotification: (error: any) => ({
+      message:
+        "❌ Lỗi hệ thống " + (error.response?.data?.message | error.message),
+      description: "Có lỗi xảy ra trong quá trình xử lý.",
+      type: "error",
+    }),
   });
 
   const invalidate = useInvalidate();
@@ -25,12 +32,14 @@ export const CategoryList = () => {
     setLoadingId(record._id);
     try {
       await axios.patch(`${API_URL}/category/edit/${record._id}`, {
+        parentId: record.parentId,
+        name: record.name,
         isActive: !record.isActive,
       });
 
       message.success("Cập nhật trạng thái thành công");
       await invalidate({
-        resource: "brand",
+        resource: "category",
         invalidates: ["list"],
       });
     } catch (error) {
@@ -72,7 +81,7 @@ export const CategoryList = () => {
                   }
                   width={200}
                 />
-                <Table.Column dataIndex="name" width={370} />
+                <Table.Column dataIndex="name" width={420} />
                 <Table.Column
                   render={(child: ICategory) =>
                     child.isActive ? "Có hiệu lực" : "Không có hiệu lực"
@@ -129,8 +138,9 @@ export const CategoryList = () => {
           title="STT"
           render={(_: unknown, __: ICategory, index: number) => index + 1}
         />
-        <Table.Column dataIndex="name" title="Tên danh mục" />
+        <Table.Column dataIndex="name" title="Tên danh mục" width={430} />
         <Table.Column
+          width={400}
           title="Trạng thái"
           render={(child: ICategory) =>
             child.isActive ? "Có hiệu lực" : "Không có hiệu lực"
