@@ -8,7 +8,7 @@ import {
   useTable,
 } from "@refinedev/antd";
 import { useInvalidate } from "@refinedev/core";
-import { message, Space, Table, Typography } from "antd";
+import { message, Popconfirm, Space, Table, Typography } from "antd";
 import axios from "axios";
 import { useState } from "react";
 import { API_URL } from "../../config/dataProvider";
@@ -113,16 +113,23 @@ export const CategoryList = () => {
                           loading={loadingId === child._id}
                         />
                       ) : (
-                        <PlusCircleOutlined
-                          style={{
-                            border: "1px solid #404040",
-                            borderRadius: "20%",
-                            padding: 4,
-                            cursor: "pointer",
-                            opacity: loadingId === child._id ? 0.5 : 1,
-                          }}
-                          onClick={() => handleChangeStatus(child)}
-                        />
+                        <Popconfirm
+                          title="Bạn chắc chắn kích hoạt hiệu lực không ?"
+                          onConfirm={() => handleChangeStatus(record)}
+                          okText="Kích hoạt"
+                          cancelText="Hủy"
+                          okButtonProps={{ loading: loadingId === record._id }}
+                        >
+                          <PlusCircleOutlined
+                            style={{
+                              border: "1px solid #404040",
+                              borderRadius: "20%",
+                              padding: 4,
+                              cursor: "pointer",
+                              opacity: loadingId === record._id ? 0.5 : 1,
+                            }}
+                          />
+                        </Popconfirm>
                       )}
                     </Space>
                   )}
@@ -164,16 +171,23 @@ export const CategoryList = () => {
                   loading={loadingId === record._id}
                 />
               ) : (
-                <PlusCircleOutlined
-                  style={{
-                    border: "1px solid #404040",
-                    borderRadius: "20%",
-                    padding: 4,
-                    cursor: "pointer",
-                    opacity: loadingId === record._id ? 0.5 : 1,
-                  }}
-                  onClick={() => handleChangeStatus(record)}
-                />
+                <Popconfirm
+                  title="Bạn chắc chắn kích hoạt hiệu lực không ?"
+                  onConfirm={() => handleChangeStatus(record)}
+                  okText="Kích hoạt"
+                  cancelText="Hủy"
+                  okButtonProps={{ loading: loadingId === record._id }}
+                >
+                  <PlusCircleOutlined
+                    style={{
+                      border: "1px solid #404040",
+                      borderRadius: "20%",
+                      padding: 4,
+                      cursor: "pointer",
+                      opacity: loadingId === record._id ? 0.5 : 1,
+                    }}
+                  />
+                </Popconfirm>
               )}
             </Space>
           )}
