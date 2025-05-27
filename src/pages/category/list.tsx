@@ -149,8 +149,19 @@ export const CategoryList = () => {
         <Table.Column
           width={400}
           title="Trạng thái"
-          render={(child: ICategory) =>
-            child.isActive ? "Có hiệu lực" : "Không có hiệu lực"
+          dataIndex="isActive"
+          filters={[
+            { text: "Có hiệu lực", value: true },
+            { text: "Không có hiệu lực", value: false },
+          ]}
+          onFilter={(value, record) =>
+            record.isActive === value ||
+            record.subCategories?.some(
+              (child: ICategory) => child.isActive === value
+            )
+          }
+          render={(value: boolean) =>
+            value ? "Có hiệu lực" : "Không có hiệu lực"
           }
         />
         <Table.Column
