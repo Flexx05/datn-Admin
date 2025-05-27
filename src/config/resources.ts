@@ -30,4 +30,12 @@ export const resources = [
       label: "Quản lý thuộc tính",
     },
   },
+  {
+    name: "comments",
+    list: "/comments",
+    show: "/comments/id/:id",
+    meta: {
+      canDelete: true,
+    },
+  },
 ];

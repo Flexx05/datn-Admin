@@ -29,10 +29,13 @@ const dataProvider: DataProvider = {
     return { data };
   },
   update: async ({ resource, id, variables }) => {
-    const { data } = await axios.patch(
-      `${API_URL}/${resource}/edit/${id}`,
-      variables
-    );
+    let url = "";
+    if (resource === "comments/reply") {
+        url = `${API_URL}/comments/reply/${id}`;
+    } else {
+        url = `${API_URL}/${resource}/edit/${id}`;
+    }
+    const { data } = await axios.patch(url, variables);
     return { data };
   },
   create: async ({ resource, variables }) => {

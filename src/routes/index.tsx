@@ -23,6 +23,8 @@ import {
   AttributeList,
   AttributeShow,
 } from "../pages/attributes";
+import { CommentList } from "../pages/comments/list";
+import { CommentShow } from "../pages/comments/show";
 
 const AppRoutes = () => {
   return (
@@ -61,6 +63,10 @@ const AppRoutes = () => {
             <Route path="add" element={<CategoryCreate />} />
             <Route path="edit/:id" element={<CategoryEdit />} />
             <Route path="show/:id" element={<CategoryShow />} />
+          </Route>
+          <Route path="/comments">
+            <Route index element={<CommentList />} />
+            <Route path="id/:id" element={<CommentShow />} />
           </Route>
           <Route path="*" element={<ErrorComponent />} />
         </Route>
