@@ -43,7 +43,7 @@ export const BrandList = () => {
   return (
     <List title={"Quản lý thương hiệu"}>
       <Input.Search
-        placeholder="Tìm kiếm tên thuộc tính"
+        placeholder="Tìm kiếm thương hiệu"
         allowClear
         onSearch={(value) =>
           setFilters([{ field: "name_like", operator: "eq", value }], "replace")
@@ -57,7 +57,7 @@ export const BrandList = () => {
           render={(_: unknown, __: IBrand, index: number) => index + 1}
         />
         <Table.Column
-          dataIndex="logoURL"
+          dataIndex="logoUrl"
           title={"Ảnh thương hiệu"}
           render={(value: string) => (
             <img
