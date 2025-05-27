@@ -3,6 +3,7 @@ import { Create, useForm, useSelect } from "@refinedev/antd";
 import { Form, Input, Select, message } from "antd";
 import { useMemo } from "react";
 import { ICategory } from "../../interface/category";
+import { HttpError } from "@refinedev/core";
 
 export const CategoryCreate = () => {
   const { formProps, saveButtonProps } = useForm({
@@ -11,8 +12,9 @@ export const CategoryCreate = () => {
       description: "Danh mục mới đã được thêm vào hệ thống.",
       type: "success",
     }),
-    errorNotification: (error: any) => ({
-      message: "❌ Tạo danh mục thất bại! " + error.response?.data?.message,
+    errorNotification: (error?: HttpError) => ({
+      message:
+        "❌ Tạo danh mục thất bại! " + (error?.response?.data?.message ?? ""),
       description: "Có lỗi xảy ra trong quá trình xử lý.",
       type: "error",
     }),
@@ -28,32 +30,34 @@ export const CategoryCreate = () => {
     },
   });
 
+  // Tối ưu hóa dữ liệu danh mục
+  const allCategories = useMemo(
+    () => (queryResult?.data?.data as ICategory[]) || [],
+    [queryResult?.data?.data]
+  );
+
+  // Lọc ra các danh mục cha hợp lệ
   const filteredOptions = useMemo(() => {
-    return (queryResult?.data?.data || [])
-      .filter((item: any) => item.parentId === null && item.isActive === true)
-      .map((item: any) => ({
+    return allCategories
+      .filter((item: ICategory) => item.parentId === null && item.isActive)
+      .map((item) => ({
         label: item.name,
         value: item._id,
       }));
-  }, [queryResult?.data?.data]);
+  }, [allCategories]);
 
   // Xử lý khi submit form
   const handleFinish = async (values: any) => {
     const parentId = values.parentId;
-
     if (parentId) {
-      const allCategories = queryResult?.data?.data || [];
-      const parent: ICategory | undefined = (allCategories as ICategory[]).find(
-        (item: ICategory) => item._id === parentId
-      );
-
-      if (!parent || parent.isActive !== true || parent.parentId !== null) {
+      const parent = allCategories.find((item) => item._id === parentId);
+      if (!parent || !parent.isActive || parent.parentId !== null) {
         message.error("Danh mục cha không hợp lệ hoặc đã bị xoá.");
         return;
       }
     }
 
-    formProps?.onFinish?.(values); // gọi hàm submit Refine nếu hợp lệ
+    formProps?.onFinish?.({ ...values, parentId });
   };
 
   return (
@@ -71,16 +75,20 @@ export const CategoryCreate = () => {
           <Input />
         </Form.Item>
 
-        <Form.Item
-          label="Danh mục cha"
-          name={["parentId"]}
-          rules={[{ required: true, message: "Vui lòng chọn danh mục cha" }]}
-        >
+        <Form.Item label="Danh mục cha" name={["parentId"]}>
           <Select
-            options={filteredOptions}
             loading={queryResult?.isLoading}
-            placeholder="Chọn danh mục cha"
-          />
+            placeholder="Chọn danh mục cha (nếu có)"
+            allowClear
+            defaultValue={""}
+          >
+            <Select.Option value="">Không có</Select.Option>
+            {filteredOptions.map((option) => (
+              <Select.Option key={option.value} value={option.value}>
+                {option.label}
+              </Select.Option>
+            ))}
+          </Select>
         </Form.Item>
 
         <Form.Item label="Thứ tự danh mục" name={["categorySort"]}>
