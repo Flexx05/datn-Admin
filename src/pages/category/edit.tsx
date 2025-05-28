@@ -73,7 +73,11 @@ export const CategoryEdit = () => {
   };
 
   return (
-    <Edit saveButtonProps={saveButtonProps} title="Cập nhật danh mục">
+    <Edit
+      saveButtonProps={saveButtonProps}
+      title="Cập nhật danh mục"
+      canDelete={false}
+    >
       <Form {...formProps} layout="vertical" onFinish={handleFinish}>
         <Form.Item
           label="Tên danh mục"
