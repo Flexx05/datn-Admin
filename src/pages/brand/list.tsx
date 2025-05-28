@@ -46,7 +46,7 @@ export const BrandList = () => {
         placeholder="Tìm kiếm thương hiệu"
         allowClear
         onSearch={(value) =>
-          setFilters([{ field: "name_like", operator: "eq", value }], "replace")
+          setFilters([{ field: "name", operator: "eq", value }], "replace")
         }
         style={{ marginBottom: 16, maxWidth: 300 }}
       />
