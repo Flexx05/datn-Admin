@@ -13,7 +13,7 @@ import {
   CategoryEdit,
   CategoryList,
   CategoryShow,
-} from "../pages/categories";
+} from "../pages/category";
 import { ForgotPassword } from "../pages/forgotPassword";
 import { Login } from "../pages/login";
 import { Register } from "../pages/register";
@@ -23,6 +23,7 @@ import {
   AttributeList,
   AttributeShow,
 } from "../pages/attributes";
+import { BrandCreate, BrandEdit, BrandList, BrandShow } from "../pages/brand";
 
 const AppRoutes = () => {
   return (
@@ -56,11 +57,17 @@ const AppRoutes = () => {
             <Route path="edit/:id" element={<AttributeEdit />} />
             <Route path="id/:id" element={<AttributeShow />} />
           </Route>
-          <Route path="/categories">
+          <Route path="/category">
             <Route index element={<CategoryList />} />
             <Route path="add" element={<CategoryCreate />} />
             <Route path="edit/:id" element={<CategoryEdit />} />
             <Route path="show/:id" element={<CategoryShow />} />
+          </Route>
+          <Route path="/brand">
+            <Route index element={<BrandList />} />
+            <Route path="add" element={<BrandCreate />} />
+            <Route path="edit/:id" element={<BrandEdit />} />
+            <Route path="show/:id" element={<BrandShow />} />
           </Route>
           <Route path="*" element={<ErrorComponent />} />
         </Route>

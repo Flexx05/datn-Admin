@@ -10,13 +10,31 @@ const dataProvider: DataProvider = {
     let endpoint = `${API_URL}/${resource}`;
     const params: Record<string, any> = {};
 
+    if (filters) {
+      filters.forEach((filter) => {
+        // filter.field là tên trường, filter.value là giá trị tìm kiếm
+        if (filter.operator === "contains") {
+          params[filter.field] = filter.value;
+        } else if (filter.operator === "eq") {
+          params[filter.field] = filter.value;
+        }
+        // Thêm các operator khác nếu cần
+      });
+    }
+
     // Nếu resource hỗ trợ tìm kiếm (ví dụ: "attribute", "product"...)
-    const resourcesWithSearchApi = ["attribute", "product", "category"];
+    const resourcesWithSearchApi = [
+      "attribute",
+      "product",
+      "category",
+      "brand",
+    ];
     if (resourcesWithSearchApi.includes(resource)) {
       endpoint += "/search";
     }
     endpoint += "";
     const { data } = await axios.get(endpoint, { params });
+    console.log(params);
 
     return {
       data,

@@ -1,3 +1,4 @@
+import { PlusCircleOutlined } from "@ant-design/icons";
 import {
   DeleteButton,
   EditButton,
@@ -5,33 +6,31 @@ import {
   ShowButton,
   useTable,
 } from "@refinedev/antd";
-import { Input, Space, Table, message } from "antd";
-import { IAttribute } from "../../interface/attribute";
-import { PlusCircleOutlined } from "@ant-design/icons";
-import axios from "axios";
-import { API_URL } from "../../config/dataProvider";
-import { useState } from "react";
 import { useInvalidate } from "@refinedev/core";
+import { Input, message, Space, Table } from "antd";
+import axios from "axios";
+import { useState } from "react";
+import { API_URL } from "../../config/dataProvider";
+import { IBrand } from "../../interface/brand";
 
-export const AttributeList = () => {
+export const BrandList = () => {
   const { tableProps, setFilters } = useTable({
     syncWithLocation: true,
   });
+
   const invalidate = useInvalidate();
   const [loadingId, setLoadingId] = useState<string | number | null>(null);
 
-  const handleChangeStatus = async (record: IAttribute) => {
+  const handleChangeStatus = async (record: IBrand) => {
     setLoadingId(record._id);
     try {
-      await axios.patch(`${API_URL}/attribute/edit/${record._id}`, {
-        values: record.values,
-        name: record.name,
+      await axios.patch(`${API_URL}/brand/edit/${record._id}`, {
         isActive: !record.isActive,
       });
 
       message.success("Cập nhật trạng thái thành công");
       await invalidate({
-        resource: "attribute",
+        resource: "brand",
         invalidates: ["list"],
       });
     } catch (error) {
@@ -42,7 +41,7 @@ export const AttributeList = () => {
   };
 
   return (
-    <List title={"Quản lý thuộc tính"}>
+    <List title={"Quản lý thương hiệu"}>
       <Input.Search
         placeholder="Tìm kiếm tên thuộc tính"
         allowClear
@@ -55,32 +54,21 @@ export const AttributeList = () => {
         <Table.Column
           dataIndex="stt"
           title={"STT"}
-          render={(_: unknown, __: IAttribute, index: number) => index + 1}
+          render={(_: unknown, __: IBrand, index: number) => index + 1}
         />
-        <Table.Column dataIndex="name" title={"Tên thuộc tính"} />
         <Table.Column
-          dataIndex="values"
-          title={"Giá trị"}
-          render={(_: unknown, record: IAttribute) => {
-            return record.isColor ? (
-              <div style={{ display: "flex", gap: 4 }}>
-                {record.values.map((item: string, idx: number) => (
-                  <div
-                    key={idx}
-                    style={{
-                      width: 20,
-                      height: 20,
-                      backgroundColor: item,
-                      borderRadius: "50%",
-                    }}
-                  ></div>
-                ))}
-              </div>
-            ) : (
-              record.values.join(", ")
-            );
-          }}
+          dataIndex="logoURL"
+          title={"Ảnh thương hiệu"}
+          render={(value: string) => (
+            <img
+              src={value}
+              width={50}
+              height={50}
+              style={{ objectFit: "contain" }}
+            />
+          )}
         />
+        <Table.Column dataIndex="name" title={"Tên thương hiệu"} />
         <Table.Column
           dataIndex="isActive"
           title={"Trạng thái"}
@@ -96,7 +84,7 @@ export const AttributeList = () => {
         <Table.Column
           title={"Hành động"}
           dataIndex="actions"
-          render={(_, record: IAttribute) => (
+          render={(_, record: IBrand) => (
             <Space>
               <EditButton hideText size="small" recordItemId={record._id} />
               <ShowButton hideText size="small" recordItemId={record._id} />
