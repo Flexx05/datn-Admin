@@ -8,18 +8,18 @@ import {
   useTable,
 } from "@refinedev/antd";
 import { useInvalidate } from "@refinedev/core";
-import { message, Popconfirm, Space, Table, Typography } from "antd";
+import { Input, message, Popconfirm, Space, Table, Typography } from "antd";
 import axios from "axios";
 import { useState } from "react";
 import { API_URL } from "../../config/dataProvider";
 import { ICategory } from "../../interface/category";
 
 export const CategoryList = () => {
-  const { tableProps } = useTable<ICategory>({
+  const { tableProps, setFilters } = useTable<ICategory>({
     syncWithLocation: true,
     errorNotification: (error: any) => ({
       message:
-        "❌ Lỗi hệ thống " + (error.response?.data?.message | error.message),
+        "❌ Lỗi hệ thống " + (error.response?.data?.message || error.message),
       description: "Có lỗi xảy ra trong quá trình xử lý.",
       type: "error",
     }),
@@ -51,6 +51,14 @@ export const CategoryList = () => {
 
   return (
     <List title={"Quản lý danh mục"}>
+      <Input.Search
+        placeholder="Tìm kiếm danh mục"
+        allowClear
+        onSearch={(value) =>
+          setFilters([{ field: "name", operator: "eq", value }], "replace")
+        }
+        style={{ marginBottom: 16, maxWidth: 300 }}
+      />
       <Table
         {...tableProps}
         rowKey="_id"
@@ -115,10 +123,10 @@ export const CategoryList = () => {
                       ) : (
                         <Popconfirm
                           title="Bạn chắc chắn kích hoạt hiệu lực không ?"
-                          onConfirm={() => handleChangeStatus(record)}
+                          onConfirm={() => handleChangeStatus(child)}
                           okText="Kích hoạt"
                           cancelText="Hủy"
-                          okButtonProps={{ loading: loadingId === record._id }}
+                          okButtonProps={{ loading: loadingId === child._id }}
                         >
                           <PlusCircleOutlined
                             style={{
@@ -126,7 +134,7 @@ export const CategoryList = () => {
                               borderRadius: "20%",
                               padding: 4,
                               cursor: "pointer",
-                              opacity: loadingId === record._id ? 0.5 : 1,
+                              opacity: loadingId === child._id ? 0.5 : 1,
                             }}
                           />
                         </Popconfirm>
@@ -154,18 +162,20 @@ export const CategoryList = () => {
             { text: "Có hiệu lực", value: true },
             { text: "Không có hiệu lực", value: false },
           ]}
-          onFilter={(value, record) =>
-            record.isActive === value ||
-            record.subCategories?.some(
-              (child: ICategory) => child.isActive === value
-            )
-          }
+          onFilter={(value, record) => {
+            return (
+              record.isActive === value ||
+              record.subCategories?.some(
+                (child: ICategory) => child.isActive === value
+              )
+            );
+          }}
           render={(value: boolean) =>
             value ? "Có hiệu lực" : "Không có hiệu lực"
           }
         />
         <Table.Column
-          title="Actions"
+          title="Hành động"
           dataIndex="actions"
           render={(_, record: ICategory) => (
             <Space>
