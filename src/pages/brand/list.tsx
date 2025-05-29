@@ -7,7 +7,7 @@ import {
   useTable,
 } from "@refinedev/antd";
 import { useInvalidate } from "@refinedev/core";
-import { Input, message, Space, Table } from "antd";
+import { Image, Input, message, Space, Table } from "antd";
 import axios from "axios";
 import { useState } from "react";
 import { API_URL } from "../../config/dataProvider";
@@ -60,12 +60,7 @@ export const BrandList = () => {
           dataIndex="logoUrl"
           title={"Ảnh thương hiệu"}
           render={(value: string) => (
-            <img
-              src={value}
-              width={50}
-              height={50}
-              style={{ objectFit: "contain" }}
-            />
+            <Image src={value} width={50} height={50} />
           )}
         />
         <Table.Column dataIndex="name" title={"Tên thương hiệu"} />
