@@ -5,7 +5,7 @@ import {
   ShowButton,
   useTable,
 } from "@refinedev/antd";
-import { Input, Space, Table, message } from "antd";
+import { Input, Popconfirm, Space, Table, message } from "antd";
 import { IAttribute } from "../../interface/attribute";
 import { PlusCircleOutlined } from "@ant-design/icons";
 import axios from "axios";
@@ -111,16 +111,23 @@ export const AttributeList = () => {
                   loading={loadingId === record._id}
                 />
               ) : (
-                <PlusCircleOutlined
-                  style={{
-                    border: "1px solid #404040",
-                    borderRadius: "20%",
-                    padding: 4,
-                    cursor: "pointer",
-                    opacity: loadingId === record._id ? 0.5 : 1,
-                  }}
-                  onClick={() => handleChangeStatus(record)}
-                />
+                <Popconfirm
+                  title="Bạn chắc chắn kích hoạt hiệu lực không ?"
+                  onConfirm={() => handleChangeStatus(record)}
+                  okText="Kích hoạt"
+                  cancelText="Hủy"
+                  okButtonProps={{ loading: loadingId === record._id }}
+                >
+                  <PlusCircleOutlined
+                    style={{
+                      border: "1px solid #404040",
+                      borderRadius: "20%",
+                      padding: 4,
+                      cursor: "pointer",
+                      opacity: loadingId === record._id ? 0.5 : 1,
+                    }}
+                  />
+                </Popconfirm>
               )}
             </Space>
           )}
