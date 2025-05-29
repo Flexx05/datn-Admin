@@ -9,7 +9,7 @@ import {
   message,
   Form,
   Input,
-  Button,
+  Button, Popconfirm
 } from "antd";
 import {
   CalendarOutlined,
@@ -19,18 +19,21 @@ import {
 } from "@ant-design/icons";
 import { Show } from "@refinedev/antd";
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router";
 
 const { Title } = Typography;
 
 export const CommentShow = () => {
   const { queryResult } = useShow();
+  const navigate = useNavigate();
   const { data, isLoading, refetch } = queryResult;
   const record = data?.data;
   const { mutate } = useUpdate();
-
-  const [updateStatus, setStatus] = useState<string | null>(null);
+   
+  // Set loading cho việc cập nhật trạng thái bình luận
+  const [status, setStatus] = useState<string | null>(null);
+  // Set loading cho việc gửi phản hồi
   const [replyLoading, setReplyLoading] = useState(false);
-
   const [form] = Form.useForm();
   useEffect(() => {
     if (record) {
@@ -39,7 +42,8 @@ export const CommentShow = () => {
       });
     }
   }, [record, form]);
-
+  
+  // Hàm xử lý cập nhật trạng thái bình luận
   const handleToggleStatus = (checked: boolean) => {
     if (!record) return;
 
@@ -67,7 +71,8 @@ export const CommentShow = () => {
       }
     );
   };
-
+  
+  // Hàm xử lý gửi phản hồi bình luận
   const handleReply = (values: { replyContent: string }) => {
     if (!record) return;
     setReplyLoading(true);
@@ -77,7 +82,6 @@ export const CommentShow = () => {
         id: record._id,
         values: {
           replyContent: values.replyContent,
-          replyAt: new Date().toISOString(),
         },
       },
       {
@@ -86,6 +90,10 @@ export const CommentShow = () => {
           setReplyLoading(false);
           refetch?.();
           form.resetFields();
+          setTimeout(() => {
+            navigate("/comments");
+          }, 1000)
+        
         },
         onError: (error:any) => {
           message.error(
@@ -98,7 +106,7 @@ export const CommentShow = () => {
   };
 
   return (
-    <Show isLoading={isLoading}>
+    <Show isLoading={isLoading} canDelete={false}>
       <Title level={4}>Chi tiết bình luận</Title>
       <Descriptions
         bordered
@@ -121,22 +129,35 @@ export const CommentShow = () => {
           <CommentOutlined /> {record?.content}
         </Descriptions.Item>
         <Descriptions.Item label="Trạng thái">
+        <Popconfirm
+          title="Bạn có chắc muốn ẩn bình luận này không?"
+          onConfirm={() => handleToggleStatus(false)}
+          disabled={record?.status !== "visible"}
+        >
           <Switch
             checked={record?.status === "visible"}
             checkedChildren="Hiện"
             unCheckedChildren="Ẩn"
-            loading={updateStatus === String(record?._id)}
-            onChange={handleToggleStatus}
+            loading={status === String(record?._id)}
+            onChange={(checked) => {
+              if (!checked && record?.status === "visible") {
+                // Nếu chuyển từ hiện sang ẩn thì show Popconfirm (không làm gì ở đây)
+              } else {
+                // Chuyển từ ẩn sang hiện thì cập nhật luôn
+                handleToggleStatus(checked);
+              }
+            }}
           />
-        </Descriptions.Item>
-        <Descriptions.Item label="Số sao đánh giá">
-          <Rate disabled value={record?.rating || 0} />
-        </Descriptions.Item>
-      </Descriptions>
+        </Popconfirm>
+      </Descriptions.Item>
+              <Descriptions.Item label="Số sao đánh giá">
+                <Rate disabled value={record?.rating || 0} />
+              </Descriptions.Item>
+            </Descriptions>
 
-      <Divider>Phản hồi của Admin</Divider>
+            <Divider>Phản hồi của Admin</Divider>
 
-      <Descriptions
+            <Descriptions
         bordered
         column={1}
         size="middle"
@@ -161,11 +182,16 @@ export const CommentShow = () => {
             placeholder={
               record?.status === "visible"
                 ? "Nhập phản hồi của bạn tại đây..."
-                : "Chỉ có thể trả lời khi bình luận đã được duyệt"
+                : record?.replyContent
             }
-            style={{ width: "100%", resize: "none" }}
+            style={{ width: "100%"}}
             disabled={record?.status !== "visible"}
           />
+            {record?.status !== "visible" && (
+              <div style={{ color: "red", marginTop: 4 }}>
+                Bình luận phải được duyệt trước khi trả lời.
+              </div>
+            )}
         </Form.Item>
         <Form.Item>
           <Button
@@ -187,7 +213,7 @@ export const CommentShow = () => {
               <CalendarOutlined /> {new Date(record.replyAt).toLocaleString()}
             </span>
           ) : (
-            "Chưa trả lời"
+            "Chưa phản hồi"
           )}
         </Descriptions.Item>
       </Descriptions>

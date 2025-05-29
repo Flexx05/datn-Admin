@@ -23,8 +23,7 @@ import {
   AttributeList,
   AttributeShow,
 } from "../pages/attributes";
-import { CommentList } from "../pages/comments/list";
-import { CommentShow } from "../pages/comments/show";
+import { CommentList, CommentShow } from "../pages/comments";
 
 const AppRoutes = () => {
   return (
