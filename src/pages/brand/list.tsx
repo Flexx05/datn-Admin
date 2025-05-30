@@ -7,7 +7,7 @@ import {
   useTable,
 } from "@refinedev/antd";
 import { useInvalidate } from "@refinedev/core";
-import { Image, Input, message, Space, Table } from "antd";
+import { Image, Input, message, Popconfirm, Space, Table } from "antd";
 import axios from "axios";
 import { useState } from "react";
 import { API_URL } from "../../config/dataProvider";
@@ -94,16 +94,23 @@ export const BrandList = () => {
                   loading={loadingId === record._id}
                 />
               ) : (
-                <PlusCircleOutlined
-                  style={{
-                    border: "1px solid #404040",
-                    borderRadius: "20%",
-                    padding: 4,
-                    cursor: "pointer",
-                    opacity: loadingId === record._id ? 0.5 : 1,
-                  }}
-                  onClick={() => handleChangeStatus(record)}
-                />
+                <Popconfirm
+                  title="Bạn chắc chắn kích hoạt hiệu lực không ?"
+                  onConfirm={() => handleChangeStatus(record)}
+                  okText="Kích hoạt"
+                  cancelText="Hủy"
+                  okButtonProps={{ loading: loadingId === record._id }}
+                >
+                  <PlusCircleOutlined
+                    style={{
+                      border: "1px solid #404040",
+                      borderRadius: "20%",
+                      padding: 4,
+                      cursor: "pointer",
+                      opacity: loadingId === record._id ? 0.5 : 1,
+                    }}
+                  />
+                </Popconfirm>
               )}
             </Space>
           )}
