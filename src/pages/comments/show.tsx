@@ -92,7 +92,7 @@ export const CommentShow = () => {
           form.resetFields();
           setTimeout(() => {
             navigate("/comments");
-          }, 1000)
+          }, 1500)
         
         },
         onError: (error:any) => {

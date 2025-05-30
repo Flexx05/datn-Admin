@@ -34,7 +34,11 @@ export const CommentList = () => {
             key="userName"
           />
 
-        <Table.Column dataIndex="content" title="Content" />
+        <Table.Column dataIndex="content" title="Content"  
+        render={(text: string) =>
+        text && text.length > 50 ? text.slice(0, 50) + "..." : text
+         } />
+
         <Table.Column
           dataIndex="rating"
           title="Rating"
@@ -112,7 +116,11 @@ export const CommentList = () => {
           }}
         />
 
-        <Table.Column dataIndex="replyContent" title="Reply" />
+        <Table.Column dataIndex="replyContent" title="Reply" 
+          render={(text: string) =>
+            text && text.length > 50 ? text.slice(0, 50) + "..." : text
+          }
+        />
         <Table.Column
           dataIndex="replyAt"
           title="Reply At"
