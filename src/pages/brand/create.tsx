@@ -7,7 +7,18 @@ import axios from "axios";
 import { useState } from "react";
 
 export const BrandCreate = () => {
-  const { formProps, saveButtonProps } = useForm({});
+  const { formProps, saveButtonProps } = useForm({
+    successNotification: () => ({
+      message: "🎉 Thêm mới thành công",
+      description: "Thương hiệu đã được thêm mới!",
+      type: "success" as const,
+    }),
+    errorNotification: (error: any) => ({
+      message: "❌ Thêm mới thất bại! " + error.response?.data?.message,
+      description: "Có lỗi xảy ra trong quá trình xử lý.",
+      type: "error" as const,
+    }),
+  });
   const [fileList, setFileList] = useState<UploadFile[]>([]);
   const [previewImage, setPreviewImage] = useState<string>();
   const [uploadedImageUrl, setUploadedImageUrl] = useState<string>();
