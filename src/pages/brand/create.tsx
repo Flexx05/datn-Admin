@@ -3,30 +3,44 @@ import { PlusOutlined } from "@ant-design/icons";
 import { Create, useForm } from "@refinedev/antd";
 import { Form, Image, Input, message, Upload } from "antd";
 import type { UploadFile } from "antd/es/upload/interface";
+import axios from "axios";
 import { useState } from "react";
 
 export const BrandCreate = () => {
   const { formProps, saveButtonProps } = useForm({});
   const [fileList, setFileList] = useState<UploadFile[]>([]);
-  const [previewImage, setPreviewImage] = useState<string | undefined>(
-    undefined
-  );
+  const [previewImage, setPreviewImage] = useState<string>();
+  const [uploadedImageUrl, setUploadedImageUrl] = useState<string>();
 
-  const normFile = (e: any) => {
-    return e?.fileList?.slice(-1); // giữ lại 1 file duy nhất
-  };
+  const normFile = (e: any) => e?.fileList?.slice(-1); // Chỉ giữ 1 ảnh
 
-  const handleChange = ({ fileList }: { fileList: UploadFile[] }) => {
-    const latestFile = fileList.slice(-1); // giữ lại file cuối
+  const handleChange = async ({ fileList }: { fileList: UploadFile[] }) => {
+    const latestFile = fileList.slice(-1);
     setFileList(latestFile);
 
-    // Hiển thị preview ảnh nếu có
-    if (latestFile.length > 0) {
-      const file = latestFile[0].originFileObj as File;
+    // Upload lên Cloudinary
+    const file = latestFile?.[0]?.originFileObj as File;
+    if (file) {
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("upload_preset", "Binova_Upload");
+
+      const endpoint = "https://api.cloudinary.com/v1_1/dtwm0rpqg/image/upload";
+
+      try {
+        const { data } = await axios.post(endpoint, formData);
+        setUploadedImageUrl(data.secure_url); // Lưu URL trả về
+        message.success("Tải ảnh lên thành công!");
+      } catch (error) {
+        message.error("Lỗi khi upload ảnh!");
+        console.error(error);
+      }
+    }
+
+    // Preview ảnh
+    if (file) {
       const reader = new FileReader();
-      reader.onload = (e) => {
-        setPreviewImage(e.target?.result as string);
-      };
+      reader.onload = (e) => setPreviewImage(e.target?.result as string);
       reader.readAsDataURL(file);
     } else {
       setPreviewImage(undefined);
@@ -40,24 +54,28 @@ export const BrandCreate = () => {
         layout="vertical"
         onFinish={async (values: any) => {
           try {
-            const file = values.logoUrl[0].originFileObj.name;
-            if (!file) return;
-            values.logoUrl = file;
-            await formProps?.onFinish?.(values);
+            if (!uploadedImageUrl) {
+              message.error("Bạn chưa tải ảnh hoặc ảnh chưa upload xong.");
+              return;
+            }
+
+            const payload = {
+              name: values.name,
+              logoUrl: uploadedImageUrl, // ✅ dùng URL từ Cloudinary
+            };
+
+            // Gửi dữ liệu qua API Refine hoặc custom
+            await formProps?.onFinish?.(payload);
           } catch (error) {
-            message.error("Lỗi xử lý ảnh");
+            message.error("Lỗi khi tạo thương hiệu!");
+            console.error(error);
           }
         }}
       >
         <Form.Item
           label="Tên thương hiệu"
           name={["name"]}
-          rules={[
-            {
-              required: true,
-              message: "Vui lòng nhập tên thương hiệu",
-            },
-          ]}
+          rules={[{ required: true, message: "Vui lòng nhập tên thương hiệu" }]}
         >
           <Input />
         </Form.Item>
@@ -73,7 +91,7 @@ export const BrandCreate = () => {
             fileList={fileList}
             onChange={handleChange}
             maxCount={1}
-            beforeUpload={() => false}
+            beforeUpload={() => false} // Không upload tự động
           >
             {fileList.length >= 1 ? null : (
               <div>
@@ -82,7 +100,6 @@ export const BrandCreate = () => {
               </div>
             )}
           </Upload>
-
           {previewImage && (
             <Image
               src={previewImage}
