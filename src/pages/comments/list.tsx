@@ -4,23 +4,164 @@ import {
   useTable,
 } from "@refinedev/antd";
 import { IComment } from "../../interface/comment";
-import { Space, Table, Rate, message, Switch, Popconfirm } from "antd";
+import { Space, Table, Rate, message, Switch, Popconfirm, Form, Input, Button, Select, DatePicker } from "antd";
 import { useUpdate } from "@refinedev/core";
 import { useState } from "react";
+import { LogicalFilter } from "@refinedev/core";
 
 
-
+const {RangePicker} = DatePicker;
 
 export const CommentList = () => {
-  const { tableProps } = useTable({
+  const [form] = Form.useForm();
+  const { tableProps, setFilters } = useTable({
     resource: "comments",
   });
   const { mutate } = useUpdate();
   const [status, setStatus] = useState<string | null>(null);
 
+   // Hàm xử lý lọc theo tên sản phẩm
+   const handleSearch = () => {
+    const productName = form.getFieldValue("productName")?.trim();
+    const userName = form.getFieldValue("userName")?.trim();
+    const status = form.getFieldValue("status");
+    const rating = form.getFieldValue("rating");
+    const createdAt = form.getFieldValue("createdAt");
+
+
+    const filters:LogicalFilter[] = [];
+    if (productName) {
+      filters.push({
+        field: "productName",
+        operator: "contains",
+        value: productName,
+      });
+    }
+    if (userName) {
+      filters.push({
+        field: "userName",
+        operator: "contains",
+        value: userName,
+      });
+    }
+    if (status) {
+      filters.push({
+        field: "status",
+        operator: "eq",
+        value: status,
+      });
+    }
+    if (rating) {
+      filters.push({
+        field: "rating",
+        operator: "eq",
+        value: rating,
+      });
+    }
+
+    if (createdAt && createdAt.length === 2) {
+      filters.push({
+        field: "startDate",
+        operator: "eq",
+        value: createdAt[0].format("YYYY-MM-DD"),
+      });
+      filters.push({
+        field: "endDate",
+        operator: "eq",
+        value: createdAt[1].format("YYYY-MM-DD"),
+      });
+    }
+    setFilters(filters, "replace");
+  };
+
   return (
     <List>
-      <Table {...tableProps} rowKey="_id">
+       <Form form={form} layout="inline" style={{ marginBottom: 16 }}>
+        <Form.Item name="productName" label="Tên sản phẩm">
+          <Input
+            placeholder="Nhập tên sản phẩm"
+            allowClear
+            onPressEnter={handleSearch}
+            onChange={(e) => {
+              if (e.target.value === "") handleSearch();
+            }}
+          />
+        </Form.Item>
+
+        <Form.Item name="userName" label="Tên người dùng">
+          <Input
+            placeholder="Nhập tên người dùng"
+            allowClear
+            onPressEnter={handleSearch}
+            onChange={(e) => {
+              if (e.target.value === "") handleSearch();
+            }}
+          />
+        </Form.Item>
+
+        <Form.Item name="status" label="Trạng thái">
+          <Select
+            allowClear
+            placeholder="Chọn trạng thái"
+            style={{ width: 140 }}
+            options={[
+              { label: "Đã duyệt", value: "visible" },
+              { label: "Chưa duyệt", value: "hidden" },
+            ]}
+            onChange={(value) => {
+              if (!value) handleSearch();
+            }}
+          />
+        </Form.Item>
+
+        <Form.Item name="rating" label="Đánh giá">
+          <Select
+            allowClear
+            placeholder="Chọn đánh giá"
+            style={{ width: 140 }}
+            options={[
+              { label: "1 sao", value: 1 },
+              { label: "2 sao", value: 2 },
+              { label: "3 sao", value: 3 },
+              { label: "4 sao", value: 4 },
+              { label: "5 sao", value: 5 },
+            ]}
+            onChange={(value) => {
+              if (!value) handleSearch();
+            }}
+          />
+        </Form.Item>
+
+        <Form.Item name="createdAt" label="Thời gian">
+          <RangePicker
+            format="YYYY-MM-DD"
+            allowClear
+            onChange={(value) => {
+              if (!value) handleSearch();
+            }}
+          />
+        </Form.Item>
+
+        <Form.Item>
+          <Button type="primary" onClick={handleSearch}>
+            Lọc
+          </Button>
+        </Form.Item>
+        <Form.Item>
+        <Button
+          onClick={() => {
+            form.resetFields();
+            setFilters([], "replace");
+          }}
+        >
+          Xóa lọc
+        </Button>
+      </Form.Item>
+      </Form>
+      
+      <Table {...tableProps} rowKey="_id"  locale={{
+          emptyText: "Không tìm thấy bình luận nào phù hợp với điều kiện lọc",
+        }}>
         <Table.Column dataIndex="_id" title="STT"  render={(_text, _record, index) => index + 1} />
         <Table.Column
             title="Product"
@@ -42,9 +183,8 @@ export const CommentList = () => {
         <Table.Column
           dataIndex="rating"
           title="Rating"
-          render={(value: number) => <Rate disabled value={value} style={{fontSize: "15px", textAlign: "center"}} />}
+          render={(value: number) => <Rate disabled value={value} style={{fontSize: "15px"}} />}
         />
-
 
 
         <Table.Column

@@ -9,6 +9,33 @@ const dataProvider: DataProvider = {
   getList: async ({ resource, filters, pagination, sorters, meta }) => {
     let endpoint = `${API_URL}/${resource}`;
     const params: Record<string, any> = {};
+    
+// Lấy các filter từ frontend và gán vào params để gửi lên backend API.
+// Mỗi filter sẽ được truyền thành một query param tương ứng
+    if (filters && Array.isArray(filters)) {
+      filters.forEach((filter) => {
+        if ("field" in filter && filter.value) {
+          if (filter.field === "productName") {
+            params.productName = filter.value;
+          }
+          if (filter.field === "userName") {
+            params.userName = filter.value;
+          }
+          if (filter.field === "status") {
+            params.status = filter.value;
+          }
+          if (filter.field === "rating") {
+            params.rating = filter.value;
+          }
+          if (filter.field === "startDate") {
+            params.startDate = filter.value;
+          }
+          if (filter.field === "endDate") {
+            params.endDate = filter.value;
+          }
+        }
+      });
+    }
 
     // Nếu resource hỗ trợ tìm kiếm (ví dụ: "attribute", "product"...)
     const resourcesWithSearchApi = ["attribute", "product", "category"];
