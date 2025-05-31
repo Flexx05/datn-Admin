@@ -3,4 +3,6 @@ export interface IBrand {
   name: string;
   logoUrl: string;
   isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
 }
