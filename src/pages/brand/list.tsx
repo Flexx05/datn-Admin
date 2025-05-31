@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { PlusCircleOutlined } from "@ant-design/icons";
 import {
   DeleteButton,
@@ -16,6 +17,12 @@ import { IBrand } from "../../interface/brand";
 export const BrandList = () => {
   const { tableProps, setFilters } = useTable({
     syncWithLocation: true,
+    errorNotification: (error: any) => ({
+      message:
+        "❌ Lỗi hệ thống " + (error.response?.data?.message | error.message),
+      description: "Có lỗi xảy ra trong quá trình xử lý.",
+      type: "error" as const,
+    }),
   });
 
   const invalidate = useInvalidate();
