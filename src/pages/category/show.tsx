@@ -1,9 +1,18 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { Show } from "@refinedev/antd";
 import { useShow } from "@refinedev/core";
-import { Card, Col, Divider, Row, Skeleton, Tag, Typography } from "antd";
+import {
+  Card,
+  Col,
+  Divider,
+  message,
+  Row,
+  Skeleton,
+  Tag,
+  Typography,
+} from "antd";
 import dayjs from "dayjs";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import axios from "axios";
 import { ICategory } from "../../interface/category";
 import { API_URL } from "../../config/dataProvider";
@@ -19,9 +28,37 @@ export const CategoryShow = () => {
       type: "error" as const,
     }),
   });
-  const { data, isLoading } = queryResult;
-
+  const { data, isLoading, refetch } = queryResult;
   const record = data?.data as ICategory | undefined;
+  const [lastStatus, setLastStatus] = useState<boolean | undefined>(
+    record?.isActive
+  );
+  const isInitialLoad = useRef(true);
+
+  // Cập nhật giá trị trạng thái ban đầu sau khi load dữ liệu lần đầu
+  useEffect(() => {
+    if (!isInitialLoad.current) return;
+    if (record?.isActive !== undefined) {
+      setLastStatus(record.isActive);
+      isInitialLoad.current = false;
+    }
+  }, [record]);
+
+  // Thiết lập polling để kiểm tra sự thay đổi trạng thái
+  useEffect(() => {
+    const interval = setInterval(async () => {
+      const refreshed = await refetch();
+      const newStatus = refreshed?.data?.data?.isActive;
+
+      // So sánh trạng thái mới và cũ
+      if (lastStatus !== undefined && newStatus !== lastStatus) {
+        message.info("⚠️ Trạng thái hiệu lực đã bị thay đổi.");
+        setLastStatus(newStatus);
+      }
+    }, 10000); // Kiểm tra mỗi 10 giây
+
+    return () => clearInterval(interval); // Dọn dẹp interval khi component bị hủy
+  }, [lastStatus, refetch]);
 
   const [parentName, setParentName] = useState<string | null>(null);
   const [parentLoading, setParentLoading] = useState(false);
@@ -59,6 +96,14 @@ export const CategoryShow = () => {
             <Col span={24}>
               <Title level={5}>Tên danh mục</Title>
               <Text>{record?.name || "Không rõ"}</Text>
+            </Col>
+            <Col span={24}>
+              <Title level={5}>Mô tả</Title>
+              <Text>
+                {record?.description || (
+                  <Text type="secondary">Không có mô tả</Text>
+                )}
+              </Text>
             </Col>
 
             {/* Loại danh mục */}
