@@ -6,4 +6,6 @@ export interface ICategory {
   subCategories: ICategory[];
   categorySort: number;
   isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
 }
