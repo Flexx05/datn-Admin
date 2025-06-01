@@ -25,7 +25,7 @@ const dataProvider: DataProvider = {
     const resourcesWithSearchApi = [
       "attribute",
       "product",
-      // "category",
+      "category",
       "brand",
     ];
     if (resourcesWithSearchApi.includes(resource)) {
@@ -33,6 +33,7 @@ const dataProvider: DataProvider = {
     }
     endpoint += "";
     const { data } = await axios.get(endpoint, { params });
+    console.log(params);
 
     return {
       data,
