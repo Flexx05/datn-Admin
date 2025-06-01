@@ -1,10 +1,22 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Edit, useForm } from "@refinedev/antd";
 import { Form, Input, Button, Space, Switch, Spin } from "antd";
 import { MinusCircleOutlined, PlusOutlined } from "@ant-design/icons";
 import { useEffect, useState } from "react";
 
 export const AttributeEdit = () => {
-  const { formProps, saveButtonProps, formLoading } = useForm({});
+  const { formProps, saveButtonProps, formLoading } = useForm({
+    successNotification: () => ({
+      message: "🎉 Cập nhật thành công",
+      description: "Thuộc tính đã được cập nhật!",
+      type: "success" as const,
+    }),
+    errorNotification: (error: any) => ({
+      message: "❌ Cập nhật thất bại! " + error.response?.data?.message,
+      description: "Có lỗi xảy ra trong quá trình xử lý.",
+      type: "error" as const,
+    }),
+  });
   const [isColorMode, setIsColorMode] = useState(false);
 
   useEffect(() => {
