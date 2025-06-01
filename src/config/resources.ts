@@ -1,12 +1,13 @@
 export const resources = [
   {
-    name: "blog_posts",
-    list: "/blog-posts",
-    create: "/blog-posts/create",
-    edit: "/blog-posts/edit/:id",
-    show: "/blog-posts/show/:id",
+    name: "product",
+    list: "/product",
+    create: "/product/add",
+    edit: "/product/edit/:id",
+    show: "/product/id/:id",
     meta: {
       canDelete: true,
+      label: "Quản lý sản phẩm",
     },
   },
   {
@@ -14,7 +15,7 @@ export const resources = [
     list: "/category",
     create: "/category/add",
     edit: "/category/edit/:id",
-    show: "/category/show/:id",
+    show: "/category/id/:id",
     meta: {
       canDelete: true,
       label: "Quản lý danh mục",
@@ -25,7 +26,7 @@ export const resources = [
     list: "/brand",
     create: "/brand/add",
     edit: "/brand/edit/:id",
-    show: "/brand/show/:id",
+    show: "/brand/id/:id",
     meta: {
       canDelete: true,
       label: "Quản lý thương hiệu",

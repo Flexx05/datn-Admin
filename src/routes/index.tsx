@@ -3,17 +3,11 @@ import { Authenticated, ErrorComponent } from "@refinedev/core";
 import { CatchAllNavigate, NavigateToResource } from "@refinedev/react-router";
 import { Outlet, Route, Routes } from "react-router";
 import {
-  BlogPostCreate,
-  BlogPostEdit,
-  BlogPostList,
-  BlogPostShow,
-} from "../pages/blog-posts";
-import {
   CategoryCreate,
   CategoryEdit,
   CategoryList,
   CategoryShow,
-} from "../pages/category";
+} from "../pages/categories";
 import { ForgotPassword } from "../pages/forgotPassword";
 import { Login } from "../pages/login";
 import { Register } from "../pages/register";
@@ -23,7 +17,13 @@ import {
   AttributeList,
   AttributeShow,
 } from "../pages/attributes";
-import { BrandCreate, BrandEdit, BrandList, BrandShow } from "../pages/brand";
+import { BrandCreate, BrandEdit, BrandList, BrandShow } from "../pages/brands";
+import {
+  ProductCreate,
+  ProductEdit,
+  ProductList,
+  ProductShow,
+} from "../pages/products";
 
 const AppRoutes = () => {
   return (
@@ -45,11 +45,11 @@ const AppRoutes = () => {
           }
         >
           <Route index element={<NavigateToResource resource="blog_posts" />} />
-          <Route path="/blog-posts">
-            <Route index element={<BlogPostList />} />
-            <Route path="create" element={<BlogPostCreate />} />
-            <Route path="edit/:id" element={<BlogPostEdit />} />
-            <Route path="show/:id" element={<BlogPostShow />} />
+          <Route path="/product">
+            <Route index element={<ProductList />} />
+            <Route path="add" element={<ProductCreate />} />
+            <Route path="edit/:id" element={<ProductEdit />} />
+            <Route path="id/:id" element={<ProductShow />} />
           </Route>
           <Route path="/attribute">
             <Route index element={<AttributeList />} />
@@ -61,13 +61,13 @@ const AppRoutes = () => {
             <Route index element={<CategoryList />} />
             <Route path="add" element={<CategoryCreate />} />
             <Route path="edit/:id" element={<CategoryEdit />} />
-            <Route path="show/:id" element={<CategoryShow />} />
+            <Route path="id/:id" element={<CategoryShow />} />
           </Route>
           <Route path="/brand">
             <Route index element={<BrandList />} />
             <Route path="add" element={<BrandCreate />} />
             <Route path="edit/:id" element={<BrandEdit />} />
-            <Route path="show/:id" element={<BrandShow />} />
+            <Route path="id/:id" element={<BrandShow />} />
           </Route>
           <Route path="*" element={<ErrorComponent />} />
         </Route>
