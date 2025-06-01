@@ -1,9 +1,10 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { Show } from "@refinedev/antd";
 import { useShow } from "@refinedev/core";
-import { Card, Col, Row, Skeleton, Tag, Typography } from "antd";
+import { Card, Col, message, Row, Skeleton, Tag, Typography } from "antd";
 import dayjs from "dayjs";
 import { IAttribute } from "../../interface/attribute";
+import { useEffect, useRef, useState } from "react";
 
 const { Title, Text } = Typography;
 
@@ -16,9 +17,39 @@ export const AttributeShow = () => {
       type: "error" as const,
     }),
   });
-  const { data, isLoading } = queryResult;
+  const { data, isLoading, refetch } = queryResult;
 
   const record = data?.data as IAttribute | undefined;
+
+  const [lastStatus, setLastStatus] = useState<boolean | undefined>(
+    record?.isActive
+  );
+  const isInitialLoad = useRef(true);
+
+  // Cập nhật giá trị trạng thái ban đầu sau khi load dữ liệu lần đầu
+  useEffect(() => {
+    if (!isInitialLoad.current) return;
+    if (record?.isActive !== undefined) {
+      setLastStatus(record.isActive);
+      isInitialLoad.current = false;
+    }
+  }, [record]);
+
+  // Thiết lập polling để kiểm tra sự thay đổi trạng thái
+  useEffect(() => {
+    const interval = setInterval(async () => {
+      const refreshed = await refetch();
+      const newStatus = refreshed?.data?.data?.isActive;
+
+      // So sánh trạng thái mới và cũ
+      if (lastStatus !== undefined && newStatus !== lastStatus) {
+        message.info("⚠️ Trạng thái hiệu lực đã bị thay đổi.");
+        setLastStatus(newStatus);
+      }
+    }, 10000); // Kiểm tra mỗi 10 giây
+
+    return () => clearInterval(interval); // Dọn dẹp interval khi component bị hủy
+  }, [lastStatus, refetch]);
 
   return (
     <Show title="Chi tiết thuộc tính" isLoading={isLoading} canDelete={false}>
