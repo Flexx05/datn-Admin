@@ -21,7 +21,6 @@ const dataProvider: DataProvider = {
         // Thêm các operator khác nếu cần
       });
     }
-
     // Nếu resource hỗ trợ tìm kiếm (ví dụ: "attribute", "product"...)
     const resourcesWithSearchApi = [
       "attribute",

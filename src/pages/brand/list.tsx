@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { PlusCircleOutlined } from "@ant-design/icons";
 import {
   DeleteButton,
@@ -7,7 +8,7 @@ import {
   useTable,
 } from "@refinedev/antd";
 import { useInvalidate } from "@refinedev/core";
-import { Input, message, Space, Table } from "antd";
+import { Image, Input, message, Popconfirm, Space, Table } from "antd";
 import axios from "axios";
 import { useState } from "react";
 import { API_URL } from "../../config/dataProvider";
@@ -16,6 +17,12 @@ import { IBrand } from "../../interface/brand";
 export const BrandList = () => {
   const { tableProps, setFilters } = useTable({
     syncWithLocation: true,
+    errorNotification: (error: any) => ({
+      message:
+        "❌ Lỗi hệ thống " + (error.response?.data?.message | error.message),
+      description: "Có lỗi xảy ra trong quá trình xử lý.",
+      type: "error" as const,
+    }),
   });
 
   const invalidate = useInvalidate();
@@ -43,10 +50,10 @@ export const BrandList = () => {
   return (
     <List title={"Quản lý thương hiệu"}>
       <Input.Search
-        placeholder="Tìm kiếm tên thuộc tính"
+        placeholder="Tìm kiếm thương hiệu"
         allowClear
         onSearch={(value) =>
-          setFilters([{ field: "name_like", operator: "eq", value }], "replace")
+          setFilters([{ field: "name", operator: "eq", value }], "replace")
         }
         style={{ marginBottom: 16, maxWidth: 300 }}
       />
@@ -57,15 +64,10 @@ export const BrandList = () => {
           render={(_: unknown, __: IBrand, index: number) => index + 1}
         />
         <Table.Column
-          dataIndex="logoURL"
+          dataIndex="logoUrl"
           title={"Ảnh thương hiệu"}
           render={(value: string) => (
-            <img
-              src={value}
-              width={50}
-              height={50}
-              style={{ objectFit: "contain" }}
-            />
+            <Image src={value} width={50} height={50} />
           )}
         />
         <Table.Column dataIndex="name" title={"Tên thương hiệu"} />
@@ -99,16 +101,23 @@ export const BrandList = () => {
                   loading={loadingId === record._id}
                 />
               ) : (
-                <PlusCircleOutlined
-                  style={{
-                    border: "1px solid #404040",
-                    borderRadius: "20%",
-                    padding: 4,
-                    cursor: "pointer",
-                    opacity: loadingId === record._id ? 0.5 : 1,
-                  }}
-                  onClick={() => handleChangeStatus(record)}
-                />
+                <Popconfirm
+                  title="Bạn chắc chắn kích hoạt hiệu lực không ?"
+                  onConfirm={() => handleChangeStatus(record)}
+                  okText="Kích hoạt"
+                  cancelText="Hủy"
+                  okButtonProps={{ loading: loadingId === record._id }}
+                >
+                  <PlusCircleOutlined
+                    style={{
+                      border: "1px solid #404040",
+                      borderRadius: "20%",
+                      padding: 4,
+                      cursor: "pointer",
+                      opacity: loadingId === record._id ? 0.5 : 1,
+                    }}
+                  />
+                </Popconfirm>
               )}
             </Space>
           )}
