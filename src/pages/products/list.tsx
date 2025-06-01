@@ -8,11 +8,21 @@ import {
   useTable,
 } from "@refinedev/antd";
 import { useInvalidate } from "@refinedev/core";
-import { Input, message, Popconfirm, Space, Table, Typography } from "antd";
+import {
+  Image,
+  Input,
+  message,
+  Popconfirm,
+  Space,
+  Table,
+  Tag,
+  Typography,
+} from "antd";
 import axios from "axios";
 import { useState } from "react";
 import { API_URL } from "../../config/dataProvider";
 import { ICategory } from "../../interface/category";
+import { IProduct, IProductAttribute } from "../../interface/product";
 
 export const ProductList = () => {
   const { tableProps, setFilters } = useTable<ICategory>({
@@ -50,9 +60,9 @@ export const ProductList = () => {
   };
 
   return (
-    <List title={"Quản lý danh mục"}>
+    <List title={"Quản lý sản phẩm"}>
       <Input.Search
-        placeholder="Tìm kiếm danh mục"
+        placeholder="Tìm kiếm sản phẩm"
         allowClear
         onSearch={(value) =>
           setFilters([{ field: "name", operator: "eq", value }], "replace")
@@ -151,11 +161,54 @@ export const ProductList = () => {
         <Table.Column
           dataIndex="stt"
           title="STT"
-          render={(_: unknown, __: ICategory, index: number) => index + 1}
+          render={(_: unknown, __: IProduct, index: number) => index + 1}
         />
-        <Table.Column dataIndex="name" title="Tên danh mục" width={430} />
         <Table.Column
-          width={400}
+          dataIndex="image"
+          title="Ảnh sản phẩm"
+          render={(_, record: IProduct) => (
+            <Image
+              src={record.image[0]}
+              width={55}
+              height={55}
+              alt="Ảnh sản phẩm"
+            />
+          )}
+        />
+        <Table.Column dataIndex="name" title="Tên sản phẩm" />
+        <Table.Column dataIndex="brandName" title="Thương hiệu" />
+        <Table.Column dataIndex="categoryName" title="Danh mục" />
+        <Table.Column
+          dataIndex="attributes"
+          title="Thuộc tính của sản phẩm"
+          render={(value: IProductAttribute[]) => (
+            <>
+              {value?.map((item) => (
+                <div>
+                  {item.attributeName}:{" "}
+                  {item.isColor ? (
+                    <div style={{ display: "flex", gap: 4 }}>
+                      {item.values.map((color, idx) => (
+                        <div
+                          key={idx}
+                          style={{
+                            width: 20,
+                            height: 20,
+                            backgroundColor: color,
+                            borderRadius: "50%",
+                          }}
+                        ></div>
+                      ))}
+                    </div>
+                  ) : (
+                    item.values.join(", ")
+                  )}
+                </div>
+              ))}
+            </>
+          )}
+        />
+        <Table.Column
           title="Trạng thái"
           dataIndex="isActive"
           filters={[
@@ -166,12 +219,16 @@ export const ProductList = () => {
             return (
               record.isActive === value ||
               record.subCategories?.some(
-                (child: ICategory) => child.isActive === value
+                (child: IProduct) => child.isActive === value
               )
             );
           }}
           render={(value: boolean) =>
-            value ? "Có hiệu lực" : "Không có hiệu lực"
+            value ? (
+              <Tag color="green">Có hiệu lực</Tag>
+            ) : (
+              <Tag color="red">Không có hiệu lực</Tag>
+            )
           }
         />
         <Table.Column
