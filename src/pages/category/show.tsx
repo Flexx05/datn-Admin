@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Show } from "@refinedev/antd";
 import { useShow } from "@refinedev/core";
 import { Card, Col, Divider, Row, Skeleton, Tag, Typography } from "antd";
@@ -10,7 +11,14 @@ import { API_URL } from "../../config/dataProvider";
 const { Title, Text } = Typography;
 
 export const CategoryShow = () => {
-  const { queryResult } = useShow({});
+  const { queryResult } = useShow({
+    errorNotification: (error: any) => ({
+      message:
+        "❌ Lỗi hệ thống " + (error.response?.data?.message | error.message),
+      description: "Có lỗi xảy ra trong quá trình xử lý.",
+      type: "error" as const,
+    }),
+  });
   const { data, isLoading } = queryResult;
 
   const record = data?.data as ICategory | undefined;
