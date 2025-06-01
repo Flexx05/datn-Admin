@@ -8,7 +8,14 @@ import { IAttribute } from "../../interface/attribute";
 const { Title, Text } = Typography;
 
 export const AttributeShow = () => {
-  const { queryResult } = useShow({});
+  const { queryResult } = useShow({
+    errorNotification: (error: any) => ({
+      message:
+        "❌ Lỗi hệ thống " + (error.response?.data?.message | error.message),
+      description: "Có lỗi xảy ra trong quá trình xử lý.",
+      type: "error" as const,
+    }),
+  });
   const { data, isLoading } = queryResult;
 
   const record = data?.data as IAttribute | undefined;
