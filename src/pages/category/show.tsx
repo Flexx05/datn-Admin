@@ -1,7 +1,11 @@
 import { Show } from "@refinedev/antd";
 import { useShow } from "@refinedev/core";
-import { Card, Col, Row, Skeleton, Typography, Tag, Divider } from "antd";
+import { Card, Col, Divider, Row, Skeleton, Tag, Typography } from "antd";
+import dayjs from "dayjs";
+import { useEffect, useState } from "react";
+import axios from "axios";
 import { ICategory } from "../../interface/category";
+import { API_URL } from "../../config/dataProvider";
 
 const { Title, Text } = Typography;
 
@@ -10,6 +14,31 @@ export const CategoryShow = () => {
   const { data, isLoading } = queryResult;
 
   const record = data?.data as ICategory | undefined;
+
+  const [parentName, setParentName] = useState<string | null>(null);
+  const [parentLoading, setParentLoading] = useState(false);
+
+  // Gọi API để lấy tên danh mục cha nếu có parentId
+  useEffect(() => {
+    const fetchParentCategory = async () => {
+      if (record?.parentId) {
+        try {
+          setParentLoading(true);
+          const { data } = await axios.get(
+            `${API_URL}/category/id/${record.parentId}`
+          );
+
+          setParentName(data?.name || null);
+        } catch (err) {
+          setParentName("Không tìm thấy");
+        } finally {
+          setParentLoading(false);
+        }
+      }
+    };
+
+    fetchParentCategory();
+  }, [record?.parentId]);
 
   return (
     <Show isLoading={isLoading} canDelete={false} title="Chi tiết danh mục">
@@ -32,6 +61,34 @@ export const CategoryShow = () => {
               </Tag>
             </Col>
 
+            {/* Trạng thái hiệu lực */}
+            <Col span={24}>
+              <Title level={5}>Trạng thái hiệu lực</Title>
+              <Tag color={record?.isActive ? "green" : "red"}>
+                {record?.isActive ? "Có hiệu lực" : "Không hiệu lực"}
+              </Tag>
+            </Col>
+
+            {/* Ngày tạo */}
+            <Col span={24}>
+              <Title level={5}>Ngày tạo</Title>
+              <Text>
+                {record?.createdAt
+                  ? dayjs(record.createdAt).format("DD/MM/YYYY HH:mm")
+                  : "Không rõ"}
+              </Text>
+            </Col>
+
+            {/* Ngày cập nhật */}
+            <Col span={24}>
+              <Title level={5}>Ngày cập nhật</Title>
+              <Text>
+                {record?.updatedAt
+                  ? dayjs(record.updatedAt).format("DD/MM/YYYY HH:mm")
+                  : "Không rõ"}
+              </Text>
+            </Col>
+
             {/* Danh mục con nếu là cha */}
             {record?.parentId === null && (
               <Col span={24}>
@@ -47,6 +104,21 @@ export const CategoryShow = () => {
                   </Row>
                 ) : (
                   <Text type="secondary">Chưa có danh mục con</Text>
+                )}
+              </Col>
+            )}
+
+            {/* Danh mục cha nếu là con */}
+            {record?.parentId && (
+              <Col span={24}>
+                <Divider />
+                <Title level={5}>Danh mục cha</Title>
+                {parentLoading ? (
+                  <Text>Đang tải...</Text>
+                ) : parentName ? (
+                  <Tag color="blue">{parentName}</Tag>
+                ) : (
+                  <Text type="secondary">Không tìm thấy</Text>
                 )}
               </Col>
             )}
