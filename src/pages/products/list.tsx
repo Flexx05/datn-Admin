@@ -21,11 +21,14 @@ import {
 import axios from "axios";
 import { useState } from "react";
 import { API_URL } from "../../config/dataProvider";
-import { ICategory } from "../../interface/category";
-import { IProduct, IProductAttribute } from "../../interface/product";
+import {
+  IProduct,
+  IProductAttribute,
+  IVariation,
+} from "../../interface/product";
 
 export const ProductList = () => {
-  const { tableProps, setFilters } = useTable<ICategory>({
+  const { tableProps, setFilters } = useTable<IProduct>({
     syncWithLocation: true,
     errorNotification: (error: any) => ({
       message:
@@ -38,22 +41,22 @@ export const ProductList = () => {
   const invalidate = useInvalidate();
   const [loadingId, setLoadingId] = useState<string | number | null>(null);
 
-  const handleChangeStatus = async (record: ICategory) => {
+  const handleChangeStatus = async (record: IProduct | IVariation | any) => {
     setLoadingId(record._id);
     try {
-      await axios.patch(`${API_URL}/category/edit/${record._id}`, {
-        parentId: record.parentId,
-        name: record.name,
+      await axios.patch(`${API_URL}/product/edit/status/${record._id}`, {
         isActive: !record.isActive,
       });
 
       message.success("Cập nhật trạng thái thành công");
       await invalidate({
-        resource: "category",
+        resource: "product",
         invalidates: ["list"],
       });
-    } catch (error) {
-      message.error("Cập nhật trạng thái thất bại");
+    } catch (error: any) {
+      message.error(
+        "Cập nhật trạng thái thất bại " + error.response?.data?.message
+      );
     } finally {
       setLoadingId(null);
     }
@@ -73,13 +76,13 @@ export const ProductList = () => {
         {...tableProps}
         rowKey="_id"
         expandable={{
-          expandedRowRender: (record: ICategory) => {
-            const children = record.subCategories;
+          expandedRowRender: (record: IProduct | IVariation | any) => {
+            const children = record.variation;
 
             if (!children || children.length === 0) {
               return (
                 <Typography.Text type="secondary">
-                  Không có danh mục con
+                  Không có biến thể
                 </Typography.Text>
               );
             }
@@ -90,72 +93,82 @@ export const ProductList = () => {
                 pagination={false}
                 rowKey="_id"
                 size="small"
-                showHeader={false}
               >
                 <Table.Column
                   dataIndex="stt"
-                  render={(_: unknown, __: ICategory, index: number) =>
+                  title="STT"
+                  render={(_: unknown, __: IVariation, index: number) =>
                     index + 1
                   }
-                  width={200}
-                />
-                <Table.Column dataIndex="name" width={420} />
-                <Table.Column
-                  render={(child: ICategory) =>
-                    child.isActive ? "Có hiệu lực" : "Không có hiệu lực"
-                  }
                 />
                 <Table.Column
-                  dataIndex="actions"
-                  width={330}
-                  render={(_, child: ICategory) => (
+                  dataIndex="image"
+                  title="Ảnh"
+                  render={(_, child: IVariation) => (
+                    <Image width={55} src={child.image} />
+                  )}
+                />
+                <Table.Column
+                  dataIndex="attributes"
+                  title="Thuộc tính"
+                  render={(_, child: IVariation) => (
                     <Space>
-                      <EditButton
-                        hideText
-                        size="small"
-                        recordItemId={child._id}
-                      />
-                      <ShowButton
-                        hideText
-                        size="small"
-                        recordItemId={child._id}
-                      />
-                      {child.isActive ? (
-                        <DeleteButton
-                          hideText
-                          size="small"
-                          recordItemId={child._id}
-                          confirmTitle="Bạn chắc chắn xóa không ?"
-                          confirmCancelText="Hủy"
-                          confirmOkText="Xóa"
-                          loading={loadingId === child._id}
-                        />
-                      ) : (
-                        <Popconfirm
-                          title="Bạn chắc chắn kích hoạt hiệu lực không ?"
-                          onConfirm={() => handleChangeStatus(child)}
-                          okText="Kích hoạt"
-                          cancelText="Hủy"
-                          okButtonProps={{ loading: loadingId === child._id }}
-                        >
-                          <PlusCircleOutlined
-                            style={{
-                              border: "1px solid #404040",
-                              borderRadius: "20%",
-                              padding: 4,
-                              cursor: "pointer",
-                              opacity: loadingId === child._id ? 0.5 : 1,
-                            }}
-                          />
-                        </Popconfirm>
+                      {child.attributes.map(
+                        (attr: IProductAttribute, attrIdx: number) => (
+                          <span key={attrIdx}>
+                            {attr.values.map((value: string, valIdx: number) =>
+                              value.includes("#") ? (
+                                <span
+                                  key={valIdx}
+                                  style={{
+                                    display: "inline-block",
+                                    width: 16,
+                                    height: 16,
+                                    backgroundColor: value,
+                                    borderRadius: "50%",
+                                    marginRight: 4,
+                                    border: "1px solid #ccc",
+                                  }}
+                                />
+                              ) : (
+                                <span key={valIdx} style={{ marginRight: 4 }}>
+                                  {value}
+                                </span>
+                              )
+                            )}
+                          </span>
+                        )
                       )}
                     </Space>
                   )}
                 />
+                <Table.Column dataIndex="regularPrice" title="Giá bán" />
+                <Table.Column dataIndex="salePrice" title="Giá sale" />
+                <Table.Column
+                  dataIndex="dateSale"
+                  title="Thời gian sale"
+                  render={(_, child: IVariation) =>
+                    child.saleForm != ""
+                      ? child.saleForm
+                      : "Không có" + " - " + child.saleTo
+                      ? child.saleTo
+                      : "Không có"
+                  }
+                />
+                <Table.Column
+                  title="Trạng thái"
+                  render={(value: boolean) =>
+                    value === true ? (
+                      <Tag color="green">Có hiệu lực</Tag>
+                    ) : (
+                      <Tag color="red">Không có hiệu lực</Tag>
+                    )
+                  }
+                />
               </Table>
             );
           },
-          rowExpandable: (record) => !!record.subCategories?.length,
+          rowExpandable: (record) => !!record.variation?.length,
         }}
       >
         <Table.Column
@@ -234,7 +247,7 @@ export const ProductList = () => {
         <Table.Column
           title="Hành động"
           dataIndex="actions"
-          render={(_, record: ICategory) => (
+          render={(_, record: IProduct) => (
             <Space>
               <EditButton hideText size="small" recordItemId={record._id} />
               <ShowButton hideText size="small" recordItemId={record._id} />
