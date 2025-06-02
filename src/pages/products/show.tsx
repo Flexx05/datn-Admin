@@ -17,7 +17,14 @@ import { API_URL } from "../../config/dataProvider";
 import { IProductAttribute, IVariation } from "../../interface/product";
 
 export const ProductShow: React.FC = () => {
-  const { queryResult } = useShow();
+  const { queryResult } = useShow({
+    errorNotification: (error: any) => ({
+      message:
+        "❌ Lỗi hệ thống " + (error.response?.data?.message || error.message),
+      description: "Có lỗi xảy ra trong quá trình xử lý.",
+      type: "error",
+    }),
+  });
   const { data, isLoading } = queryResult;
   const record = data?.data;
   const [loadingId, setLoadingId] = useState<string | number | null>(null);
