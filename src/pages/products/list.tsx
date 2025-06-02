@@ -109,38 +109,41 @@ export const ProductList = () => {
                   )}
                 />
                 <Table.Column
+                  title="Màu sắc"
                   dataIndex="attributes"
-                  title="Thuộc tính"
-                  render={(_, child: IVariation) => (
-                    <Space>
-                      {child.attributes.map(
-                        (attr: IProductAttribute, attrIdx: number) => (
-                          <span key={attrIdx}>
-                            {attr.values.map((value: string, valIdx: number) =>
-                              value.includes("#") ? (
-                                <span
-                                  key={valIdx}
-                                  style={{
-                                    display: "inline-block",
-                                    width: 16,
-                                    height: 16,
-                                    backgroundColor: value,
-                                    borderRadius: "50%",
-                                    marginRight: 4,
-                                    border: "1px solid #ccc",
-                                  }}
-                                />
-                              ) : (
-                                <span key={valIdx} style={{ marginRight: 4 }}>
-                                  {value}
-                                </span>
-                              )
-                            )}
-                          </span>
-                        )
-                      )}
-                    </Space>
-                  )}
+                  key="color"
+                  render={(attrs: IProductAttribute[]) => {
+                    const colorAttr = attrs.find(
+                      (attr) => attr.attributeName === "Màu sắc"
+                    );
+                    return colorAttr?.values?.map(
+                      (color: string, idx: number) => (
+                        <span
+                          key={idx}
+                          style={{
+                            display: "inline-block",
+                            width: 20,
+                            height: 20,
+                            backgroundColor: color,
+                            borderRadius: "50%",
+                            border: "1px solid #ccc",
+                            marginRight: 5,
+                          }}
+                        />
+                      )
+                    );
+                  }}
+                />
+                <Table.Column
+                  title="Kích thước"
+                  dataIndex="attributes"
+                  key="size"
+                  render={(attrs: IProductAttribute[]) => {
+                    const sizeAttr = attrs.find(
+                      (attr) => attr.attributeName === "Kích thước"
+                    );
+                    return sizeAttr?.values?.join(", ");
+                  }}
                 />
                 <Table.Column dataIndex="regularPrice" title="Giá bán" />
                 <Table.Column dataIndex="salePrice" title="Giá sale" />
@@ -148,13 +151,14 @@ export const ProductList = () => {
                   dataIndex="dateSale"
                   title="Thời gian sale"
                   render={(_, child: IVariation) =>
-                    child.saleForm != ""
+                    child.saleForm !== null
                       ? child.saleForm
-                      : "Không có" + " - " + child.saleTo
+                      : "Không có" + " - " + child.saleTo !== null
                       ? child.saleTo
                       : "Không có"
                   }
                 />
+                <Table.Column title="Tồn kho" dataIndex="stock" />
                 <Table.Column
                   title="Trạng thái"
                   render={(value: boolean) =>
@@ -192,34 +196,46 @@ export const ProductList = () => {
         <Table.Column dataIndex="brandName" title="Thương hiệu" />
         <Table.Column dataIndex="categoryName" title="Danh mục" />
         <Table.Column
+          title="Màu sắc"
           dataIndex="attributes"
-          title="Thuộc tính của sản phẩm"
-          render={(value: IProductAttribute[]) => (
-            <>
-              {value?.map((item) => (
-                <div>
-                  {item.attributeName}:{" "}
-                  {item.isColor ? (
-                    <div style={{ display: "flex", gap: 4 }}>
-                      {item.values.map((color, idx) => (
-                        <div
-                          key={idx}
-                          style={{
-                            width: 20,
-                            height: 20,
-                            backgroundColor: color,
-                            borderRadius: "50%",
-                          }}
-                        ></div>
-                      ))}
-                    </div>
-                  ) : (
-                    item.values.join(", ")
-                  )}
-                </div>
-              ))}
-            </>
-          )}
+          key="color"
+          render={(attrs: IProductAttribute[]) => {
+            const colorAttr = attrs.find(
+              (attr) => attr.attributeName === "Màu sắc"
+            );
+            return colorAttr?.values?.map((color: string, idx: number) => (
+              <span
+                key={idx}
+                style={{
+                  display: "inline-block",
+                  width: 20,
+                  height: 20,
+                  backgroundColor: color,
+                  borderRadius: "50%",
+                  border: "1px solid #ccc",
+                  marginRight: 5,
+                }}
+              />
+            ));
+          }}
+        />
+        <Table.Column
+          title="Kích thước"
+          dataIndex="attributes"
+          key="size"
+          render={(attrs: IProductAttribute[]) => {
+            const sizeAttr = attrs.find(
+              (attr) => attr.attributeName === "Kích thước"
+            );
+            return sizeAttr?.values?.join(", ");
+          }}
+        />
+        <Table.Column
+          title="Tồn kho"
+          dataIndex="stock"
+          render={(_, record: IProduct) =>
+            record.variation.reduce((prev, curr) => prev + curr.stock, 0)
+          }
         />
         <Table.Column
           title="Trạng thái"
