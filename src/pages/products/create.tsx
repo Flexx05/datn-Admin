@@ -1,89 +1,192 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import { PlusOutlined } from "@ant-design/icons";
 import { Create, useForm, useSelect } from "@refinedev/antd";
-import { Form, Input, Select, message } from "antd";
-import { useMemo } from "react";
-import { ICategory } from "../../interface/category";
 import { HttpError } from "@refinedev/core";
+import MDEditor from "@uiw/react-md-editor";
+import { Form, Input, Select, Upload, UploadFile, message } from "antd";
+import axios from "axios";
+import { useMemo, useState } from "react";
+import { IBrand } from "../../interface/brand";
+import { ICategory } from "../../interface/category";
 
 export const ProductCreate = () => {
   const { formProps, saveButtonProps } = useForm({
     successNotification: () => ({
-      message: "🎉 Tạo danh mục thành công!",
-      description: "Danh mục mới đã được thêm vào hệ thống.",
+      message: "🎉 Tạo sản phẩm thành công!",
+      description: "Sản phẩm mới đã được thêm vào hệ thống.",
       type: "success",
     }),
     errorNotification: (error?: HttpError) => ({
       message:
-        "❌ Tạo danh mục thất bại! " + (error?.response?.data?.message ?? ""),
+        "❌ Tạo sản phẩm thất bại! " + (error?.response?.data?.message ?? ""),
       description: "Có lỗi xảy ra trong quá trình xử lý.",
       type: "error",
     }),
   });
 
-  // Lấy danh sách danh mục
-  const { queryResult } = useSelect({
+  const [fileList, setFileList] = useState<UploadFile[]>([]);
+  const [uploadedImageUrls, setUploadedImageUrls] = useState<string[]>([]);
+
+  const normFile = (e: any) => e?.fileList?.slice(0, 5);
+
+  const handleChange = async ({
+    fileList: newFileList,
+  }: {
+    fileList: UploadFile[];
+  }) => {
+    const updatedFileList = newFileList.slice(0, 5).map((file) => ({
+      ...file,
+      status: file.status || "uploading",
+    }));
+
+    setFileList(updatedFileList);
+
+    const newUploadedUrls: string[] = [];
+
+    for (let i = 0; i < updatedFileList.length; i++) {
+      const file = updatedFileList[i];
+      const originFile = file.originFileObj as File;
+
+      // Nếu file chưa có URL => cần upload
+      if (!file.url && originFile) {
+        try {
+          const formData = new FormData();
+          formData.append("file", originFile);
+          formData.append("upload_preset", "Binova_Upload");
+
+          const { data } = await axios.post(
+            "https://api.cloudinary.com/v1_1/dtwm0rpqg/image/upload",
+            formData
+          );
+
+          // Cập nhật trạng thái cho file đó
+          updatedFileList[i] = {
+            ...updatedFileList[i],
+            status: "done",
+            url: data.secure_url,
+          };
+          message.success(`Tải ảnh lên công: ${file.name}`);
+          newUploadedUrls.push(data.secure_url);
+        } catch (error) {
+          updatedFileList[i] = {
+            ...updatedFileList[i],
+            status: "error",
+          };
+          message.error(`❌ Lỗi khi upload ảnh: ${file.name}`);
+        }
+      } else if (file.url) {
+        newUploadedUrls.push(file.url);
+      }
+    }
+
+    setFileList([...updatedFileList]);
+    setUploadedImageUrls(newUploadedUrls);
+  };
+
+  const { queryResult: category } = useSelect({
     resource: "category",
     optionLabel: "name",
     optionValue: "_id",
-    pagination: {
-      mode: "off",
-    },
+    pagination: { mode: "off" },
   });
 
-  // Tối ưu hóa dữ liệu danh mục
+  const { queryResult: brand } = useSelect({
+    resource: "brand",
+    optionLabel: "name",
+    optionValue: "_id",
+    pagination: { mode: "off" },
+  });
+
   const allCategories = useMemo(
-    () => (queryResult?.data?.data as ICategory[]) || [],
-    [queryResult?.data?.data]
+    () => (category?.data?.data as ICategory[]) || [],
+    [category?.data?.data]
+  );
+  const allBrands = useMemo(
+    () => (brand?.data?.data as IBrand[]) || [],
+    [brand?.data?.data]
   );
 
-  // Lọc ra các danh mục cha hợp lệ
-  const filteredOptions = useMemo(() => {
+  const categoryOptions = useMemo(() => {
     return allCategories
-      .filter((item: ICategory) => item.parentId === null && item.isActive)
+      .filter((item: ICategory) => item.parentId !== null && item.isActive)
       .map((item) => ({
         label: item.name,
         value: item._id,
       }));
   }, [allCategories]);
 
-  // Xử lý khi submit form
+  const brandOptions = useMemo(() => {
+    return allBrands
+      .filter((item: IBrand) => item.isActive)
+      .map((item) => ({
+        label: item.name,
+        value: item._id,
+      }));
+  }, [allBrands]);
+
   const handleFinish = async (values: any) => {
-    const parentId = values.parentId;
-    if (parentId) {
-      const parent = allCategories.find((item) => item._id === parentId);
-      if (!parent || !parent.isActive || parent.parentId !== null) {
-        message.error("Danh mục cha không hợp lệ hoặc đã bị xoá.");
+    try {
+      if (uploadedImageUrls.length === 0) {
+        message.error("Bạn chưa tải ảnh hoặc ảnh chưa upload xong.");
         return;
       }
-    }
 
-    formProps?.onFinish?.({ ...values, parentId });
+      const payload = {
+        ...values,
+        images: uploadedImageUrls,
+      };
+
+      await formProps?.onFinish?.(payload);
+    } catch (error) {
+      message.error("Lỗi khi tạo sản phẩm!");
+      console.error(error);
+    }
   };
 
   return (
-    <Create saveButtonProps={saveButtonProps} title="Tạo danh mục">
+    <Create saveButtonProps={saveButtonProps} title="Tạo sản phẩm">
       <Form {...formProps} layout="vertical" onFinish={handleFinish}>
         <Form.Item
-          label="Tên danh mục"
-          name={["name"]}
-          rules={[{ required: true, message: "Vui lòng nhập tên danh mục" }]}
+          label="Tên sản phẩm"
+          name="name"
+          rules={[{ required: true, message: "Vui lòng nhập tên sản phẩm" }]}
         >
           <Input />
         </Form.Item>
 
-        <Form.Item label="Mô tả" name={["description"]}>
-          <Input />
+        <Form.Item
+          label="Hình ảnh"
+          name="images"
+          valuePropName="fileList"
+          getValueFromEvent={normFile}
+        >
+          <Upload
+            listType="picture-card"
+            fileList={fileList}
+            onChange={handleChange}
+            maxCount={5}
+            beforeUpload={() => false}
+          >
+            {fileList.length >= 5 ? null : (
+              <div>
+                <PlusOutlined />
+                <div style={{ marginTop: 8 }}>Upload</div>
+              </div>
+            )}
+          </Upload>
         </Form.Item>
 
-        <Form.Item label="Danh mục cha" name={["parentId"]}>
-          <Select
-            loading={queryResult?.isLoading}
-            placeholder="Chọn danh mục cha (nếu có)"
-            allowClear
-            defaultValue={""}
-          >
-            <Select.Option value="">Không có</Select.Option>
-            {filteredOptions.map((option) => (
+        <Form.Item label="Mô tả" name="description">
+          <MDEditor data-color-mode="dark" />
+        </Form.Item>
+
+        <Form.Item
+          label="Danh mục"
+          name="categoryId"
+          rules={[{ required: true, message: "Vui lòng chọn danh mục" }]}
+        >
+          <Select loading={category?.isLoading}>
+            {categoryOptions.map((option) => (
               <Select.Option key={option.value} value={option.value}>
                 {option.label}
               </Select.Option>
@@ -91,11 +194,17 @@ export const ProductCreate = () => {
           </Select>
         </Form.Item>
 
-        <Form.Item label="Thứ tự danh mục" name={["categorySort"]}>
-          <Select placeholder="Chọn thứ tự">
-            <Select.Option value={1}>1</Select.Option>
-            <Select.Option value={2}>2</Select.Option>
-            <Select.Option value={3}>3</Select.Option>
+        <Form.Item
+          label="Thương hiệu"
+          name="brandId"
+          rules={[{ required: true, message: "Vui lòng chọn thương hiệu" }]}
+        >
+          <Select loading={brand?.isLoading}>
+            {brandOptions.map((option) => (
+              <Select.Option key={option.value} value={option.value}>
+                {option.label}
+              </Select.Option>
+            ))}
           </Select>
         </Form.Item>
       </Form>

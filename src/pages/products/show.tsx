@@ -58,7 +58,7 @@ export const ProductShow: React.FC = () => {
   };
 
   return (
-    <Show isLoading={isLoading} canDelete={false}>
+    <Show isLoading={isLoading} canDelete={false} title="Chi tiết sản phẩm">
       <Descriptions title="Thông tin sản phẩm" bordered column={1}>
         <Descriptions.Item label="Tên sản phẩm">
           {record?.name}
