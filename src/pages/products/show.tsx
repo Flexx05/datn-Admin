@@ -1,13 +1,54 @@
-import React from "react";
-import { useShow } from "@refinedev/core";
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import { RetweetOutlined } from "@ant-design/icons";
 import { Show } from "@refinedev/antd";
-import { Descriptions, Table, Tag, Image } from "antd";
-import { IProductAttribute } from "../../interface/product";
+import { useInvalidate, useShow } from "@refinedev/core";
+import {
+  Descriptions,
+  Image,
+  Popconfirm,
+  Space,
+  Table,
+  Tag,
+  message,
+} from "antd";
+import axios from "axios";
+import React, { useState } from "react";
+import { API_URL } from "../../config/dataProvider";
+import { IProductAttribute, IVariation } from "../../interface/product";
 
 export const ProductShow: React.FC = () => {
   const { queryResult } = useShow();
   const { data, isLoading } = queryResult;
   const record = data?.data;
+  const [loadingId, setLoadingId] = useState<string | number | null>(null);
+  const invalidate = useInvalidate();
+  const handleChangeStatus = async (variation: IVariation) => {
+    if (!record?._id || !variation?._id) return;
+
+    setLoadingId(variation._id);
+    try {
+      await axios.patch(
+        `${API_URL}/product/edit/${record._id}/${variation._id}`,
+        {
+          isActive: variation.isActive,
+        }
+      );
+
+      message.success("Cập nhật trạng thái thành công");
+
+      await invalidate({
+        id: record._id,
+        resource: "product",
+        invalidates: ["detail"],
+      });
+    } catch (error: any) {
+      message.error(
+        "Cập nhật trạng thái thất bại: " + error.response?.data?.message
+      );
+    } finally {
+      setLoadingId(null);
+    }
+  };
 
   return (
     <Show isLoading={isLoading} canDelete={false}>
@@ -73,12 +114,12 @@ export const ProductShow: React.FC = () => {
       <br />
 
       <h3>Biến thể sản phẩm</h3>
-      <Table
-        dataSource={record?.variation || []}
-        rowKey="_id"
-        pagination={false}
-        bordered
-      >
+      <Table dataSource={record?.variation || []} rowKey="_id" bordered>
+        <Table.Column
+          title="Hình ảnh"
+          dataIndex="image"
+          render={(img: string) => <Image src={img} width={60} />}
+        />
         <Table.Column
           title="Màu sắc"
           dataIndex="attributes"
@@ -127,9 +168,28 @@ export const ProductShow: React.FC = () => {
           )}
         />
         <Table.Column
-          title="Hình ảnh"
-          dataIndex="image"
-          render={(img: string) => <Image src={img} width={60} />}
+          dataIndex="actions"
+          render={(_, record: IVariation) => (
+            <Space>
+              <Popconfirm
+                title="Bạn chắc chắn thay đổi hiệu lực không ?"
+                onConfirm={() => handleChangeStatus(record)}
+                okText="Kích hoạt"
+                cancelText="Hủy"
+                okButtonProps={{ loading: loadingId === record._id }}
+              >
+                <RetweetOutlined
+                  style={{
+                    border: "1px solid #404040",
+                    borderRadius: "20%",
+                    padding: 4,
+                    cursor: "pointer",
+                    opacity: loadingId === record._id ? 0.5 : 1,
+                  }}
+                />
+              </Popconfirm>
+            </Space>
+          )}
         />
       </Table>
     </Show>
