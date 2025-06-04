@@ -3,11 +3,14 @@ import { PlusOutlined } from "@ant-design/icons";
 import { Create, useForm, useSelect } from "@refinedev/antd";
 import { HttpError } from "@refinedev/core";
 import MDEditor from "@uiw/react-md-editor";
-import { Form, Input, Select, Upload, UploadFile, message } from "antd";
+import { Button, Form, Input, Select, Upload, UploadFile, message } from "antd";
 import axios from "axios";
 import { useMemo, useState } from "react";
+import { IAttribute } from "../../interface/attribute";
 import { IBrand } from "../../interface/brand";
 import { ICategory } from "../../interface/category";
+import { AttributeItem } from "./AttributeItem";
+import { API_URL } from "../../config/dataProvider";
 
 export const ProductCreate = () => {
   const { formProps, saveButtonProps } = useForm({
@@ -47,7 +50,6 @@ export const ProductCreate = () => {
       const file = updatedFileList[i];
       const originFile = file.originFileObj as File;
 
-      // Nếu file chưa có URL => cần upload
       if (!file.url && originFile) {
         try {
           const formData = new FormData();
@@ -59,13 +61,12 @@ export const ProductCreate = () => {
             formData
           );
 
-          // Cập nhật trạng thái cho file đó
           updatedFileList[i] = {
             ...updatedFileList[i],
             status: "done",
             url: data.secure_url,
           };
-          message.success(`Tải ảnh lên công: ${file.name}`);
+          message.success(`Tải ảnh lên thành công: ${file.name}`);
           newUploadedUrls.push(data.secure_url);
         } catch (error) {
           updatedFileList[i] = {
@@ -97,13 +98,29 @@ export const ProductCreate = () => {
     pagination: { mode: "off" },
   });
 
+  const { queryResult: attribute } = useSelect({
+    resource: "attribute",
+    optionLabel: "name",
+    optionValue: "_id",
+    pagination: { mode: "off" },
+    meta: {
+      fields: ["isColor"],
+    },
+  });
+
   const allCategories = useMemo(
     () => (category?.data?.data as ICategory[]) || [],
     [category?.data?.data]
   );
+
   const allBrands = useMemo(
     () => (brand?.data?.data as IBrand[]) || [],
     [brand?.data?.data]
+  );
+
+  const allAttributes = useMemo(
+    () => (attribute?.data?.data as IAttribute[]) || [],
+    [attribute?.data?.data]
   );
 
   const categoryOptions = useMemo(() => {
@@ -125,6 +142,8 @@ export const ProductCreate = () => {
   }, [allBrands]);
 
   const handleFinish = async (values: any) => {
+    console.log(values.attributes);
+
     try {
       if (uploadedImageUrls.length === 0) {
         message.error("Bạn chưa tải ảnh hoặc ảnh chưa upload xong.");
@@ -133,7 +152,7 @@ export const ProductCreate = () => {
 
       const payload = {
         ...values,
-        images: uploadedImageUrls,
+        image: uploadedImageUrls,
       };
 
       await formProps?.onFinish?.(payload);
@@ -156,7 +175,7 @@ export const ProductCreate = () => {
 
         <Form.Item
           label="Hình ảnh"
-          name="images"
+          name="image"
           valuePropName="fileList"
           getValueFromEvent={normFile}
         >
@@ -185,13 +204,7 @@ export const ProductCreate = () => {
           name="categoryId"
           rules={[{ required: true, message: "Vui lòng chọn danh mục" }]}
         >
-          <Select loading={category?.isLoading}>
-            {categoryOptions.map((option) => (
-              <Select.Option key={option.value} value={option.value}>
-                {option.label}
-              </Select.Option>
-            ))}
-          </Select>
+          <Select loading={category?.isLoading} options={categoryOptions} />
         </Form.Item>
 
         <Form.Item
@@ -199,13 +212,81 @@ export const ProductCreate = () => {
           name="brandId"
           rules={[{ required: true, message: "Vui lòng chọn thương hiệu" }]}
         >
-          <Select loading={brand?.isLoading}>
-            {brandOptions.map((option) => (
-              <Select.Option key={option.value} value={option.value}>
-                {option.label}
-              </Select.Option>
-            ))}
-          </Select>
+          <Select loading={brand?.isLoading} options={brandOptions} />
+        </Form.Item>
+
+        <Form.Item
+          label="Thuộc tính"
+          rules={[{ required: true, message: "Thuộc tính bắt buộc nhập" }]}
+        >
+          <Form.List name="attributes">
+            {(fields, { add, remove }) => (
+              <>
+                {fields.map((field) => (
+                  <AttributeItem
+                    key={field.key}
+                    field={field}
+                    remove={remove}
+                    allAttributes={allAttributes}
+                    form={formProps.form}
+                  />
+                ))}
+                <Form.Item>
+                  <Button
+                    type="dashed"
+                    onClick={() => add()}
+                    icon={<PlusOutlined />}
+                    block
+                  >
+                    Thêm thuộc tính
+                  </Button>
+                </Form.Item>
+
+                <Form.Item>
+                  <Button
+                    type="primary"
+                    onClick={async () => {
+                      try {
+                        const attributes =
+                          formProps.form?.getFieldValue("attributes");
+
+                        if (!attributes || attributes.length === 0) {
+                          message.warning(
+                            "Bạn cần thêm ít nhất 1 thuộc tính trước khi tạo biến thể."
+                          );
+                          return;
+                        }
+
+                        const response = await axios.post(
+                          `${API_URL}/product/generate-variations`,
+                          {
+                            attributes,
+                          }
+                        );
+
+                        const generatedVariations = response.data;
+
+                        formProps.form?.setFieldValue(
+                          "variations",
+                          generatedVariations
+                        );
+
+                        message.success(
+                          "✅ Đã tạo sản phẩm biến thể thành công!"
+                        );
+                      } catch (error) {
+                        console.error(error);
+                        message.error("❌ Lỗi khi tạo sản phẩm biến thể!");
+                      }
+                    }}
+                    block
+                  >
+                    Tạo sản phẩm biến thể
+                  </Button>
+                </Form.Item>
+              </>
+            )}
+          </Form.List>
         </Form.Item>
       </Form>
     </Create>
