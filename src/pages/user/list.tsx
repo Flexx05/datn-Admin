@@ -32,7 +32,20 @@ export const UserList = () => {
 
   const setFiltersTyped = setFilters as (filters: CrudFilters, behavior?: string) => void;
 
-
+  const handleChangeStatus = async (record: IUser) => {
+    setLoadingId(record._id);
+    try {
+      await axios.patch(`${API_URL}/admin/users/${record._id}/status`, {
+        isActive: !record.isActive,
+      });
+      message.success("Cập nhật trạng thái thành công");
+      await invalidate({ resource: "admin/users", invalidates: ["list"] });
+    } catch (error) {
+      message.error("Cập nhật trạng thái thất bại");
+    } finally {
+      setLoadingId(null);
+    }
+  };
 
   return (
     <List title="Quản lý khách hàng">
@@ -95,7 +108,30 @@ export const UserList = () => {
             value ? <Tag color="green">Hoạt động</Tag> : <Tag color="red">Khoá</Tag>
           }
         />
-
+        <Table.Column
+          title="Hành động"
+          dataIndex="actions"
+          render={(_, record: IUser) => (
+            <Space>
+              <ShowButton hideText size="small" recordItemId={record._id} />
+              <Popconfirm
+                title={
+                  record.isActive
+                    ? "Bạn chắc chắn muốn khoá tài khoản này?"
+                    : "Bạn chắc chắn muốn mở khoá tài khoản này?"
+                }
+                onConfirm={() => handleChangeStatus(record)}
+                okText={record.isActive ? "Khoá" : "Mở khoá"}
+                cancelText="Huỷ"
+                okButtonProps={{ loading: loadingId === record._id }}
+              >
+                <Button size="small" type={record.isActive ? "default" : "primary"}>
+                  {record.isActive ? "Khoá" : "Mở khoá"}
+                </Button>
+              </Popconfirm>
+            </Space>
+          )}
+        />
       </Table>
     </List>
   );
