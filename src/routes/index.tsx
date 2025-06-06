@@ -69,6 +69,10 @@ const AppRoutes = () => {
             <Route path="edit/:id" element={<BrandEdit />} />
             <Route path="id/:id" element={<BrandShow />} />
           </Route>
+          <Route path="/users">
+            <Route index element={<UserList />} />
+            <Route path="show/:id" element={<UserShow />} />
+          </Route>
           <Route path="*" element={<ErrorComponent />} />
         </Route>
         <Route
