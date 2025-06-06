@@ -4,7 +4,7 @@ import { Form, Input, Select, message } from "antd";
 import { useMemo } from "react";
 import { ICategory } from "../../interface/category";
 
-export const CategoryEdit = () => {
+export const ProductEdit = () => {
   const {
     formProps,
     saveButtonProps,

@@ -1,25 +1,14 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { Show } from "@refinedev/antd";
 import { useShow } from "@refinedev/core";
-import {
-  Card,
-  Col,
-  Divider,
-  message,
-  Row,
-  Skeleton,
-  Tag,
-  Typography,
-} from "antd";
+import { Card, Col, message, Row, Skeleton, Tag, Typography } from "antd";
 import dayjs from "dayjs";
+import { IAttribute } from "../../interface/attribute";
 import { useEffect, useRef, useState } from "react";
-import axios from "axios";
-import { ICategory } from "../../interface/category";
-import { API_URL } from "../../config/dataProvider";
 
 const { Title, Text } = Typography;
 
-export const CategoryShow = () => {
+export const AttributeShow = () => {
   const { queryResult } = useShow({
     errorNotification: (error: any) => ({
       message:
@@ -29,7 +18,9 @@ export const CategoryShow = () => {
     }),
   });
   const { data, isLoading, refetch } = queryResult;
-  const record = data?.data as ICategory | undefined;
+
+  const record = data?.data as IAttribute | undefined;
+
   const [lastStatus, setLastStatus] = useState<boolean | undefined>(
     record?.isActive
   );
@@ -60,58 +51,55 @@ export const CategoryShow = () => {
     return () => clearInterval(interval); // Dọn dẹp interval khi component bị hủy
   }, [lastStatus, refetch]);
 
-  const [parentName, setParentName] = useState<string | null>(null);
-  const [parentLoading, setParentLoading] = useState(false);
-
-  // Gọi API để lấy tên danh mục cha nếu có parentId
-  useEffect(() => {
-    const fetchParentCategory = async () => {
-      if (record?.parentId) {
-        try {
-          setParentLoading(true);
-          const { data } = await axios.get(
-            `${API_URL}/category/id/${record.parentId}`
-          );
-
-          setParentName(data?.name || null);
-        } catch (err) {
-          setParentName("Không tìm thấy");
-        } finally {
-          setParentLoading(false);
-        }
-      }
-    };
-
-    fetchParentCategory();
-  }, [record?.parentId]);
-
   return (
-    <Show isLoading={isLoading} canDelete={false} title="Chi tiết danh mục">
+    <Show title="Chi tiết thuộc tính" isLoading={isLoading} canDelete={false}>
       <Card bordered style={{ maxWidth: 700, margin: "0 auto" }}>
         {isLoading ? (
           <Skeleton active />
         ) : (
           <Row gutter={[16, 16]}>
-            {/* Tên danh mục */}
+            {/* Tên thuộc tính */}
             <Col span={24}>
-              <Title level={5}>Tên danh mục</Title>
+              <Title level={5}>Tên thuộc tính</Title>
               <Text>{record?.name || "Không rõ"}</Text>
             </Col>
+
+            {/* Loại thuộc tính */}
             <Col span={24}>
-              <Title level={5}>Mô tả</Title>
-              <Text>
-                {record?.description || (
-                  <Text type="secondary">Không có mô tả</Text>
-                )}
-              </Text>
+              <Title level={5}>Loại thuộc tính</Title>
+              <Tag color={record?.isColor ? "purple" : "blue"}>
+                {record?.isColor ? "Màu sắc" : "Văn bản"}
+              </Tag>
             </Col>
 
-            {/* Loại danh mục */}
+            {/* Giá trị thuộc tính */}
             <Col span={24}>
-              <Title level={5}>Loại danh mục</Title>
-              <Tag color={record?.parentId === null ? "blue" : "purple"}>
-                {record?.parentId === null ? "Danh mục cha" : "Danh mục con"}
-              </Tag>
+              <Title level={5}>Giá trị thuộc tính</Title>
+              {record?.isColor ? (
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                  {record?.values?.map((color: string, idx: number) => (
+                    <div
+                      key={idx}
+                      style={{
+                        width: 24,
+                        height: 24,
+                        backgroundColor: color,
+                        borderRadius: "50%",
+                        border: "1px solid #ccc",
+                      }}
+                      title={color}
+                    />
+                  ))}
+                </div>
+              ) : record?.values?.length ? (
+                record.values.map((value: string, idx: number) => (
+                  <Tag key={idx} color="geekblue">
+                    {value}
+                  </Tag>
+                ))
+              ) : (
+                <Text type="secondary">Không có giá trị</Text>
+              )}
             </Col>
 
             {/* Trạng thái hiệu lực */}
@@ -141,40 +129,6 @@ export const CategoryShow = () => {
                   : "Không rõ"}
               </Text>
             </Col>
-
-            {/* Danh mục con nếu là cha */}
-            {record?.parentId === null && (
-              <Col span={24}>
-                <Divider />
-                <Title level={5}>Danh mục con</Title>
-                {record?.subCategories?.length ? (
-                  <Row gutter={[8, 8]}>
-                    {record.subCategories.map((item: ICategory) => (
-                      <Col key={item._id}>
-                        <Tag color="green">{item.name}</Tag>
-                      </Col>
-                    ))}
-                  </Row>
-                ) : (
-                  <Text type="secondary">Chưa có danh mục con</Text>
-                )}
-              </Col>
-            )}
-
-            {/* Danh mục cha nếu là con */}
-            {record?.parentId && (
-              <Col span={24}>
-                <Divider />
-                <Title level={5}>Danh mục cha</Title>
-                {parentLoading ? (
-                  <Text>Đang tải...</Text>
-                ) : parentName ? (
-                  <Tag color="blue">{parentName}</Tag>
-                ) : (
-                  <Text type="secondary">Không tìm thấy</Text>
-                )}
-              </Col>
-            )}
           </Row>
         )}
       </Card>
