@@ -150,6 +150,39 @@ export const ProductCreate = () => {
         return;
       }
 
+      // Kiểm tra danh mục còn hoạt động
+      const selectedCategory = allCategories.find(
+        (cat) => cat._id === values.categoryId
+      );
+      if (!selectedCategory || !selectedCategory.isActive) {
+        message.error("Danh mục đã bị vô hiệu hóa. Vui lòng chọn lại.");
+        return;
+      }
+
+      // Kiểm tra thương hiệu còn hoạt động
+      const selectedBrand = allBrands.find((b) => b._id === values.brandId);
+      if (!selectedBrand || !selectedBrand.isActive) {
+        message.error("Thương hiệu đã bị vô hiệu hóa. Vui lòng chọn lại.");
+        return;
+      }
+
+      // Kiểm tra tất cả thuộc tính đều còn hoạt động
+      const invalidAttribute = (values.attributes || []).find((attr: any) => {
+        const found = allAttributes.find((a) => a._id === attr.attributeId);
+        return !found || !found.isActive;
+      });
+
+      if (invalidAttribute) {
+        const found = allAttributes.find(
+          (a) => a._id === invalidAttribute.attributeId
+        );
+        const attrName = found?.name || "Không xác định";
+        message.error(
+          `Thuộc tính "${attrName}" đã bị vô hiệu hóa. Vui lòng kiểm tra lại.`
+        );
+        return;
+      }
+
       // Kiểm tra ngày kết thúc không trước ngày bắt đầu
       const hasInvalidDateRange = values.variation?.some((variation: any) => {
         const start = variation.saleForm ? dayjs(variation.saleForm) : null;
@@ -166,7 +199,6 @@ export const ProductCreate = () => {
       const normalizedVariations = (values.variation || []).map(
         (variation: any) => {
           let imageUrl: string | undefined;
-
           const imageFile = variation.image?.[0];
           if (imageFile) {
             imageUrl = imageFile.url;
@@ -316,7 +348,7 @@ export const ProductCreate = () => {
           </Form.Item>
 
           <Form.List name="variation">
-            {(fields, { add, remove }) => (
+            {(fields, { remove }) => (
               <>
                 {fields.map((field) => (
                   <VariationItem
