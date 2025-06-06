@@ -44,7 +44,7 @@ const AppRoutes = () => {
             </Authenticated>
           }
         >
-          <Route index element={<NavigateToResource resource="blog_posts" />} />
+          <Route index element={<NavigateToResource resource="product" />} />
           <Route path="/product">
             <Route index element={<ProductList />} />
             <Route path="add" element={<ProductCreate />} />

@@ -5,12 +5,14 @@ import { HttpError } from "@refinedev/core";
 import MDEditor from "@uiw/react-md-editor";
 import { Button, Form, Input, Select, Upload, UploadFile, message } from "antd";
 import axios from "axios";
+import dayjs from "dayjs";
 import { useMemo, useState } from "react";
+import { API_URL } from "../../config/dataProvider";
 import { IAttribute } from "../../interface/attribute";
 import { IBrand } from "../../interface/brand";
 import { ICategory } from "../../interface/category";
 import { AttributeItem } from "./AttributeItem";
-import { API_URL } from "../../config/dataProvider";
+import { VariationItem } from "./VariationItem";
 
 export const ProductCreate = () => {
   const { formProps, saveButtonProps } = useForm({
@@ -142,17 +144,51 @@ export const ProductCreate = () => {
   }, [allBrands]);
 
   const handleFinish = async (values: any) => {
-    console.log(values.attributes);
-
     try {
       if (uploadedImageUrls.length === 0) {
         message.error("Bạn chưa tải ảnh hoặc ảnh chưa upload xong.");
         return;
       }
 
+      // Kiểm tra ngày kết thúc không trước ngày bắt đầu
+      const hasInvalidDateRange = values.variation?.some((variation: any) => {
+        const start = variation.saleForm ? dayjs(variation.saleForm) : null;
+        const end = variation.saleTo ? dayjs(variation.saleTo) : null;
+        return start && end && end.isBefore(start);
+      });
+
+      if (hasInvalidDateRange) {
+        message.error("Ngày kết thúc giảm giá không được trước ngày bắt đầu.");
+        return;
+      }
+
+      // Chuẩn hóa dữ liệu biến thể
+      const normalizedVariations = (values.variation || []).map(
+        (variation: any) => {
+          let imageUrl: string | undefined;
+
+          const imageFile = variation.image?.[0];
+          if (imageFile) {
+            imageUrl = imageFile.url;
+          }
+
+          return {
+            ...variation,
+            image: imageUrl,
+            saleForm: variation.saleForm
+              ? dayjs(variation.saleForm).format("YYYY-MM-DD")
+              : undefined,
+            saleTo: variation.saleTo
+              ? dayjs(variation.saleTo).format("YYYY-MM-DD")
+              : undefined,
+          };
+        }
+      );
+
       const payload = {
         ...values,
         image: uploadedImageUrls,
+        variation: normalizedVariations,
       };
 
       await formProps?.onFinish?.(payload);
@@ -177,6 +213,7 @@ export const ProductCreate = () => {
           label="Hình ảnh"
           name="image"
           valuePropName="fileList"
+          rules={[{ required: true, message: "Vui chọn hình ảnh" }]}
           getValueFromEvent={normFile}
         >
           <Upload
@@ -189,7 +226,7 @@ export const ProductCreate = () => {
             {fileList.length >= 5 ? null : (
               <div>
                 <PlusOutlined />
-                <div style={{ marginTop: 8 }}>Upload</div>
+                <div style={{ marginTop: 8 }}>Tải ảnh</div>
               </div>
             )}
           </Upload>
@@ -241,49 +278,54 @@ export const ProductCreate = () => {
                     Thêm thuộc tính
                   </Button>
                 </Form.Item>
+              </>
+            )}
+          </Form.List>
 
-                <Form.Item>
-                  <Button
-                    type="primary"
-                    onClick={async () => {
-                      try {
-                        const attributes =
-                          formProps.form?.getFieldValue("attributes");
+          <Form.Item label={null}>
+            <Button
+              onClick={async () => {
+                try {
+                  const response = await axios.post(
+                    `${API_URL}/product/generate-variations`,
+                    {
+                      attributes: formProps.form?.getFieldValue("attributes"),
+                    }
+                  );
 
-                        if (!attributes || attributes.length === 0) {
-                          message.warning(
-                            "Bạn cần thêm ít nhất 1 thuộc tính trước khi tạo biến thể."
-                          );
-                          return;
-                        }
+                  const generatedVariations = response.data.variation.map(
+                    (item: any) => ({
+                      attributes: item.attributes || [],
+                      regularPrice: 0,
+                      stock: 0,
+                    })
+                  );
 
-                        const response = await axios.post(
-                          `${API_URL}/product/generate-variations`,
-                          {
-                            attributes,
-                          }
-                        );
+                  await formProps.form?.setFieldsValue({
+                    variation: generatedVariations,
+                  });
 
-                        const generatedVariations = response.data;
+                  message.success("Tạo biến thể thành công!");
+                } catch (error) {
+                  message.error("Lỗi khi tạo biến thể!");
+                }
+              }}
+            >
+              Tạo sản phẩm biến thể
+            </Button>
+          </Form.Item>
 
-                        formProps.form?.setFieldValue(
-                          "variations",
-                          generatedVariations
-                        );
-
-                        message.success(
-                          "✅ Đã tạo sản phẩm biến thể thành công!"
-                        );
-                      } catch (error) {
-                        console.error(error);
-                        message.error("❌ Lỗi khi tạo sản phẩm biến thể!");
-                      }
-                    }}
-                    block
-                  >
-                    Tạo sản phẩm biến thể
-                  </Button>
-                </Form.Item>
+          <Form.List name="variation">
+            {(fields, { add, remove }) => (
+              <>
+                {fields.map((field) => (
+                  <VariationItem
+                    key={field.key}
+                    field={field}
+                    remove={remove}
+                    form={formProps.form}
+                  />
+                ))}
               </>
             )}
           </Form.List>
