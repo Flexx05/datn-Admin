@@ -16,11 +16,12 @@ export const AttributeItem = ({
   allAttributes,
   form,
 }: AttributeItemProps) => {
-  const selectedAttributeIds = form
-    .getFieldValue("attributes")
-    ?.filter((_: any, idx: number) => idx !== field.name)
-    ?.map((attr: any) => attr?.attributeId)
-    .filter(Boolean);
+  const selectedAttributeIds =
+    form
+      .getFieldValue("attributes")
+      ?.filter((_: any, idx: number) => idx !== field.name)
+      ?.map((attr: any) => attr?.attributeId)
+      .filter(Boolean) || [];
 
   const availableAttributes = allAttributes
     .filter((attr) => attr.isActive && !selectedAttributeIds.includes(attr._id))
@@ -35,13 +36,28 @@ export const AttributeItem = ({
     "attributeId",
   ]);
 
-  const valueOptions =
-    allAttributes
-      .find((attr) => attr._id === currentAttributeId)
-      ?.values?.map((val) => ({
-        label: val,
-        value: val,
-      })) || [];
+  const isColor = form.getFieldValue(["attributes", field.name, "isColor"]);
+
+  const rawValues =
+    allAttributes.find((attr) => attr._id === currentAttributeId)?.values || [];
+
+  const valueOptions = rawValues.map((val) => ({
+    label: isColor ? (
+      <div
+        style={{
+          backgroundColor: val,
+          width: 20,
+          height: 20,
+          borderRadius: "50%",
+          border: "1px solid #ccc",
+          display: "inline-block",
+        }}
+      />
+    ) : (
+      val
+    ),
+    value: val,
+  }));
 
   return (
     <Space
@@ -117,11 +133,49 @@ export const AttributeItem = ({
               ]}
             >
               <Select
-                mode="tags"
+                mode="multiple"
                 placeholder="Chọn hoặc thêm giá trị mới"
                 options={valueOptions}
                 style={{ minWidth: "250px" }}
                 disabled={!currentAttributeId}
+                tagRender={
+                  isColor
+                    ? (props) => {
+                        const { value, closable, onClose } = props;
+                        return (
+                          <div
+                            style={{
+                              display: "inline-flex",
+                              alignItems: "center",
+                              marginRight: 4,
+                              padding: "0 6px",
+                              border: "1px solid #ccc",
+                              borderRadius: 12,
+                              backgroundColor: "black",
+                            }}
+                          >
+                            <div
+                              style={{
+                                backgroundColor: value as string,
+                                width: 16,
+                                height: 16,
+                                borderRadius: "50%",
+                                marginRight: 4,
+                              }}
+                            />
+                            {closable && (
+                              <span
+                                onClick={onClose}
+                                style={{ cursor: "pointer", fontSize: 12 }}
+                              >
+                                ✕
+                              </span>
+                            )}
+                          </div>
+                        );
+                      }
+                    : undefined
+                }
               />
             </Form.Item>
           );
