@@ -82,6 +82,48 @@ export const VariationItem: React.FC<VariationItemProps> = ({
           </Button>
         </Popconfirm>
       </div>
+      <div
+        style={{
+          display: "flex",
+          gap: 8,
+          flexWrap: "wrap",
+          marginBottom: 12,
+        }}
+      >
+        {(
+          form?.getFieldValue(["variation", field.name, "attributes"]) || []
+        ).map((attr: any, idx: number) => {
+          const isColor = /^#(?:[0-9a-fA-F]{3}){1,2}$/.test(attr.values?.[0]); // kiểm tra nếu là mã màu hex
+          return (
+            <div
+              key={idx}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 6,
+              }}
+            >
+              <strong>{attr.attributeName}:</strong>
+              {attr.values.map((val: string, i: number) =>
+                isColor ? (
+                  <div
+                    key={i}
+                    style={{
+                      width: 16,
+                      height: 16,
+                      borderRadius: "50%",
+                      backgroundColor: val,
+                      border: "1px solid #ccc",
+                    }}
+                  />
+                ) : (
+                  <span key={i}>{val}</span>
+                )
+              )}
+            </div>
+          );
+        })}
+      </div>
 
       <div
         style={{
