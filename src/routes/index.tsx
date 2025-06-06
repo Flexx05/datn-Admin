@@ -24,6 +24,7 @@ import {
   AttributeShow,
 } from "../pages/attributes";
 import { BrandCreate, BrandEdit, BrandList, BrandShow } from "../pages/brand";
+import { UserList, UserShow } from "../pages/user";
 
 const AppRoutes = () => {
   return (
@@ -68,6 +69,10 @@ const AppRoutes = () => {
             <Route path="add" element={<BrandCreate />} />
             <Route path="edit/:id" element={<BrandEdit />} />
             <Route path="show/:id" element={<BrandShow />} />
+          </Route>
+          <Route path="/users">
+            <Route index element={<UserList />} />
+            <Route path="show/:id" element={<UserShow />} />
           </Route>
           <Route path="*" element={<ErrorComponent />} />
         </Route>

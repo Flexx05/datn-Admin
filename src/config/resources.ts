@@ -42,4 +42,12 @@ export const resources = [
       label: "Quản lý thuộc tính",
     },
   },
+  {
+    name: "admin/users",
+    list: "/users",
+    show: "/users/show/:id",
+    meta: {
+      label: "Quản lý Khách hàng",
+    },
+  },
 ];
