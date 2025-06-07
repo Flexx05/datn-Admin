@@ -8,15 +8,39 @@ import {
   useTable,
 } from "@refinedev/antd";
 import { useInvalidate } from "@refinedev/core";
-import { Image, Input, message, Popconfirm, Space, Table } from "antd";
+import {
+  Image,
+  Input,
+  message,
+  Popconfirm,
+  Space,
+  Table,
+  Tabs,
+  Tag,
+} from "antd";
 import axios from "axios";
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { API_URL } from "../../config/dataProvider";
 import { IBrand } from "../../interface/brand";
 
 export const BrandList = () => {
+  const [filterActive, setFilterActive] = useState<boolean>(true);
   const { tableProps, setFilters } = useTable({
     syncWithLocation: true,
+    permanentFilter: [
+      {
+        field: "isActive",
+        operator: "eq",
+        value: filterActive,
+      },
+    ],
+    onSearch: (value) => [
+      {
+        field: "search",
+        operator: "contains",
+        value: value,
+      },
+    ],
     errorNotification: (error: any) => ({
       message:
         "❌ Lỗi hệ thống " + (error.response?.data?.message | error.message),
@@ -47,14 +71,69 @@ export const BrandList = () => {
     }
   };
 
+  const handleTabChange = useCallback(
+    (key: string) => {
+      const isActiveFilter = key === "active";
+      setFilterActive(isActiveFilter);
+
+      // Cập nhật lại filter mới
+      setFilters(
+        [
+          {
+            field: "isActive",
+            operator: "eq",
+            value: isActiveFilter,
+          },
+        ],
+        "replace"
+      );
+    },
+    [setFilters]
+  );
+
+  const handleSearch = useCallback(
+    (value: string) => {
+      setFilters(
+        value
+          ? [
+              {
+                field: "search",
+                operator: "contains",
+                value,
+              },
+              {
+                field: "isActive",
+                operator: "eq",
+                value: filterActive,
+              },
+            ]
+          : [
+              {
+                field: "isActive",
+                operator: "eq",
+                value: filterActive,
+              },
+            ],
+        "replace"
+      );
+    },
+    [filterActive, setFilters]
+  );
+
   return (
     <List title={"Quản lý thương hiệu"}>
+      <Tabs
+        activeKey={filterActive ? "active" : "trash"}
+        onChange={handleTabChange}
+        style={{ marginBottom: 16 }}
+      >
+        <Tabs.TabPane tab="Thương hiệu đang hoạt động" key="active" />
+        <Tabs.TabPane tab="Thùng rác" key="trash" />
+      </Tabs>
       <Input.Search
         placeholder="Tìm kiếm thương hiệu"
         allowClear
-        onSearch={(value) =>
-          setFilters([{ field: "name", operator: "eq", value }], "replace")
-        }
+        onSearch={handleSearch}
         style={{ marginBottom: 16, maxWidth: 300 }}
       />
       <Table {...tableProps} rowKey="_id">
@@ -74,13 +153,12 @@ export const BrandList = () => {
         <Table.Column
           dataIndex="isActive"
           title={"Trạng thái"}
-          filters={[
-            { text: "Có hiệu lực", value: true },
-            { text: "Không có hiệu lực", value: false },
-          ]}
-          onFilter={(value, record) => record.isActive === value}
           render={(value: boolean) =>
-            value ? "Có hiệu lực" : "Không có hiệu lực"
+            value ? (
+              <Tag color="green">Có hiệu lực</Tag>
+            ) : (
+              <Tag color="red">Không có hiệu lực</Tag>
+            )
           }
         />
         <Table.Column
