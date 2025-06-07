@@ -24,6 +24,7 @@ import {
   ProductList,
   ProductShow,
 } from "../pages/products";
+import { UserList, UserShow } from "../pages/user";
 
 const AppRoutes = () => {
   return (
