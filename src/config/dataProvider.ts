@@ -7,7 +7,6 @@ export const API_URL = "http://localhost:8080/api";
 const dataProvider: DataProvider = {
   getApiUrl: () => API_URL,
   getList: async ({ resource, filters, pagination, sorters, meta }) => {
-    let endpoint = `${API_URL}/${resource}`;
     const params: Record<string, any> = {};
 
     if (filters) {
@@ -21,14 +20,8 @@ const dataProvider: DataProvider = {
         // Thêm các operator khác nếu cần
       });
     }
-    // Nếu resource hỗ trợ tìm kiếm (ví dụ: "attribute", "product"...)
-    const resourcesWithSearchApi = ["category"];
-    if (resourcesWithSearchApi.includes(resource)) {
-      endpoint += "/search";
-    }
-    endpoint += "";
-    const { data } = await axios.get(endpoint, { params });
-    console.log(params);
+
+    const { data } = await axios.get(`${API_URL}/${resource}`, { params });
 
     return {
       data: data.docs || data,
