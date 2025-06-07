@@ -22,12 +22,7 @@ const dataProvider: DataProvider = {
       });
     }
     // Nếu resource hỗ trợ tìm kiếm (ví dụ: "attribute", "product"...)
-    const resourcesWithSearchApi = [
-      "attribute",
-      "product",
-      "category",
-      "brand",
-    ];
+    const resourcesWithSearchApi = ["category", "brand"];
     if (resourcesWithSearchApi.includes(resource)) {
       endpoint += "/search";
     }
@@ -36,8 +31,8 @@ const dataProvider: DataProvider = {
     console.log(params);
 
     return {
-      data,
-      total: data.length,
+      data: data.docs || data,
+      total: data.length || data.totalDocs || 0,
     };
   },
 

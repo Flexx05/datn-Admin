@@ -17,20 +17,36 @@ import {
   Table,
   Tabs,
   Tag,
-  Typography,
 } from "antd";
 import axios from "axios";
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { API_URL } from "../../config/dataProvider";
 import {
   IProduct,
   IProductAttribute,
   IVariation,
 } from "../../interface/product";
+import { ColorDots } from "./ColorDots";
+import { VariationTable } from "./VariationTable";
 
 export const ProductList = () => {
+  const [filterActive, setFilterActive] = useState<boolean>(true);
   const { tableProps, setFilters } = useTable<IProduct>({
     syncWithLocation: true,
+    permanentFilter: [
+      {
+        field: "isActive",
+        operator: "eq",
+        value: filterActive,
+      },
+    ],
+    onSearch: (value) => [
+      {
+        field: "name",
+        operator: "contains",
+        value: value,
+      },
+    ],
     errorNotification: (error: any) => ({
       message:
         "❌ Lỗi hệ thống " + (error.response?.data?.message || error.message),
@@ -41,38 +57,87 @@ export const ProductList = () => {
 
   const invalidate = useInvalidate();
   const [loadingId, setLoadingId] = useState<string | number | null>(null);
-  const [filterActive, setFilterActive] = useState<boolean>(true);
 
-  const filteredData = (tableProps.dataSource || []).filter(
-    (product) => product.isActive === filterActive
+  const handleChangeStatus = useCallback(
+    async (record: IProduct | IVariation | any) => {
+      setLoadingId(record._id);
+      try {
+        await axios.patch(`${API_URL}/product/edit/status/${record._id}`, {
+          isActive: !record.isActive,
+        });
+
+        message.success("Cập nhật trạng thái thành công");
+        await invalidate({
+          resource: "product",
+          invalidates: ["list"],
+        });
+      } catch (error: any) {
+        const errorMessage =
+          error.response?.data?.message ||
+          error.message ||
+          "Lỗi không xác định";
+        message.error("Cập nhật trạng thái thất bại: " + errorMessage);
+      } finally {
+        setLoadingId(null);
+      }
+    },
+    [invalidate]
   );
 
-  const handleChangeStatus = async (record: IProduct | IVariation | any) => {
-    setLoadingId(record._id);
-    try {
-      await axios.patch(`${API_URL}/product/edit/status/${record._id}`, {
-        isActive: !record.isActive,
-      });
+  const handleTabChange = useCallback(
+    (key: string) => {
+      const isActiveFilter = key === "active";
+      setFilterActive(isActiveFilter);
 
-      message.success("Cập nhật trạng thái thành công");
-      await invalidate({
-        resource: "product",
-        invalidates: ["list"],
-      });
-    } catch (error: any) {
-      message.error(
-        "Cập nhật trạng thái thất bại " + error.response?.data?.message
+      // Cập nhật lại filter mới
+      setFilters(
+        [
+          {
+            field: "isActive",
+            operator: "eq",
+            value: isActiveFilter,
+          },
+        ],
+        "replace"
       );
-    } finally {
-      setLoadingId(null);
-    }
-  };
+    },
+    [setFilters]
+  );
+
+  const handleSearch = useCallback(
+    (value: string) => {
+      setFilters(
+        value
+          ? [
+              {
+                field: "search",
+                operator: "contains",
+                value,
+              },
+              {
+                field: "isActive",
+                operator: "eq",
+                value: filterActive,
+              },
+            ]
+          : [
+              {
+                field: "isActive",
+                operator: "eq",
+                value: filterActive,
+              },
+            ],
+        "replace"
+      );
+    },
+    [filterActive, setFilters]
+  );
 
   return (
     <List title={"Quản lý sản phẩm"}>
       <Tabs
         activeKey={filterActive ? "active" : "trash"}
-        onChange={(key) => setFilterActive(key === "active")}
+        onChange={handleTabChange}
         style={{ marginBottom: 16 }}
       >
         <Tabs.TabPane tab="Sản phẩm đang hoạt động" key="active" />
@@ -81,116 +146,16 @@ export const ProductList = () => {
       <Input.Search
         placeholder="Tìm kiếm sản phẩm"
         allowClear
-        onSearch={(value) =>
-          setFilters([{ field: "name", operator: "eq", value }], "replace")
-        }
+        onSearch={handleSearch}
         style={{ marginBottom: 16, maxWidth: 300 }}
       />
       <Table
         {...tableProps}
-        dataSource={filteredData}
         rowKey="_id"
         expandable={{
-          expandedRowRender: (record: IProduct | IVariation | any) => {
-            const children = record.variation;
-
-            if (!children || children.length === 0) {
-              return (
-                <Typography.Text type="secondary">
-                  Không có biến thể
-                </Typography.Text>
-              );
-            }
-
-            return (
-              <Table
-                dataSource={children}
-                pagination={false}
-                rowKey="_id"
-                size="small"
-              >
-                <Table.Column
-                  dataIndex="stt"
-                  title="STT"
-                  render={(_: unknown, __: IVariation, index: number) =>
-                    index + 1
-                  }
-                />
-                <Table.Column
-                  dataIndex="image"
-                  title="Ảnh"
-                  render={(_, child: IVariation) => (
-                    <Image width={55} src={child.image} />
-                  )}
-                />
-                <Table.Column
-                  title="Màu sắc"
-                  dataIndex="attributes"
-                  key="color"
-                  render={(attrs: IProductAttribute[]) => {
-                    const colorAttr = attrs.find(
-                      (attr) => attr.attributeName === "Màu sắc"
-                    );
-                    return colorAttr?.values?.map(
-                      (color: string, idx: number) => (
-                        <span
-                          key={idx}
-                          style={{
-                            display: "inline-block",
-                            width: 20,
-                            height: 20,
-                            backgroundColor: color,
-                            borderRadius: "50%",
-                            border: "1px solid #ccc",
-                            marginRight: 5,
-                          }}
-                        />
-                      )
-                    );
-                  }}
-                />
-                <Table.Column
-                  title="Kích thước"
-                  dataIndex="attributes"
-                  key="size"
-                  render={(attrs: IProductAttribute[]) => {
-                    const sizeAttr = attrs.find(
-                      (attr) => attr.attributeName === "Kích thước"
-                    );
-                    return sizeAttr?.values?.join(", ");
-                  }}
-                />
-                <Table.Column dataIndex="regularPrice" title="Giá bán" />
-                <Table.Column dataIndex="salePrice" title="Giá sale" />
-                <Table.Column
-                  title="Ngày bắt đầu sale"
-                  dataIndex="saleFrom"
-                  render={(date: string) =>
-                    date ? new Date(date).toLocaleDateString() : "Chưa có"
-                  }
-                />
-                <Table.Column
-                  title="Ngày kết thúc sale"
-                  dataIndex="saleTo"
-                  render={(date: string) =>
-                    date ? new Date(date).toLocaleDateString() : "Chưa có"
-                  }
-                />
-                <Table.Column title="Tồn kho" dataIndex="stock" />
-                <Table.Column
-                  dataIndex="isActive"
-                  title="Trạng thái"
-                  render={(value: boolean) =>
-                    value === true ? (
-                      <Tag color="green">Có hiệu lực</Tag>
-                    ) : (
-                      <Tag color="red">Không có hiệu lực</Tag>
-                    )
-                  }
-                />
-              </Table>
-            );
-          },
+          expandedRowRender: (record: IProduct | IVariation | any) => (
+            <VariationTable variations={record.variation} />
+          ),
           rowExpandable: (record) => !!record.variation?.length,
         }}
       >
@@ -222,20 +187,7 @@ export const ProductList = () => {
             const colorAttr = attrs.find(
               (attr) => attr.attributeName === "Màu sắc"
             );
-            return colorAttr?.values?.map((color: string, idx: number) => (
-              <span
-                key={idx}
-                style={{
-                  display: "inline-block",
-                  width: 20,
-                  height: 20,
-                  backgroundColor: color,
-                  borderRadius: "50%",
-                  border: "1px solid #ccc",
-                  marginRight: 5,
-                }}
-              />
-            ));
+            return colorAttr ? <ColorDots colors={colorAttr.values} /> : null;
           }}
         />
         <Table.Column
@@ -246,14 +198,14 @@ export const ProductList = () => {
             const sizeAttr = attrs.find(
               (attr) => attr.attributeName === "Kích thước"
             );
-            return sizeAttr?.values?.join(", ");
+            return sizeAttr?.values?.join(", ") || "";
           }}
         />
         <Table.Column
           title="Tồn kho"
           dataIndex="stock"
           render={(_, record: IProduct) =>
-            record.variation.reduce((prev, curr) => prev + curr.stock, 0)
+            record.variation?.reduce((prev, curr) => prev + curr.stock, 0) || 0
           }
         />
         <Table.Column
@@ -283,6 +235,7 @@ export const ProductList = () => {
                   confirmCancelText="Hủy"
                   confirmOkText="Xóa"
                   loading={loadingId === record._id}
+                  disabled={loadingId === record._id}
                 />
               ) : (
                 <Popconfirm
@@ -297,9 +250,11 @@ export const ProductList = () => {
                       border: "1px solid #404040",
                       borderRadius: "20%",
                       padding: 4,
-                      cursor: "pointer",
+                      cursor:
+                        loadingId === record._id ? "not-allowed" : "pointer",
                       opacity: loadingId === record._id ? 0.5 : 1,
                     }}
+                    disabled={loadingId === record._id}
                   />
                 </Popconfirm>
               )}
