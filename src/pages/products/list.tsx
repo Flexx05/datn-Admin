@@ -15,6 +15,7 @@ import {
   Popconfirm,
   Space,
   Table,
+  Tabs,
   Tag,
   Typography,
 } from "antd";
@@ -40,6 +41,11 @@ export const ProductList = () => {
 
   const invalidate = useInvalidate();
   const [loadingId, setLoadingId] = useState<string | number | null>(null);
+  const [filterActive, setFilterActive] = useState<boolean>(true);
+
+  const filteredData = (tableProps.dataSource || []).filter(
+    (product) => product.isActive === filterActive
+  );
 
   const handleChangeStatus = async (record: IProduct | IVariation | any) => {
     setLoadingId(record._id);
@@ -64,6 +70,14 @@ export const ProductList = () => {
 
   return (
     <List title={"Quản lý sản phẩm"}>
+      <Tabs
+        activeKey={filterActive ? "active" : "trash"}
+        onChange={(key) => setFilterActive(key === "active")}
+        style={{ marginBottom: 16 }}
+      >
+        <Tabs.TabPane tab="Sản phẩm đang hoạt động" key="active" />
+        <Tabs.TabPane tab="Thùng rác" key="trash" />
+      </Tabs>
       <Input.Search
         placeholder="Tìm kiếm sản phẩm"
         allowClear
@@ -74,6 +88,7 @@ export const ProductList = () => {
       />
       <Table
         {...tableProps}
+        dataSource={filteredData}
         rowKey="_id"
         expandable={{
           expandedRowRender: (record: IProduct | IVariation | any) => {
@@ -148,18 +163,22 @@ export const ProductList = () => {
                 <Table.Column dataIndex="regularPrice" title="Giá bán" />
                 <Table.Column dataIndex="salePrice" title="Giá sale" />
                 <Table.Column
-                  dataIndex="dateSale"
-                  title="Thời gian sale"
-                  render={(_, child: IVariation) =>
-                    child.saleForm !== null
-                      ? child.saleForm
-                      : "Không có" + " - " + child.saleTo !== null
-                      ? child.saleTo
-                      : "Không có"
+                  title="Ngày bắt đầu sale"
+                  dataIndex="saleFrom"
+                  render={(date: string) =>
+                    date ? new Date(date).toLocaleDateString() : "Chưa có"
+                  }
+                />
+                <Table.Column
+                  title="Ngày kết thúc sale"
+                  dataIndex="saleTo"
+                  render={(date: string) =>
+                    date ? new Date(date).toLocaleDateString() : "Chưa có"
                   }
                 />
                 <Table.Column title="Tồn kho" dataIndex="stock" />
                 <Table.Column
+                  dataIndex="isActive"
                   title="Trạng thái"
                   render={(value: boolean) =>
                     value === true ? (
@@ -240,18 +259,6 @@ export const ProductList = () => {
         <Table.Column
           title="Trạng thái"
           dataIndex="isActive"
-          filters={[
-            { text: "Có hiệu lực", value: true },
-            { text: "Không có hiệu lực", value: false },
-          ]}
-          onFilter={(value, record) => {
-            return (
-              record.isActive === value ||
-              record.subCategories?.some(
-                (child: IProduct) => child.isActive === value
-              )
-            );
-          }}
           render={(value: boolean) =>
             value ? (
               <Tag color="green">Có hiệu lực</Tag>
