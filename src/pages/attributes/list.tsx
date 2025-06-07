@@ -6,17 +6,32 @@ import {
   ShowButton,
   useTable,
 } from "@refinedev/antd";
-import { Input, Popconfirm, Space, Table, message } from "antd";
+import { Input, Popconfirm, Space, Table, Tabs, message } from "antd";
 import { IAttribute } from "../../interface/attribute";
 import { PlusCircleOutlined } from "@ant-design/icons";
 import axios from "axios";
 import { API_URL } from "../../config/dataProvider";
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { useInvalidate } from "@refinedev/core";
 
 export const AttributeList = () => {
+  const [filterActive, setFilterActive] = useState<boolean>(true);
   const { tableProps, setFilters } = useTable({
     syncWithLocation: true,
+    permanentFilter: [
+      {
+        field: "isActive",
+        operator: "eq",
+        value: filterActive,
+      },
+    ],
+    onSearch: (value) => [
+      {
+        field: "search",
+        operator: "contains",
+        value: value,
+      },
+    ],
     errorNotification: (error: any) => ({
       message:
         "❌ Lỗi hệ thống " + (error.response?.data?.message | error.message),
@@ -48,14 +63,69 @@ export const AttributeList = () => {
     }
   };
 
+  const handleTabChange = useCallback(
+    (key: string) => {
+      const isActiveFilter = key === "active";
+      setFilterActive(isActiveFilter);
+
+      // Cập nhật lại filter mới
+      setFilters(
+        [
+          {
+            field: "isActive",
+            operator: "eq",
+            value: isActiveFilter,
+          },
+        ],
+        "replace"
+      );
+    },
+    [setFilters]
+  );
+
+  const handleSearch = useCallback(
+    (value: string) => {
+      setFilters(
+        value
+          ? [
+              {
+                field: "search",
+                operator: "contains",
+                value,
+              },
+              {
+                field: "isActive",
+                operator: "eq",
+                value: filterActive,
+              },
+            ]
+          : [
+              {
+                field: "isActive",
+                operator: "eq",
+                value: filterActive,
+              },
+            ],
+        "replace"
+      );
+    },
+    [filterActive, setFilters]
+  );
+
   return (
     <List title={"Quản lý thuộc tính"}>
+      <Tabs
+        activeKey={filterActive ? "active" : "trash"}
+        onChange={handleTabChange}
+        style={{ marginBottom: 16 }}
+      >
+        <Tabs.TabPane tab="Sản phẩm đang hoạt động" key="active" />
+        <Tabs.TabPane tab="Thùng rác" key="trash" />
+      </Tabs>
       <Input.Search
         placeholder="Tìm kiếm tên thuộc tính"
         allowClear
-        onSearch={(value) =>
-          setFilters([{ field: "name", operator: "eq", value }], "replace")
-        }
+        onSearch={handleSearch}
         style={{ marginBottom: 16, maxWidth: 300 }}
       />
       <Table {...tableProps} rowKey="_id">
