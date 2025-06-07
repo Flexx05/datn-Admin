@@ -6,7 +6,7 @@ import {
   ShowButton,
   useTable,
 } from "@refinedev/antd";
-import { Input, Popconfirm, Space, Table, Tabs, message } from "antd";
+import { Input, Popconfirm, Space, Table, Tabs, Tag, message } from "antd";
 import { IAttribute } from "../../interface/attribute";
 import { PlusCircleOutlined } from "@ant-design/icons";
 import axios from "axios";
@@ -119,7 +119,7 @@ export const AttributeList = () => {
         onChange={handleTabChange}
         style={{ marginBottom: 16 }}
       >
-        <Tabs.TabPane tab="Sản phẩm đang hoạt động" key="active" />
+        <Tabs.TabPane tab="Thuộc tính đang hoạt động" key="active" />
         <Tabs.TabPane tab="Thùng rác" key="trash" />
       </Tabs>
       <Input.Search
@@ -161,13 +161,12 @@ export const AttributeList = () => {
         <Table.Column
           dataIndex="isActive"
           title={"Trạng thái"}
-          filters={[
-            { text: "Có hiệu lực", value: true },
-            { text: "Không có hiệu lực", value: false },
-          ]}
-          onFilter={(value, record) => record.isActive === value}
           render={(value: boolean) =>
-            value ? "Có hiệu lực" : "Không có hiệu lực"
+            value ? (
+              <Tag color="green">Có hiệu lực</Tag>
+            ) : (
+              <Tag color="red">Không có hiệu lực</Tag>
+            )
           }
         />
         <Table.Column
