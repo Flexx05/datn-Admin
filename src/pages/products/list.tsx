@@ -42,7 +42,7 @@ export const ProductList = () => {
     ],
     onSearch: (value) => [
       {
-        field: "name",
+        field: "search",
         operator: "contains",
         value: value,
       },

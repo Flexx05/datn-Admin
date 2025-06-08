@@ -50,20 +50,6 @@ export const VariationTable = ({
       />
       <Table.Column dataIndex="regularPrice" title="Giá bán" />
       <Table.Column dataIndex="salePrice" title="Giá sale" />
-      <Table.Column
-        title="Ngày bắt đầu sale"
-        dataIndex="saleFrom"
-        render={(date: string) =>
-          date ? new Date(date).toLocaleDateString() : "Chưa có"
-        }
-      />
-      <Table.Column
-        title="Ngày kết thúc sale"
-        dataIndex="saleTo"
-        render={(date: string) =>
-          date ? new Date(date).toLocaleDateString() : "Chưa có"
-        }
-      />
       <Table.Column title="Tồn kho" dataIndex="stock" />
       <Table.Column
         title="Trạng thái"
