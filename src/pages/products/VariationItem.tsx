@@ -11,6 +11,7 @@ import {
 import { MinusCircleOutlined, PlusOutlined } from "@ant-design/icons";
 import axios from "axios";
 import dayjs from "dayjs";
+import { ColorDots } from "./ColorDots";
 
 interface VariationItemProps {
   field: any;
@@ -23,7 +24,9 @@ export const VariationItem: React.FC<VariationItemProps> = ({
   remove,
   form,
 }) => {
-  const handleImageChange = async ({ fileList }: { fileList: any[] }) => {
+  const handleImageChange = async (info: any) => {
+    const fileList = Array.isArray(info?.fileList) ? info.fileList : [];
+
     const file = fileList[0];
 
     if (file && file.originFileObj) {
@@ -106,16 +109,7 @@ export const VariationItem: React.FC<VariationItemProps> = ({
               <strong>{attr.attributeName}:</strong>
               {attr.values.map((val: string, i: number) =>
                 isColor ? (
-                  <div
-                    key={i}
-                    style={{
-                      width: 16,
-                      height: 16,
-                      borderRadius: "50%",
-                      backgroundColor: val,
-                      border: "1px solid #ccc",
-                    }}
-                  />
+                  <ColorDots colors={[val]} />
                 ) : (
                   <span key={i}>{val}</span>
                 )
