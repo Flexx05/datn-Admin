@@ -5,7 +5,6 @@ import { HttpError } from "@refinedev/core";
 import MDEditor from "@uiw/react-md-editor";
 import { Button, Form, Input, Select, Upload, UploadFile, message } from "antd";
 import axios from "axios";
-import dayjs from "dayjs";
 import { useMemo, useState } from "react";
 import { API_URL } from "../../config/dataProvider";
 import { IAttribute } from "../../interface/attribute";
@@ -183,18 +182,6 @@ export const ProductCreate = () => {
         return;
       }
 
-      // Kiểm tra ngày kết thúc không trước ngày bắt đầu
-      const hasInvalidDateRange = values.variation?.some((variation: any) => {
-        const start = variation.saleForm ? dayjs(variation.saleForm) : null;
-        const end = variation.saleTo ? dayjs(variation.saleTo) : null;
-        return start && end && end.isBefore(start);
-      });
-
-      if (hasInvalidDateRange) {
-        message.error("Ngày kết thúc giảm giá không được trước ngày bắt đầu.");
-        return;
-      }
-
       // Chuẩn hóa dữ liệu biến thể
       const normalizedVariations = (values.variation || []).map(
         (variation: any) => {
@@ -207,12 +194,7 @@ export const ProductCreate = () => {
           return {
             ...variation,
             image: imageUrl,
-            saleForm: variation.saleForm
-              ? dayjs(variation.saleForm).format("YYYY-MM-DD")
-              : undefined,
-            saleTo: variation.saleTo
-              ? dayjs(variation.saleTo).format("YYYY-MM-DD")
-              : undefined,
+            // Đã xóa xử lý saleFrom và saleTo
           };
         }
       );
