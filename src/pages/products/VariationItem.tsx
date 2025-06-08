@@ -1,16 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import {
-  DatePicker,
-  Form,
-  InputNumber,
-  Popconfirm,
-  Upload,
-  Button,
-  message,
-} from "antd";
 import { MinusCircleOutlined, PlusOutlined } from "@ant-design/icons";
+import { Button, Form, InputNumber, message, Popconfirm, Upload } from "antd";
 import axios from "axios";
-import dayjs from "dayjs";
 import { ColorDots } from "./ColorDots";
 
 interface VariationItemProps {
@@ -185,70 +176,6 @@ export const VariationItem: React.FC<VariationItemProps> = ({
               ]}
             >
               <InputNumber placeholder="Nhập giá giảm (nếu có)" />
-            </Form.Item>
-          </div>
-
-          <div style={{ display: "flex", gap: "20px" }}>
-            <Form.Item shouldUpdate>
-              {() => {
-                const salePrice = form.getFieldValue([
-                  "variation",
-                  field.name,
-                  "salePrice",
-                ]);
-                const saleTo = form.getFieldValue([
-                  "variation",
-                  field.name,
-                  "saleTo",
-                ]);
-                return (
-                  <Form.Item
-                    label="Ngày bắt đầu giảm"
-                    name={[field.name, "saleForm"]}
-                  >
-                    <DatePicker
-                      style={{ width: "100%" }}
-                      format="YYYY-MM-DD"
-                      placeholder="Chọn ngày bắt đầu"
-                      disabled={!salePrice}
-                      disabledDate={(current) =>
-                        saleTo && current.isAfter(dayjs(saleTo))
-                      }
-                    />
-                  </Form.Item>
-                );
-              }}
-            </Form.Item>
-
-            <Form.Item shouldUpdate>
-              {() => {
-                const salePrice = form.getFieldValue([
-                  "variation",
-                  field.name,
-                  "salePrice",
-                ]);
-                const saleForm = form.getFieldValue([
-                  "variation",
-                  field.name,
-                  "saleForm",
-                ]);
-                return (
-                  <Form.Item
-                    label="Ngày kết thúc giảm"
-                    name={[field.name, "saleTo"]}
-                  >
-                    <DatePicker
-                      style={{ width: "100%" }}
-                      format="YYYY-MM-DD"
-                      placeholder="Chọn ngày kết thúc"
-                      disabled={!salePrice}
-                      disabledDate={(current) =>
-                        saleForm && current.isBefore(dayjs(saleForm))
-                      }
-                    />
-                  </Form.Item>
-                );
-              }}
             </Form.Item>
           </div>
         </div>

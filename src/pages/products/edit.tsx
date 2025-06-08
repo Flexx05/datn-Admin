@@ -5,15 +5,14 @@ import { HttpError } from "@refinedev/core";
 import MDEditor from "@uiw/react-md-editor";
 import { Button, Form, Input, Select, Upload, UploadFile, message } from "antd";
 import axios from "axios";
-import dayjs from "dayjs";
 import { useEffect, useMemo, useState } from "react";
 import { API_URL } from "../../config/dataProvider";
 import { IAttribute } from "../../interface/attribute";
 import { IBrand } from "../../interface/brand";
 import { ICategory } from "../../interface/category";
+import { IVariation } from "../../interface/product";
 import { AttributeItem } from "./AttributeItem";
 import { VariationItem } from "./VariationItem";
-import { IVariation } from "../../interface/product";
 
 export const ProductEdit = () => {
   const { formProps, saveButtonProps, queryResult } = useForm({
@@ -223,17 +222,6 @@ export const ProductEdit = () => {
         return;
       }
 
-      const hasInvalidDateRange = values.variation?.some((variation: any) => {
-        const start = variation.saleForm ? dayjs(variation.saleForm) : null;
-        const end = variation.saleTo ? dayjs(variation.saleTo) : null;
-        return start && end && end.isBefore(start);
-      });
-
-      if (hasInvalidDateRange) {
-        message.error("Ngày kết thúc giảm giá không được trước ngày bắt đầu.");
-        return;
-      }
-
       const normalizedVariations = (values.variation || []).map(
         (variation: any) => {
           let imageUrl: string | undefined;
@@ -245,12 +233,6 @@ export const ProductEdit = () => {
           return {
             ...variation,
             image: imageUrl,
-            saleForm: variation.saleForm
-              ? dayjs(variation.saleForm).format("YYYY-MM-DD")
-              : undefined,
-            saleTo: variation.saleTo
-              ? dayjs(variation.saleTo).format("YYYY-MM-DD")
-              : undefined,
           };
         }
       );
