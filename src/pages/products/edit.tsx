@@ -251,7 +251,11 @@ export const ProductEdit = () => {
   };
 
   return (
-    <Edit saveButtonProps={saveButtonProps} title="Chỉnh sửa sản phẩm">
+    <Edit
+      saveButtonProps={saveButtonProps}
+      title="Chỉnh sửa sản phẩm"
+      canDelete={false}
+    >
       <Form {...formProps} layout="vertical" onFinish={handleFinish}>
         <Form.Item
           label="Tên sản phẩm"

@@ -18,6 +18,14 @@ export const VariationItem: React.FC<VariationItemProps> = ({
   const handleImageChange = async (info: any) => {
     const fileList = Array.isArray(info?.fileList) ? info.fileList : [];
 
+    // Nếu xóa ảnh (fileList rỗng)
+    if (!fileList.length) {
+      const currentVariations = form.getFieldValue("variation") || [];
+      currentVariations[field.name]["image"] = [];
+      form.setFieldsValue({ variation: currentVariations });
+      return;
+    }
+
     const file = fileList[0];
 
     if (file && file.originFileObj) {
@@ -46,9 +54,10 @@ export const VariationItem: React.FC<VariationItemProps> = ({
       } catch (error) {
         message.error("❌ Lỗi khi upload ảnh biến thể.");
       }
-    } else if (!fileList.length) {
+    } else {
+      // Nếu chỉ chọn ảnh đã có (không phải upload mới)
       const currentVariations = form.getFieldValue("variation") || [];
-      currentVariations[field.name]["image"] = [];
+      currentVariations[field.name]["image"] = fileList;
       form.setFieldsValue({ variation: currentVariations });
     }
   };

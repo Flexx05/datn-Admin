@@ -89,7 +89,6 @@ export const ProductList = () => {
       const isActiveFilter = key === "active";
       setFilterActive(isActiveFilter);
 
-      // Cập nhật lại filter mới
       setFilters(
         [
           {
