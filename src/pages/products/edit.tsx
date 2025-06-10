@@ -3,7 +3,16 @@ import { PlusOutlined } from "@ant-design/icons";
 import { Edit, useForm, useSelect } from "@refinedev/antd";
 import { HttpError } from "@refinedev/core";
 import MDEditor from "@uiw/react-md-editor";
-import { Button, Form, Input, Select, Upload, UploadFile, message } from "antd";
+import {
+  Button,
+  Form,
+  Input,
+  Select,
+  Upload,
+  UploadFile,
+  message,
+  Spin,
+} from "antd";
 import axios from "axios";
 import { useEffect, useMemo, useState } from "react";
 import { API_URL } from "../../config/dataProvider";
@@ -13,6 +22,8 @@ import { ICategory } from "../../interface/category";
 import { IVariation } from "../../interface/product";
 import { AttributeItem } from "./AttributeItem";
 import { VariationItem } from "./VariationItem";
+import { CSSTransition, TransitionGroup } from "react-transition-group";
+import "./variation-animations.css";
 
 export const ProductEdit = () => {
   const { formProps, saveButtonProps, queryResult } = useForm({
@@ -34,6 +45,8 @@ export const ProductEdit = () => {
 
   const [fileList, setFileList] = useState<any[]>([]);
   const [uploadedImageUrls, setUploadedImageUrls] = useState<string[]>([]);
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+  const [isGenerating, setIsGenerating] = useState<boolean>(false);
 
   useEffect(() => {
     if (productData) {
@@ -186,6 +199,7 @@ export const ProductEdit = () => {
   }, [allBrands]);
 
   const handleFinish = async (values: any) => {
+    setIsSubmitting(true);
     try {
       if (uploadedImageUrls.length === 0) {
         message.error("Bạn chưa tải ảnh hoặc ảnh chưa upload xong.");
@@ -247,8 +261,26 @@ export const ProductEdit = () => {
     } catch (error) {
       message.error("Lỗi khi cập nhật sản phẩm!");
       console.error(error);
+    } finally {
+      setIsSubmitting(false);
     }
   };
+
+  if (queryResult?.isLoading) {
+    return (
+      <div style={{ textAlign: "center", padding: "50px 0" }}>
+        <Spin size="large" />
+      </div>
+    );
+  }
+
+  if (isGenerating) {
+    return (
+      <div style={{ textAlign: "center", padding: "50px 0" }}>
+        <Spin size="large" />
+      </div>
+    );
+  }
 
   return (
     <Edit
@@ -256,6 +288,7 @@ export const ProductEdit = () => {
       title="Chỉnh sửa sản phẩm"
       canDelete={false}
     >
+      <Spin spinning={isSubmitting} tip="Đang xử lý..."></Spin>
       <Form {...formProps} layout="vertical" onFinish={handleFinish}>
         <Form.Item
           label="Tên sản phẩm"
@@ -337,7 +370,10 @@ export const ProductEdit = () => {
 
           <Form.Item label={null}>
             <Button
+              loading={isGenerating}
               onClick={async () => {
+                setIsGenerating(true);
+                setIsSubmitting(true);
                 try {
                   const response = await axios.post(
                     `${API_URL}/product/generate-variations`,
@@ -361,8 +397,12 @@ export const ProductEdit = () => {
                   message.success("Tạo biến thể thành công!");
                 } catch (error) {
                   message.error("Lỗi khi tạo biến thể!");
+                } finally {
+                  setIsGenerating(false);
+                  setIsSubmitting(false);
                 }
               }}
+              disabled={isSubmitting}
             >
               Tạo sản phẩm biến thể
             </Button>
@@ -370,16 +410,21 @@ export const ProductEdit = () => {
 
           <Form.List name="variation">
             {(fields, { remove }) => (
-              <>
+              <TransitionGroup>
                 {fields.map((field) => (
-                  <VariationItem
+                  <CSSTransition
                     key={field.key}
-                    field={field}
-                    remove={remove}
-                    form={formProps.form}
-                  />
+                    timeout={400}
+                    classNames="variation-fade"
+                  >
+                    <VariationItem
+                      field={field}
+                      remove={remove}
+                      form={formProps.form}
+                    />
+                  </CSSTransition>
                 ))}
-              </>
+              </TransitionGroup>
             )}
           </Form.List>
         </Form.Item>

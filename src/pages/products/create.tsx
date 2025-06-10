@@ -3,7 +3,16 @@ import { PlusOutlined } from "@ant-design/icons";
 import { Create, useForm, useSelect } from "@refinedev/antd";
 import { HttpError } from "@refinedev/core";
 import MDEditor from "@uiw/react-md-editor";
-import { Button, Form, Input, Select, Upload, UploadFile, message } from "antd";
+import {
+  Button,
+  Form,
+  Input,
+  Select,
+  Spin,
+  Upload,
+  UploadFile,
+  message,
+} from "antd";
 import axios from "axios";
 import { useMemo, useState } from "react";
 import { API_URL } from "../../config/dataProvider";
@@ -12,6 +21,8 @@ import { IBrand } from "../../interface/brand";
 import { ICategory } from "../../interface/category";
 import { AttributeItem } from "./AttributeItem";
 import { VariationItem } from "./VariationItem";
+import "./variation-animations.css";
+import { CSSTransition, TransitionGroup } from "react-transition-group";
 
 export const ProductCreate = () => {
   const { formProps, saveButtonProps } = useForm({
@@ -30,6 +41,7 @@ export const ProductCreate = () => {
 
   const [fileList, setFileList] = useState<UploadFile[]>([]);
   const [uploadedImageUrls, setUploadedImageUrls] = useState<string[]>([]);
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
   const normFile = (e: any) => e?.fileList?.slice(0, 5);
 
@@ -143,6 +155,7 @@ export const ProductCreate = () => {
   }, [allBrands]);
 
   const handleFinish = async (values: any) => {
+    setIsSubmitting(true);
     try {
       if (uploadedImageUrls.length === 0) {
         message.error("Bạn chưa tải ảnh hoặc ảnh chưa upload xong.");
@@ -209,142 +222,163 @@ export const ProductCreate = () => {
     } catch (error) {
       message.error("Lỗi khi tạo sản phẩm!");
       console.error(error);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
+  if (category?.isLoading || brand?.isLoading || attribute?.isLoading) {
+    return (
+      <div style={{ textAlign: "center", padding: "50px 0" }}>
+        <Spin size="large" />
+      </div>
+    );
+  }
+
   return (
     <Create saveButtonProps={saveButtonProps} title="Tạo sản phẩm">
-      <Form {...formProps} layout="vertical" onFinish={handleFinish}>
-        <Form.Item
-          label="Tên sản phẩm"
-          name="name"
-          rules={[{ required: true, message: "Vui lòng nhập tên sản phẩm" }]}
-        >
-          <Input />
-        </Form.Item>
-
-        <Form.Item
-          label="Hình ảnh"
-          name="image"
-          valuePropName="fileList"
-          rules={[{ required: true, message: "Vui chọn hình ảnh" }]}
-          getValueFromEvent={normFile}
-        >
-          <Upload
-            listType="picture-card"
-            fileList={fileList}
-            onChange={handleChange}
-            maxCount={5}
-            beforeUpload={() => false}
+      <Spin spinning={isSubmitting} tip="Đang xử lý...">
+        <Form {...formProps} layout="vertical" onFinish={handleFinish}>
+          <Form.Item
+            label="Tên sản phẩm"
+            name="name"
+            rules={[{ required: true, message: "Vui lòng nhập tên sản phẩm" }]}
           >
-            {fileList.length >= 5 ? null : (
-              <div>
-                <PlusOutlined />
-                <div style={{ marginTop: 8 }}>Tải ảnh</div>
-              </div>
-            )}
-          </Upload>
-        </Form.Item>
-
-        <Form.Item label="Mô tả" name="description">
-          <MDEditor data-color-mode="dark" />
-        </Form.Item>
-
-        <Form.Item
-          label="Danh mục"
-          name="categoryId"
-          rules={[{ required: true, message: "Vui lòng chọn danh mục" }]}
-        >
-          <Select loading={category?.isLoading} options={categoryOptions} />
-        </Form.Item>
-
-        <Form.Item
-          label="Thương hiệu"
-          name="brandId"
-          rules={[{ required: true, message: "Vui lòng chọn thương hiệu" }]}
-        >
-          <Select loading={brand?.isLoading} options={brandOptions} />
-        </Form.Item>
-
-        <Form.Item
-          label="Thuộc tính"
-          rules={[{ required: true, message: "Thuộc tính bắt buộc nhập" }]}
-        >
-          <Form.List name="attributes">
-            {(fields, { add, remove }) => (
-              <>
-                {fields.map((field) => (
-                  <AttributeItem
-                    key={field.key}
-                    field={field}
-                    remove={remove}
-                    allAttributes={allAttributes}
-                    form={formProps.form}
-                  />
-                ))}
-                <Form.Item>
-                  <Button
-                    type="dashed"
-                    onClick={() => add()}
-                    icon={<PlusOutlined />}
-                    block
-                  >
-                    Thêm thuộc tính
-                  </Button>
-                </Form.Item>
-              </>
-            )}
-          </Form.List>
-
-          <Form.Item label={null}>
-            <Button
-              onClick={async () => {
-                try {
-                  const response = await axios.post(
-                    `${API_URL}/product/generate-variations`,
-                    {
-                      attributes: formProps.form?.getFieldValue("attributes"),
-                    }
-                  );
-
-                  const generatedVariations = response.data.variation.map(
-                    (item: any) => ({
-                      attributes: item.attributes || [],
-                      regularPrice: 0,
-                      stock: 0,
-                    })
-                  );
-
-                  await formProps.form?.setFieldsValue({
-                    variation: generatedVariations,
-                  });
-
-                  message.success("Tạo biến thể thành công!");
-                } catch (error) {
-                  message.error("Lỗi khi tạo biến thể!");
-                }
-              }}
-            >
-              Tạo sản phẩm biến thể
-            </Button>
+            <Input />
           </Form.Item>
 
-          <Form.List name="variation">
-            {(fields, { remove }) => (
-              <>
-                {fields.map((field) => (
-                  <VariationItem
-                    key={field.key}
-                    field={field}
-                    remove={remove}
-                    form={formProps.form}
-                  />
-                ))}
-              </>
-            )}
-          </Form.List>
-        </Form.Item>
-      </Form>
+          <Form.Item
+            label="Hình ảnh"
+            name="image"
+            valuePropName="fileList"
+            rules={[{ required: true, message: "Vui chọn hình ảnh" }]}
+            getValueFromEvent={normFile}
+          >
+            <Upload
+              listType="picture-card"
+              fileList={fileList}
+              onChange={handleChange}
+              maxCount={5}
+              beforeUpload={() => false}
+            >
+              {fileList.length >= 5 ? null : (
+                <div>
+                  <PlusOutlined />
+                  <div style={{ marginTop: 8 }}>Tải ảnh</div>
+                </div>
+              )}
+            </Upload>
+          </Form.Item>
+
+          <Form.Item label="Mô tả" name="description">
+            <MDEditor data-color-mode="dark" />
+          </Form.Item>
+
+          <Form.Item
+            label="Danh mục"
+            name="categoryId"
+            rules={[{ required: true, message: "Vui lòng chọn danh mục" }]}
+          >
+            <Select loading={category?.isLoading} options={categoryOptions} />
+          </Form.Item>
+
+          <Form.Item
+            label="Thương hiệu"
+            name="brandId"
+            rules={[{ required: true, message: "Vui lòng chọn thương hiệu" }]}
+          >
+            <Select loading={brand?.isLoading} options={brandOptions} />
+          </Form.Item>
+
+          <Form.Item
+            label="Thuộc tính"
+            rules={[{ required: true, message: "Thuộc tính bắt buộc nhập" }]}
+          >
+            <Form.List name="attributes">
+              {(fields, { add, remove }) => (
+                <>
+                  {fields.map((field) => (
+                    <AttributeItem
+                      key={field.key}
+                      field={field}
+                      remove={remove}
+                      allAttributes={allAttributes}
+                      form={formProps.form}
+                    />
+                  ))}
+                  <Form.Item>
+                    <Button
+                      type="dashed"
+                      onClick={() => add()}
+                      icon={<PlusOutlined />}
+                      block
+                    >
+                      Thêm thuộc tính
+                    </Button>
+                  </Form.Item>
+                </>
+              )}
+            </Form.List>
+
+            <Form.Item label={null}>
+              <Button
+                onClick={async () => {
+                  setIsSubmitting(true);
+                  try {
+                    const response = await axios.post(
+                      `${API_URL}/product/generate-variations`,
+                      {
+                        attributes: formProps.form?.getFieldValue("attributes"),
+                      }
+                    );
+
+                    const generatedVariations = response.data.variation.map(
+                      (item: any) => ({
+                        attributes: item.attributes || [],
+                        regularPrice: 0,
+                        stock: 0,
+                      })
+                    );
+
+                    await formProps.form?.setFieldsValue({
+                      variation: generatedVariations,
+                    });
+
+                    message.success("Tạo biến thể thành công!");
+                  } catch (error) {
+                    message.error("Lỗi khi tạo biến thể!");
+                  } finally {
+                    setIsSubmitting(false);
+                  }
+                }}
+                disabled={isSubmitting}
+              >
+                Tạo sản phẩm biến thể
+              </Button>
+            </Form.Item>
+
+            <Form.List name="variation">
+              {(fields, { remove }) => (
+                <TransitionGroup>
+                  {fields.map((field) => (
+                    <CSSTransition
+                      key={field.key}
+                      timeout={400}
+                      classNames="variation-fade"
+                    >
+                      <VariationItem
+                        field={field}
+                        remove={remove}
+                        form={formProps.form}
+                      />
+                    </CSSTransition>
+                  ))}
+                </TransitionGroup>
+              )}
+            </Form.List>
+          </Form.Item>
+        </Form>
+      </Spin>
     </Create>
   );
 };
