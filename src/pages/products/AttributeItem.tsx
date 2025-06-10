@@ -2,6 +2,7 @@
 import { MinusCircleOutlined } from "@ant-design/icons";
 import { Form, Select, Space, Checkbox } from "antd";
 import { IAttribute } from "../../interface/attribute";
+import { ColorDots } from "./ColorDots";
 
 interface AttributeItemProps {
   field: any;
@@ -42,20 +43,7 @@ export const AttributeItem = ({
     allAttributes.find((attr) => attr._id === currentAttributeId)?.values || [];
 
   const valueOptions = rawValues.map((val) => ({
-    label: isColor ? (
-      <div
-        style={{
-          backgroundColor: val,
-          width: 20,
-          height: 20,
-          borderRadius: "50%",
-          border: "1px solid #ccc",
-          display: "inline-block",
-        }}
-      />
-    ) : (
-      val
-    ),
+    label: isColor ? <ColorDots colors={[val]} /> : val,
     value: val,
   }));
 
@@ -154,15 +142,7 @@ export const AttributeItem = ({
                               backgroundColor: "black",
                             }}
                           >
-                            <div
-                              style={{
-                                backgroundColor: value as string,
-                                width: 16,
-                                height: 16,
-                                borderRadius: "50%",
-                                marginRight: 4,
-                              }}
-                            />
+                            <ColorDots colors={[value]} />
                             {closable && (
                               <span
                                 onClick={onClose}
