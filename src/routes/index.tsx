@@ -23,6 +23,7 @@ import {
   ProductShow,
 } from "../pages/products";
 import { UserList, UserShow } from "../pages/user";
+import { UserEdit } from "../pages/user/edit";
 
 const AppRoutes = () => {
   return (
@@ -76,6 +77,7 @@ const AppRoutes = () => {
           <Route path="/users">
             <Route index element={<UserList />} />
             <Route path="show/:id" element={<UserShow />} />
+            <Route path="edit/:id" element={<UserEdit />} />
           </Route>
           <Route path="*" element={<ErrorComponent />} />
         </Route>

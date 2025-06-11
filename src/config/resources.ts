@@ -47,6 +47,7 @@ export const resources = [
     name: "admin/users",
     list: "/users",
     show: "/users/show/:id",
+    edit: "/users/edit/:id",
     meta: {
       label: "Quản lý Khách hàng",
     },
