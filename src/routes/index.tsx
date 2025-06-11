@@ -3,21 +3,19 @@ import { Authenticated, ErrorComponent } from "@refinedev/core";
 import { CatchAllNavigate, NavigateToResource } from "@refinedev/react-router";
 import { Outlet, Route, Routes } from "react-router";
 import {
-  CategoryCreate,
-  CategoryEdit,
-  CategoryList,
-  CategoryShow,
-} from "../pages/categories";
-import { ForgotPassword } from "../pages/forgotPassword";
-import { Login } from "../pages/login";
-import { Register } from "../pages/register";
-import {
   AttributeCreate,
   AttributeEdit,
   AttributeList,
   AttributeShow,
 } from "../pages/attributes";
 import { BrandCreate, BrandEdit, BrandList, BrandShow } from "../pages/brands";
+import {
+  CategoryCreate,
+  CategoryEdit,
+  CategoryList,
+  CategoryShow,
+} from "../pages/categories";
+import { Login } from "../pages/login";
 import {
   ProductCreate,
   ProductEdit,
@@ -39,6 +37,11 @@ const AppRoutes = () => {
               <ThemedLayoutV2
                 Header={Header}
                 Sider={(props) => <ThemedSiderV2 {...props} fixed />}
+                Title={() => (
+                  <>
+                    <img src="../../public/logofull.png" width={70} />
+                  </>
+                )}
               >
                 <Outlet />
               </ThemedLayoutV2>
@@ -84,8 +87,6 @@ const AppRoutes = () => {
           }
         >
           <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
-          <Route path="/forgot-password" element={<ForgotPassword />} />
         </Route>
       </Routes>
     </div>
