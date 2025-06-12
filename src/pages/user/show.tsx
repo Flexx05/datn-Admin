@@ -51,6 +51,16 @@ export const UserShow = () => {
                 : ""}
             </Text>
           </Col>
+          <Col span={24}>
+            <Title level={5}>Người thay đổi gần nhất</Title>
+            <Text>
+              {record?.userUpdated || "Không có"} (
+              {record?.updatedAt
+                ? dayjs(record.createdAt).format("DD/MM/YYYY HH:mm")
+                : ""}
+              )
+            </Text>
+          </Col>
         </Row>
       </Card>
     </Show>

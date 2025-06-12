@@ -8,4 +8,5 @@ export interface IUser {
   createdAt: string;
   updatedAt: string;
   role: string;
+  userUpdated?: string;
 }
