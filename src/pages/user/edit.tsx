@@ -17,20 +17,26 @@ export const UserEdit = () => {
     }),
   });
 
+  const handleFinish = async (values: any) => {
+    const { fullName, phone, address } = values;
+    const updatedValues = {
+      fullName,
+      phone: phone || null, // Chuyển đổi số điện thoại thành null nếu không có
+      address: address || null, // Chuyển đổi địa chỉ thành null nếu không có
+    };
+    if (formProps.onFinish) {
+      await formProps.onFinish(updatedValues);
+    }
+  };
+
   return (
     <Edit saveButtonProps={saveButtonProps} title="Chỉnh sửa thương hiệu">
-      <Form {...formProps} layout="vertical">
+      <Form {...formProps} layout="vertical" onFinish={handleFinish}>
         <Form.Item label="Tên khách hàng" name={["fullName"]}>
           <Input />
         </Form.Item>
-        <Form.Item
-          label="Tên khách hàng"
-          name={["email"]}
-          rules={[
-            { type: "email", message: "Vui lòng nhập địa chỉ email hợp lệ" },
-          ]}
-        >
-          <Input />
+        <Form.Item label="Email" name={["email"]}>
+          <Input disabled />
         </Form.Item>
         <Form.Item
           label="Số điện thoại"
@@ -38,7 +44,7 @@ export const UserEdit = () => {
           rules={[
             {
               pattern: /^\(?([0-9]{3})\)?[-.\s]?([0-9]{3})[-.\s]?([0-9]{4})$/,
-              message: "Vui lòng nhập số điện thoại hợp lệ (10-11 chữ số)",
+              message: "Vui lòng nhập số điện thoại hợp lệ (10 chữ số)",
             },
           ]}
         >
