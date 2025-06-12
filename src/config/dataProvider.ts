@@ -4,8 +4,23 @@ import axios from "axios";
 
 export const API_URL = "http://localhost:8080/api";
 
+const axiosInstance = axios.create();
+
+// Thêm interceptor để tự động thêm token vào mọi request
+axiosInstance.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem("token");
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
+
 const dataProvider: DataProvider = {
   getApiUrl: () => API_URL,
+
   getList: async ({ resource, filters, pagination, sorters, meta }) => {
     const params: Record<string, any> = {};
 
@@ -21,7 +36,9 @@ const dataProvider: DataProvider = {
       });
     }
 
-    const { data } = await axios.get(`${API_URL}/${resource}`, { params });
+    const { data } = await axiosInstance.get(`${API_URL}/${resource}`, {
+      params,
+    });
 
     return {
       data: data.docs || data,
@@ -30,22 +47,27 @@ const dataProvider: DataProvider = {
   },
 
   getOne: async ({ resource, id }) => {
-    const { data } = await axios.get(`${API_URL}/${resource}/id/${id}`);
+    const { data } = await axiosInstance.get(`${API_URL}/${resource}/id/${id}`);
     return { data };
   },
   update: async ({ resource, id, variables }) => {
-    const { data } = await axios.patch(
+    const { data } = await axiosInstance.patch(
       `${API_URL}/${resource}/edit/${id}`,
       variables
     );
     return { data };
   },
   create: async ({ resource, variables }) => {
-    const { data } = await axios.post(`${API_URL}/${resource}/add`, variables);
+    const { data } = await axiosInstance.post(
+      `${API_URL}/${resource}/add`,
+      variables
+    );
     return { data };
   },
   deleteOne: async ({ resource, id }) => {
-    const { data } = await axios.delete(`${API_URL}/${resource}/delete/${id}`);
+    const { data } = await axiosInstance.delete(
+      `${API_URL}/${resource}/delete/${id}`
+    );
     return { data };
   },
 };
