@@ -1,18 +1,19 @@
-import { List, ShowButton, useTable } from "@refinedev/antd";
-import { Space, Table, Tag, Popconfirm, message, Button, Input, Image } from "antd";
-import { useInvalidate } from "@refinedev/core";
-import { IUser } from "../../interface/user";
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import { EditButton, List, ShowButton, useTable } from "@refinedev/antd";
+import { CrudFilters, useInvalidate } from "@refinedev/core";
+import { Button, Input, Popconfirm, Space, Table, Tag, message } from "antd";
 import axios from "axios";
 import { useState } from "react";
 import { API_URL } from "../../config/dataProvider";
-import { CrudFilters } from "@refinedev/core";
+import { IUser } from "../../interface/user";
 
 export const UserList = () => {
   const { tableProps, setFilters } = useTable<IUser>({
     syncWithLocation: true,
     resource: "admin/users",
     errorNotification: (error: any) => ({
-      message: "❌ Lỗi hệ thống " + (error.response?.data?.message || error.message),
+      message:
+        "❌ Lỗi hệ thống " + (error.response?.data?.message || error.message),
       description: "Có lỗi xảy ra trong quá trình xử lý.",
       type: "error",
     }),
@@ -30,7 +31,10 @@ export const UserList = () => {
   const invalidate = useInvalidate();
   const [loadingId, setLoadingId] = useState<string | number | null>(null);
 
-  const setFiltersTyped = setFilters as (filters: CrudFilters, behavior?: string) => void;
+  const setFiltersTyped = setFilters as (
+    filters: CrudFilters,
+    behavior?: string
+  ) => void;
 
   const handleChangeStatus = async (record: IUser) => {
     setLoadingId(record._id);
@@ -53,7 +57,10 @@ export const UserList = () => {
         placeholder="Tìm kiếm khách hàng"
         allowClear
         onSearch={(value: string) =>
-          setFiltersTyped([{ field: "search", operator: "contains", value }], "merge")
+          setFiltersTyped(
+            [{ field: "search", operator: "contains", value }],
+            "merge"
+          )
         }
         style={{ marginBottom: 16, maxWidth: 300 }}
       />
@@ -67,7 +74,13 @@ export const UserList = () => {
             setFiltersTyped(
               [
                 ...(filters.isActive
-                  ? [{ field: "isActive", operator: "eq" as const, value: Boolean(filters.isActive[0]) }]
+                  ? [
+                      {
+                        field: "isActive",
+                        operator: "eq" as const,
+                        value: Boolean(filters.isActive[0]),
+                      },
+                    ]
                   : []),
               ],
               "merge"
@@ -80,22 +93,13 @@ export const UserList = () => {
           title="STT"
           render={(_: unknown, __: IUser, index: number) => index + 1}
         />
-        <Table.Column
-          dataIndex="avatar"
-          title="Ảnh"
-          render={(value: string) => (
-            <Image
-              src={value || "https://ui-avatars.com/api/?name=User"}
-              alt="avatar"
-              width={50}
-              height={50}
-              // style={{ borderRadius: "50%", objectFit: "cover" }}
-              preview 
-            />
-          )}
-        />
         <Table.Column dataIndex="fullName" title="Tên người dùng" />
         <Table.Column dataIndex="email" title="Email" />
+        <Table.Column
+          dataIndex="phone"
+          title="Số điện thoại"
+          render={(value: string) => value || "Chưa cập nhật"}
+        />
         <Table.Column
           dataIndex="isActive"
           title="Trạng thái"
@@ -105,7 +109,11 @@ export const UserList = () => {
           ]}
           filterMultiple={false}
           render={(value: boolean) =>
-            value ? <Tag color="green">Hoạt động</Tag> : <Tag color="red">Khoá</Tag>
+            value ? (
+              <Tag color="green">Hoạt động</Tag>
+            ) : (
+              <Tag color="red">Khoá</Tag>
+            )
           }
         />
         <Table.Column
@@ -114,6 +122,7 @@ export const UserList = () => {
           render={(_, record: IUser) => (
             <Space>
               <ShowButton hideText size="small" recordItemId={record._id} />
+              <EditButton hideText size="small" recordItemId={record._id} />
               <Popconfirm
                 title={
                   record.isActive
@@ -125,7 +134,10 @@ export const UserList = () => {
                 cancelText="Huỷ"
                 okButtonProps={{ loading: loadingId === record._id }}
               >
-                <Button size="small" type={record.isActive ? "default" : "primary"}>
+                <Button
+                  size="small"
+                  type={record.isActive ? "default" : "primary"}
+                >
                   {record.isActive ? "Khoá" : "Mở khoá"}
                 </Button>
               </Popconfirm>
@@ -135,4 +147,4 @@ export const UserList = () => {
       </Table>
     </List>
   );
-}; 
+};
