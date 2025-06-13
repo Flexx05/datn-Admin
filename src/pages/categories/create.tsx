@@ -80,22 +80,14 @@ export const CategoryCreate = () => {
             loading={queryResult?.isLoading}
             placeholder="Chọn danh mục cha (nếu có)"
             allowClear
-            defaultValue={""}
+            defaultValue={null}
           >
-            <Select.Option value="">Không có</Select.Option>
+            <Select.Option value={null}>Không có</Select.Option>
             {filteredOptions.map((option) => (
               <Select.Option key={option.value} value={option.value}>
                 {option.label}
               </Select.Option>
             ))}
-          </Select>
-        </Form.Item>
-
-        <Form.Item label="Thứ tự danh mục" name={["categorySort"]}>
-          <Select placeholder="Chọn thứ tự">
-            <Select.Option value={1}>1</Select.Option>
-            <Select.Option value={2}>2</Select.Option>
-            <Select.Option value={3}>3</Select.Option>
           </Select>
         </Form.Item>
       </Form>
