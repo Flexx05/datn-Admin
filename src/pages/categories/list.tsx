@@ -22,6 +22,7 @@ import axios from "axios";
 import { useCallback, useState } from "react";
 import { API_URL } from "../../config/dataProvider";
 import { ICategory } from "../../interface/category";
+import dayjs from "dayjs";
 
 export const CategoryList = () => {
   const [filterActive, setFilterActive] = useState<boolean>(true);
@@ -155,7 +156,7 @@ export const CategoryList = () => {
             }
 
             return (
-              <Table
+              <Table style={{ backgroundColor: "grey" }}
                 dataSource={children}
                 pagination={false}
                 rowKey="_id"
@@ -167,9 +168,11 @@ export const CategoryList = () => {
                   render={(_: unknown, __: ICategory, index: number) =>
                     index + 1
                   }
-                  width={200}
+                  width={100}
                 />
-                <Table.Column dataIndex="name" width={420} />
+                <Table.Column dataIndex="name" width={200}/>
+                <Table.Column dataIndex="slug" width={220} />
+                <Table.Column dataIndex="createdAt" render={(value: string) => <Typography.Text>{dayjs(value).format("DD/MM/YYYY")}</Typography.Text>} />
                 <Table.Column
                   dataIndex={"isActive"}
                   render={(value: boolean) =>
@@ -182,7 +185,7 @@ export const CategoryList = () => {
                 />
                 <Table.Column
                   dataIndex="actions"
-                  width={330}
+                  width={180}
                   render={(_, child: ICategory) => (
                     <Space>
                       <EditButton
@@ -238,9 +241,11 @@ export const CategoryList = () => {
           title="STT"
           render={(_: unknown, __: ICategory, index: number) => index + 1}
         />
-        <Table.Column dataIndex="name" title="Tên danh mục" width={430} />
+        <Table.Column dataIndex="name" title="Tên danh mục" />
+        <Table.Column dataIndex="slug" title={"Đường dẫn"} />
+        <Table.Column dataIndex="createdAt" title="Ngày tạo" render={(value: string) => <Typography.Text>{dayjs(value).format("DD/MM/YYYY")}</Typography.Text>} />
         <Table.Column
-          width={400}
+          
           title="Trạng thái"
           dataIndex="isActive"
           render={(value: boolean) =>

@@ -17,11 +17,13 @@ import {
   Table,
   Tabs,
   Tag,
+  Typography,
 } from "antd";
 import axios from "axios";
 import { useCallback, useState } from "react";
 import { API_URL } from "../../config/dataProvider";
 import { IBrand } from "../../interface/brand";
+import dayjs from "dayjs";
 
 export const BrandList = () => {
   const [filterActive, setFilterActive] = useState<boolean>(true);
@@ -150,6 +152,8 @@ export const BrandList = () => {
           )}
         />
         <Table.Column dataIndex="name" title={"Tên thương hiệu"} />
+        <Table.Column dataIndex="slug" title={"Đường dẫn"} />
+        <Table.Column dataIndex="createdAt" title="Ngày tạo" render={(value: string) => <Typography.Text>{dayjs(value).format("DD/MM/YYYY")}</Typography.Text>} />
         <Table.Column
           dataIndex="isActive"
           title={"Trạng thái"}

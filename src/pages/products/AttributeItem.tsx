@@ -139,7 +139,7 @@ export const AttributeItem = ({
                               padding: "0 6px",
                               border: "1px solid #ccc",
                               borderRadius: 12,
-                              backgroundColor: "black",
+                              backgroundColor: "white",
                             }}
                           >
                             <ColorDots colors={[value]} />
