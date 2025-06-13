@@ -58,12 +58,7 @@ export const AttributeEdit = () => {
             onChange={(checked) => {
               setIsColorMode(checked);
               formProps.form?.setFieldValue("isColor", checked);
-              const currentValues =
-                formProps.form?.getFieldValue("values") || [];
-              formProps.form?.setFieldValue(
-                "values",
-                currentValues.map(() => (checked ? "#ffffff" : ""))
-              );
+              formProps.form?.setFieldsValue({ values: [] }); // Reset values khi đổi chế độ
             }}
           />
         </Form.Item>
@@ -82,11 +77,6 @@ export const AttributeEdit = () => {
                 const trimmed = values.map((v) =>
                   typeof v === "string" ? v.trim() : v
                 );
-                if (trimmed.some((v) => !v)) {
-                  return Promise.reject(
-                    new Error("Không được để trống giá trị")
-                  );
-                }
 
                 const unique = new Set(trimmed);
                 if (unique.size !== trimmed.length) {
@@ -114,6 +104,7 @@ export const AttributeEdit = () => {
                     name={name}
                     rules={[{ required: true, message: "Không được để trống" }]}
                     getValueFromEvent={(e) => e.target.value}
+                    valuePropName={isColorMode ? "value" : undefined}
                   >
                     {isColorMode ? (
                       <input
@@ -136,7 +127,7 @@ export const AttributeEdit = () => {
               <Form.Item>
                 <Button
                   type="dashed"
-                  onClick={() => add(isColorMode ? "#ffffff" : "")}
+                  onClick={() => add(isColorMode ? "#000000" : "")}
                   block
                   icon={<PlusOutlined />}
                 >

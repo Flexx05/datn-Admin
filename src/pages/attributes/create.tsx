@@ -38,6 +38,7 @@ export const AttributeCreate = () => {
             onChange={(checked) => {
               setIsColorMode(checked);
               formProps.form?.setFieldValue("isColor", checked);
+              formProps.form?.setFieldsValue({ values: [] }); // Reset values khi đổi chế độ
             }}
           />
         </Form.Item>
@@ -58,11 +59,6 @@ export const AttributeCreate = () => {
                 const trimmed = values.map((v) =>
                   typeof v === "string" ? v.trim() : v
                 );
-                if (trimmed.some((v) => !v)) {
-                  return Promise.reject(
-                    new Error("Không được để trống giá trị")
-                  );
-                }
 
                 const unique = new Set(trimmed);
                 if (unique.size !== trimmed.length) {
@@ -90,6 +86,7 @@ export const AttributeCreate = () => {
                     name={name}
                     rules={[{ required: true, message: "Không được để trống" }]}
                     getValueFromEvent={(e) => e.target.value}
+                    valuePropName={isColorMode ? "value" : undefined} // Thêm dòng này
                   >
                     {isColorMode ? (
                       <input
@@ -112,7 +109,7 @@ export const AttributeCreate = () => {
               <Form.Item>
                 <Button
                   type="dashed"
-                  onClick={() => add()}
+                  onClick={() => add(isColorMode ? "#000000" : "")} // Thêm giá trị mặc định
                   block
                   icon={<PlusOutlined />}
                 >
