@@ -25,7 +25,11 @@ export const AttributeCreate = () => {
         <Form.Item
           label="Tên thuộc tính"
           name={["name"]}
-          rules={[{ required: true, message: "Vui lòng nhập tên thuộc tính" }]}
+          rules={[
+            { required: true, message: "Vui lòng nhập tên thuộc tính" },
+            { min: 3, message: "Tên thuộc tính phải có ít nhất 3 ký tự" },
+            { max: 50, message: "Tên thuộc tính không được vượt quá 50 ký tự" },
+          ]}
         >
           <Input />
         </Form.Item>
@@ -84,7 +88,14 @@ export const AttributeCreate = () => {
                   <Form.Item
                     {...restField}
                     name={name}
-                    rules={[{ required: true, message: "Không được để trống" }]}
+                    rules={[
+                      { required: true, message: "Không được để trống" },
+                      { min: 1, message: "Giá trị phải có ít nhất 1 ký tự" },
+                      {
+                        max: 20,
+                        message: "Giá trị không được vượt quá 20 ký tự",
+                      },
+                    ]}
                     getValueFromEvent={(e) => e.target.value}
                     valuePropName={isColorMode ? "value" : undefined} // Thêm dòng này
                   >
