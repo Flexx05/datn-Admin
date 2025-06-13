@@ -6,7 +6,9 @@ import {
   ShowButton,
   useTable,
 } from "@refinedev/antd";
+import { useInvalidate } from "@refinedev/core";
 import {
+  Button,
   Input,
   Popconfirm,
   Space,
@@ -16,13 +18,11 @@ import {
   Typography,
   message,
 } from "antd";
-import { IAttribute } from "../../interface/attribute";
-import { PlusCircleOutlined } from "@ant-design/icons";
 import axios from "axios";
-import { API_URL } from "../../config/dataProvider";
-import { useCallback, useState } from "react";
-import { useInvalidate } from "@refinedev/core";
 import dayjs from "dayjs";
+import { useCallback, useState } from "react";
+import { API_URL } from "../../config/dataProvider";
+import { IAttribute } from "../../interface/attribute";
 
 export const AttributeList = () => {
   const [filterActive, setFilterActive] = useState<boolean>(true);
@@ -194,8 +194,18 @@ export const AttributeList = () => {
           dataIndex="actions"
           render={(_, record: IAttribute) => (
             <Space>
-              <EditButton hideText size="small" recordItemId={record._id} />
-              <ShowButton hideText size="small" recordItemId={record._id} />
+              <EditButton
+                hideText
+                size="small"
+                recordItemId={record._id}
+                hidden={!record.isActive}
+              />
+              <ShowButton
+                hideText
+                size="small"
+                recordItemId={record._id}
+                hidden={!record.isActive}
+              />
               {record.isActive ? (
                 <DeleteButton
                   hideText
@@ -214,15 +224,9 @@ export const AttributeList = () => {
                   cancelText="Hủy"
                   okButtonProps={{ loading: loadingId === record._id }}
                 >
-                  <PlusCircleOutlined
-                    style={{
-                      border: "1px solid #404040",
-                      borderRadius: "20%",
-                      padding: 4,
-                      cursor: "pointer",
-                      opacity: loadingId === record._id ? 0.5 : 1,
-                    }}
-                  />
+                  <Button size="small" type="default">
+                    Kích hoạt
+                  </Button>
                 </Popconfirm>
               )}
             </Space>
