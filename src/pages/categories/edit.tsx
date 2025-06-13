@@ -82,7 +82,11 @@ export const CategoryEdit = () => {
         <Form.Item
           label="Tên danh mục"
           name={["name"]}
-          rules={[{ required: true, message: "Vui lòng nhập tên danh mục" }]}
+          rules={[
+            { required: true, message: "Vui lòng nhập tên danh mục" },
+            { max: 30, message: "Tên danh mục không được quá 30 ký tự" },
+            { min: 3, message: "Tên danh mục phải có ít nhất 3 ký tự" },
+          ]}
         >
           <Input />
         </Form.Item>
@@ -104,20 +108,12 @@ export const CategoryEdit = () => {
             disabled={isParentCategory} // ❗ Disable nếu đang là danh mục cha
             allowClear
           >
-            <Select.Option value="">Không có</Select.Option>
+            <Select.Option value={null}>Không có</Select.Option>
             {filteredOptions.map((option) => (
               <Select.Option key={option.value} value={option.value}>
                 {option.label}
               </Select.Option>
             ))}
-          </Select>
-        </Form.Item>
-
-        <Form.Item label="Thứ tự danh mục" name={["categorySort"]}>
-          <Select placeholder="Chọn thứ tự">
-            <Select.Option value={1}>1</Select.Option>
-            <Select.Option value={2}>2</Select.Option>
-            <Select.Option value={3}>3</Select.Option>
           </Select>
         </Form.Item>
       </Form>

@@ -66,7 +66,11 @@ export const CategoryCreate = () => {
         <Form.Item
           label="Tên danh mục"
           name={["name"]}
-          rules={[{ required: true, message: "Vui lòng nhập tên danh mục" }]}
+          rules={[
+            { required: true, message: "Vui lòng nhập tên danh mục" },
+            { max: 30, message: "Tên danh mục không được quá 30 ký tự" },
+            { min: 3, message: "Tên danh mục phải có ít nhất 3 ký tự" },
+          ]}
         >
           <Input />
         </Form.Item>
