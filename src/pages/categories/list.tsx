@@ -156,7 +156,7 @@ export const CategoryList = () => {
             }
 
             return (
-              <Table style={{ backgroundColor: "grey" }}
+              <Table
                 dataSource={children}
                 pagination={false}
                 rowKey="_id"
@@ -170,9 +170,16 @@ export const CategoryList = () => {
                   }
                   width={100}
                 />
-                <Table.Column dataIndex="name" width={200}/>
+                <Table.Column dataIndex="name" width={200} />
                 <Table.Column dataIndex="slug" width={220} />
-                <Table.Column dataIndex="createdAt" render={(value: string) => <Typography.Text>{dayjs(value).format("DD/MM/YYYY")}</Typography.Text>} />
+                <Table.Column
+                  dataIndex="createdAt"
+                  render={(value: string) => (
+                    <Typography.Text>
+                      {dayjs(value).format("DD/MM/YYYY")}
+                    </Typography.Text>
+                  )}
+                />
                 <Table.Column
                   dataIndex={"isActive"}
                   render={(value: boolean) =>
@@ -243,9 +250,16 @@ export const CategoryList = () => {
         />
         <Table.Column dataIndex="name" title="Tên danh mục" />
         <Table.Column dataIndex="slug" title={"Đường dẫn"} />
-        <Table.Column dataIndex="createdAt" title="Ngày tạo" render={(value: string) => <Typography.Text>{dayjs(value).format("DD/MM/YYYY")}</Typography.Text>} />
         <Table.Column
-          
+          dataIndex="createdAt"
+          title="Ngày tạo"
+          render={(value: string) => (
+            <Typography.Text>
+              {dayjs(value).format("DD/MM/YYYY")}
+            </Typography.Text>
+          )}
+        />
+        <Table.Column
           title="Trạng thái"
           dataIndex="isActive"
           render={(value: boolean) =>
@@ -261,8 +275,18 @@ export const CategoryList = () => {
           dataIndex="actions"
           render={(_, record: ICategory) => (
             <Space>
-              <EditButton hideText size="small" recordItemId={record._id} />
-              <ShowButton hideText size="small" recordItemId={record._id} />
+              <EditButton
+                hideText
+                size="small"
+                recordItemId={record._id}
+                hidden={!record.isActive}
+              />
+              <ShowButton
+                hideText
+                size="small"
+                recordItemId={record._id}
+                hidden={!record.isActive}
+              />
               {record.isActive ? (
                 <DeleteButton
                   hideText
