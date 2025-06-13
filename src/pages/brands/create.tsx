@@ -31,6 +31,11 @@ export const BrandCreate = () => {
 
     // Upload lên Cloudinary
     const file = latestFile?.[0]?.originFileObj as File;
+    if (file.type !== "image/jpeg" && file.type !== "image/png") {
+      message.error("Vui lòng chỉ tải lên ảnh định dạng JPEG hoặc PNG.");
+      return;
+    }
+
     if (file) {
       const formData = new FormData();
       formData.append("file", file);
@@ -40,6 +45,9 @@ export const BrandCreate = () => {
 
       try {
         const { data } = await axios.post(endpoint, formData);
+        if (!data || !data.secure_url) {
+          throw new Error("Không nhận được URL từ Cloudinary");
+        }
         setUploadedImageUrl(data.secure_url); // Lưu URL trả về
         message.success("Tải ảnh lên thành công!");
       } catch (error) {
