@@ -1,5 +1,4 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { PlusCircleOutlined } from "@ant-design/icons";
 import {
   DeleteButton,
   EditButton,
@@ -9,6 +8,7 @@ import {
 } from "@refinedev/antd";
 import { useInvalidate } from "@refinedev/core";
 import {
+  Button,
   Image,
   Input,
   message,
@@ -20,10 +20,10 @@ import {
   Typography,
 } from "antd";
 import axios from "axios";
+import dayjs from "dayjs";
 import { useCallback, useState } from "react";
 import { API_URL } from "../../config/dataProvider";
 import { IBrand } from "../../interface/brand";
-import dayjs from "dayjs";
 
 export const BrandList = () => {
   const [filterActive, setFilterActive] = useState<boolean>(true);
@@ -153,7 +153,15 @@ export const BrandList = () => {
         />
         <Table.Column dataIndex="name" title={"Tên thương hiệu"} />
         <Table.Column dataIndex="slug" title={"Đường dẫn"} />
-        <Table.Column dataIndex="createdAt" title="Ngày tạo" render={(value: string) => <Typography.Text>{dayjs(value).format("DD/MM/YYYY")}</Typography.Text>} />
+        <Table.Column
+          dataIndex="createdAt"
+          title="Ngày tạo"
+          render={(value: string) => (
+            <Typography.Text>
+              {dayjs(value).format("DD/MM/YYYY")}
+            </Typography.Text>
+          )}
+        />
         <Table.Column
           dataIndex="isActive"
           title={"Trạng thái"}
@@ -170,8 +178,18 @@ export const BrandList = () => {
           dataIndex="actions"
           render={(_, record: IBrand) => (
             <Space>
-              <EditButton hideText size="small" recordItemId={record._id} />
-              <ShowButton hideText size="small" recordItemId={record._id} />
+              <EditButton
+                hideText
+                size="small"
+                recordItemId={record._id}
+                hidden={!record.isActive}
+              />
+              <ShowButton
+                hideText
+                size="small"
+                recordItemId={record._id}
+                hidden={!record.isActive}
+              />
               {record.isActive ? (
                 <DeleteButton
                   hideText
@@ -190,15 +208,9 @@ export const BrandList = () => {
                   cancelText="Hủy"
                   okButtonProps={{ loading: loadingId === record._id }}
                 >
-                  <PlusCircleOutlined
-                    style={{
-                      border: "1px solid #404040",
-                      borderRadius: "20%",
-                      padding: 4,
-                      cursor: "pointer",
-                      opacity: loadingId === record._id ? 0.5 : 1,
-                    }}
-                  />
+                  <Button type="default" size="small">
+                    Kích hoạt
+                  </Button>
                 </Popconfirm>
               )}
             </Space>
