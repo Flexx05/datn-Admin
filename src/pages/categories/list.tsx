@@ -200,11 +200,13 @@ export const CategoryList = () => {
                         hideText
                         size="small"
                         recordItemId={child._id}
+                        hidden={!child.isActive}
                       />
                       <ShowButton
                         hideText
                         size="small"
                         recordItemId={child._id}
+                        hidden={!child.isActive}
                       />
                       {child.isActive ? (
                         <DeleteButton
@@ -224,15 +226,9 @@ export const CategoryList = () => {
                           cancelText="Hủy"
                           okButtonProps={{ loading: loadingId === child._id }}
                         >
-                          <PlusCircleOutlined
-                            style={{
-                              border: "1px solid #404040",
-                              borderRadius: "20%",
-                              padding: 4,
-                              cursor: "pointer",
-                              opacity: loadingId === child._id ? 0.5 : 1,
-                            }}
-                          />
+                          <Button size="small" type="default">
+                            Kích hoạt
+                          </Button>
                         </Popconfirm>
                       )}
                     </Space>
@@ -274,45 +270,49 @@ export const CategoryList = () => {
         <Table.Column
           title="Hành động"
           dataIndex="actions"
-          render={(_, record: ICategory) => (
-            <Space>
-              <EditButton
-                hideText
-                size="small"
-                recordItemId={record._id}
-                hidden={!record.isActive}
-              />
-              <ShowButton
-                hideText
-                size="small"
-                recordItemId={record._id}
-                hidden={!record.isActive}
-              />
-              {record.isActive ? (
-                <DeleteButton
+          render={(_, record: ICategory) => {
+            const isUnknown = record.slug === "danh-muc-khong-xac-dinh"; // thay slug này nếu cần
+            return (
+              <Space>
+                <EditButton
                   hideText
                   size="small"
                   recordItemId={record._id}
-                  confirmTitle="Bạn chắc chắn xóa không ?"
-                  confirmCancelText="Hủy"
-                  confirmOkText="Xóa"
-                  loading={loadingId === record._id}
+                  hidden={!record.isActive || isUnknown}
                 />
-              ) : (
-                <Popconfirm
-                  title="Bạn chắc chắn kích hoạt hiệu lực không ?"
-                  onConfirm={() => handleChangeStatus(record)}
-                  okText="Kích hoạt"
-                  cancelText="Hủy"
-                  okButtonProps={{ loading: loadingId === record._id }}
-                >
-                  <Button size="small" type="default">
-                    Kích hoạt
-                  </Button>
-                </Popconfirm>
-              )}
-            </Space>
-          )}
+                <ShowButton
+                  hideText
+                  size="small"
+                  recordItemId={record._id}
+                  hidden={!record.isActive}
+                />
+                {record.isActive ? (
+                  <DeleteButton
+                    hideText
+                    size="small"
+                    recordItemId={record._id}
+                    confirmTitle="Bạn chắc chắn xóa không ?"
+                    confirmCancelText="Hủy"
+                    confirmOkText="Xóa"
+                    loading={loadingId === record._id}
+                    hidden={isUnknown}
+                  />
+                ) : (
+                  <Popconfirm
+                    title="Bạn chắc chắn kích hoạt hiệu lực không ?"
+                    onConfirm={() => handleChangeStatus(record)}
+                    okText="Kích hoạt"
+                    cancelText="Hủy"
+                    okButtonProps={{ loading: loadingId === record._id }}
+                  >
+                    <Button size="small" type="default">
+                      Kích hoạt
+                    </Button>
+                  </Popconfirm>
+                )}
+              </Space>
+            );
+          }}
         />
       </Table>
     </List>
