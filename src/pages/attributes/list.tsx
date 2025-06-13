@@ -6,13 +6,23 @@ import {
   ShowButton,
   useTable,
 } from "@refinedev/antd";
-import { Input, Popconfirm, Space, Table, Tabs, Tag, message } from "antd";
+import {
+  Input,
+  Popconfirm,
+  Space,
+  Table,
+  Tabs,
+  Tag,
+  Typography,
+  message,
+} from "antd";
 import { IAttribute } from "../../interface/attribute";
 import { PlusCircleOutlined } from "@ant-design/icons";
 import axios from "axios";
 import { API_URL } from "../../config/dataProvider";
 import { useCallback, useState } from "react";
 import { useInvalidate } from "@refinedev/core";
+import dayjs from "dayjs";
 
 export const AttributeList = () => {
   const [filterActive, setFilterActive] = useState<boolean>(true);
@@ -149,6 +159,7 @@ export const AttributeList = () => {
                       height: 20,
                       backgroundColor: item,
                       borderRadius: "50%",
+                      border: "1px solid grey",
                     }}
                   ></div>
                 ))}
@@ -157,6 +168,15 @@ export const AttributeList = () => {
               record.values.join(", ")
             );
           }}
+        />
+        <Table.Column
+          dataIndex="createdAt"
+          title={"Ngày tạo"}
+          render={(value: string) => (
+            <Typography.Text>
+              {dayjs(value).format("DD/MM/YYYY")}
+            </Typography.Text>
+          )}
         />
         <Table.Column
           dataIndex="isActive"
