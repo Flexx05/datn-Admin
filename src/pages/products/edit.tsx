@@ -330,7 +330,16 @@ export const ProductEdit = () => {
           name="categoryId"
           rules={[{ required: true, message: "Vui lòng chọn danh mục" }]}
         >
-          <Select loading={category?.isLoading} options={categoryOptions} />
+          <Select loading={category?.isLoading}>
+            <Select.Option value={"684b90f74a1d82d1e454b373"}>
+              Danh mục không xác định
+            </Select.Option>
+            {categoryOptions.map((option) => (
+              <Select.Option key={option.value} value={option.value}>
+                {option.label}
+              </Select.Option>
+            ))}
+          </Select>
         </Form.Item>
 
         <Form.Item
