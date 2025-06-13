@@ -46,6 +46,11 @@ const dataProvider: DataProvider = {
       params._order = "desc";
     }
 
+    if (pagination) {
+      params._page = pagination.current || 1;
+      params._limit = pagination.pageSize || 10;
+    }
+
     const { data } = await axiosInstance.get(`${API_URL}/${resource}`, {
       params,
     });
