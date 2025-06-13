@@ -9,6 +9,7 @@ import {
 } from "@refinedev/antd";
 import { useInvalidate } from "@refinedev/core";
 import {
+  Button,
   Input,
   message,
   Popconfirm,
@@ -305,15 +306,9 @@ export const CategoryList = () => {
                   cancelText="Hủy"
                   okButtonProps={{ loading: loadingId === record._id }}
                 >
-                  <PlusCircleOutlined
-                    style={{
-                      border: "1px solid #404040",
-                      borderRadius: "20%",
-                      padding: 4,
-                      cursor: "pointer",
-                      opacity: loadingId === record._id ? 0.5 : 1,
-                    }}
-                  />
+                  <Button size="small" type="default">
+                    Kích hoạt
+                  </Button>
                 </Popconfirm>
               )}
             </Space>
