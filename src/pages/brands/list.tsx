@@ -174,47 +174,51 @@ export const BrandList = () => {
           }
         />
         <Table.Column
-          title={"Hành động"}
+          title="Hành động"
           dataIndex="actions"
-          render={(_, record: IBrand) => (
-            <Space>
-              <EditButton
-                hideText
-                size="small"
-                recordItemId={record._id}
-                hidden={!record.isActive}
-              />
-              <ShowButton
-                hideText
-                size="small"
-                recordItemId={record._id}
-                hidden={!record.isActive}
-              />
-              {record.isActive ? (
-                <DeleteButton
+          render={(_, record: IBrand) => {
+            const isUnknown = record.slug === "thuong-hieu-khong-xac-dinh"; // thay slug này nếu cần
+            return (
+              <Space>
+                <EditButton
                   hideText
                   size="small"
                   recordItemId={record._id}
-                  confirmTitle="Bạn chắc chắn xóa không ?"
-                  confirmCancelText="Hủy"
-                  confirmOkText="Xóa"
-                  loading={loadingId === record._id}
+                  hidden={!record.isActive || isUnknown}
                 />
-              ) : (
-                <Popconfirm
-                  title="Bạn chắc chắn kích hoạt hiệu lực không ?"
-                  onConfirm={() => handleChangeStatus(record)}
-                  okText="Kích hoạt"
-                  cancelText="Hủy"
-                  okButtonProps={{ loading: loadingId === record._id }}
-                >
-                  <Button type="default" size="small">
-                    Kích hoạt
-                  </Button>
-                </Popconfirm>
-              )}
-            </Space>
-          )}
+                <ShowButton
+                  hideText
+                  size="small"
+                  recordItemId={record._id}
+                  hidden={!record.isActive}
+                />
+                {record.isActive ? (
+                  <DeleteButton
+                    hideText
+                    size="small"
+                    recordItemId={record._id}
+                    confirmTitle="Bạn chắc chắn xóa không ?"
+                    confirmCancelText="Hủy"
+                    confirmOkText="Xóa"
+                    loading={loadingId === record._id}
+                    hidden={isUnknown}
+                  />
+                ) : (
+                  <Popconfirm
+                    title="Bạn chắc chắn kích hoạt hiệu lực không ?"
+                    onConfirm={() => handleChangeStatus(record)}
+                    okText="Kích hoạt"
+                    cancelText="Hủy"
+                    okButtonProps={{ loading: loadingId === record._id }}
+                  >
+                    <Button size="small" type="default">
+                      Kích hoạt
+                    </Button>
+                  </Popconfirm>
+                )}
+              </Space>
+            );
+          }}
         />
       </Table>
     </List>

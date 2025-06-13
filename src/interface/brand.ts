@@ -1,6 +1,7 @@
 export interface IBrand {
   _id: string | number;
   name: string;
+  slug: string;
   logoUrl: string;
   isActive: boolean;
   createdAt: string;

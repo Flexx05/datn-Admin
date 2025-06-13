@@ -1,5 +1,4 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { PlusCircleOutlined } from "@ant-design/icons";
 import {
   DeleteButton,
   EditButton,
@@ -20,10 +19,10 @@ import {
   Typography,
 } from "antd";
 import axios from "axios";
+import dayjs from "dayjs";
 import { useCallback, useState } from "react";
 import { API_URL } from "../../config/dataProvider";
 import { ICategory } from "../../interface/category";
-import dayjs from "dayjs";
 
 export const CategoryList = () => {
   const [filterActive, setFilterActive] = useState<boolean>(true);
