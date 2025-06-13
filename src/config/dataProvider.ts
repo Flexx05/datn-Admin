@@ -36,6 +36,21 @@ const dataProvider: DataProvider = {
       });
     }
 
+    if (sorters && sorters.length > 0) {
+      const sorter = sorters[0];
+      params._sort = sorter.field;
+      params._order = sorter.order;
+    } else {
+      // Nếu không có, dùng mặc định
+      params._sort = "createdAt";
+      params._order = "desc";
+    }
+
+    if (pagination) {
+      params._page = pagination.current || 1;
+      params._limit = pagination.pageSize || 10;
+    }
+
     const { data } = await axiosInstance.get(`${API_URL}/${resource}`, {
       params,
     });

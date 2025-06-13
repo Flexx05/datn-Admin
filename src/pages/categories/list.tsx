@@ -1,5 +1,4 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { PlusCircleOutlined } from "@ant-design/icons";
 import {
   DeleteButton,
   EditButton,
@@ -9,6 +8,7 @@ import {
 } from "@refinedev/antd";
 import { useInvalidate } from "@refinedev/core";
 import {
+  Button,
   Input,
   message,
   Popconfirm,
@@ -19,10 +19,10 @@ import {
   Typography,
 } from "antd";
 import axios from "axios";
+import dayjs from "dayjs";
 import { useCallback, useState } from "react";
 import { API_URL } from "../../config/dataProvider";
 import { ICategory } from "../../interface/category";
-import dayjs from "dayjs";
 
 export const CategoryList = () => {
   const [filterActive, setFilterActive] = useState<boolean>(true);
@@ -156,7 +156,7 @@ export const CategoryList = () => {
             }
 
             return (
-              <Table style={{ backgroundColor: "grey" }}
+              <Table
                 dataSource={children}
                 pagination={false}
                 rowKey="_id"
@@ -170,9 +170,16 @@ export const CategoryList = () => {
                   }
                   width={100}
                 />
-                <Table.Column dataIndex="name" width={200}/>
+                <Table.Column dataIndex="name" width={200} />
                 <Table.Column dataIndex="slug" width={220} />
-                <Table.Column dataIndex="createdAt" render={(value: string) => <Typography.Text>{dayjs(value).format("DD/MM/YYYY")}</Typography.Text>} />
+                <Table.Column
+                  dataIndex="createdAt"
+                  render={(value: string) => (
+                    <Typography.Text>
+                      {dayjs(value).format("DD/MM/YYYY")}
+                    </Typography.Text>
+                  )}
+                />
                 <Table.Column
                   dataIndex={"isActive"}
                   render={(value: boolean) =>
@@ -192,11 +199,13 @@ export const CategoryList = () => {
                         hideText
                         size="small"
                         recordItemId={child._id}
+                        hidden={!child.isActive}
                       />
                       <ShowButton
                         hideText
                         size="small"
                         recordItemId={child._id}
+                        hidden={!child.isActive}
                       />
                       {child.isActive ? (
                         <DeleteButton
@@ -216,15 +225,9 @@ export const CategoryList = () => {
                           cancelText="Hủy"
                           okButtonProps={{ loading: loadingId === child._id }}
                         >
-                          <PlusCircleOutlined
-                            style={{
-                              border: "1px solid #404040",
-                              borderRadius: "20%",
-                              padding: 4,
-                              cursor: "pointer",
-                              opacity: loadingId === child._id ? 0.5 : 1,
-                            }}
-                          />
+                          <Button size="small" type="default">
+                            Kích hoạt
+                          </Button>
                         </Popconfirm>
                       )}
                     </Space>
@@ -243,9 +246,16 @@ export const CategoryList = () => {
         />
         <Table.Column dataIndex="name" title="Tên danh mục" />
         <Table.Column dataIndex="slug" title={"Đường dẫn"} />
-        <Table.Column dataIndex="createdAt" title="Ngày tạo" render={(value: string) => <Typography.Text>{dayjs(value).format("DD/MM/YYYY")}</Typography.Text>} />
         <Table.Column
-          
+          dataIndex="createdAt"
+          title="Ngày tạo"
+          render={(value: string) => (
+            <Typography.Text>
+              {dayjs(value).format("DD/MM/YYYY")}
+            </Typography.Text>
+          )}
+        />
+        <Table.Column
           title="Trạng thái"
           dataIndex="isActive"
           render={(value: boolean) =>
@@ -259,41 +269,49 @@ export const CategoryList = () => {
         <Table.Column
           title="Hành động"
           dataIndex="actions"
-          render={(_, record: ICategory) => (
-            <Space>
-              <EditButton hideText size="small" recordItemId={record._id} />
-              <ShowButton hideText size="small" recordItemId={record._id} />
-              {record.isActive ? (
-                <DeleteButton
+          render={(_, record: ICategory) => {
+            const isUnknown = record.slug === "danh-muc-khong-xac-dinh"; // thay slug này nếu cần
+            return (
+              <Space>
+                <EditButton
                   hideText
                   size="small"
                   recordItemId={record._id}
-                  confirmTitle="Bạn chắc chắn xóa không ?"
-                  confirmCancelText="Hủy"
-                  confirmOkText="Xóa"
-                  loading={loadingId === record._id}
+                  hidden={!record.isActive || isUnknown}
                 />
-              ) : (
-                <Popconfirm
-                  title="Bạn chắc chắn kích hoạt hiệu lực không ?"
-                  onConfirm={() => handleChangeStatus(record)}
-                  okText="Kích hoạt"
-                  cancelText="Hủy"
-                  okButtonProps={{ loading: loadingId === record._id }}
-                >
-                  <PlusCircleOutlined
-                    style={{
-                      border: "1px solid #404040",
-                      borderRadius: "20%",
-                      padding: 4,
-                      cursor: "pointer",
-                      opacity: loadingId === record._id ? 0.5 : 1,
-                    }}
+                <ShowButton
+                  hideText
+                  size="small"
+                  recordItemId={record._id}
+                  hidden={!record.isActive}
+                />
+                {record.isActive ? (
+                  <DeleteButton
+                    hideText
+                    size="small"
+                    recordItemId={record._id}
+                    confirmTitle="Bạn chắc chắn xóa không ?"
+                    confirmCancelText="Hủy"
+                    confirmOkText="Xóa"
+                    loading={loadingId === record._id}
+                    hidden={isUnknown}
                   />
-                </Popconfirm>
-              )}
-            </Space>
-          )}
+                ) : (
+                  <Popconfirm
+                    title="Bạn chắc chắn kích hoạt hiệu lực không ?"
+                    onConfirm={() => handleChangeStatus(record)}
+                    okText="Kích hoạt"
+                    cancelText="Hủy"
+                    okButtonProps={{ loading: loadingId === record._id }}
+                  >
+                    <Button size="small" type="default">
+                      Kích hoạt
+                    </Button>
+                  </Popconfirm>
+                )}
+              </Space>
+            );
+          }}
         />
       </Table>
     </List>

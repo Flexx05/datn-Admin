@@ -61,6 +61,11 @@ export const BrandEdit = () => {
     setFileList(latestFile);
 
     const file = latestFile[0]?.originFileObj as File;
+    if (file.type !== "image/jpeg" && file.type !== "image/png") {
+      message.error("Vui lòng chỉ tải lên ảnh định dạng JPEG hoặc PNG.");
+      return;
+    }
+
     if (file) {
       const formData = new FormData();
       formData.append("file", file);
@@ -69,6 +74,9 @@ export const BrandEdit = () => {
       const endpoint = "https://api.cloudinary.com/v1_1/dtwm0rpqg/image/upload";
       try {
         const { data } = await axios.post(endpoint, formData);
+        if (!data || !data.secure_url) {
+          throw new Error("Không nhận được URL từ Cloudinary");
+        }
         setUploadedImageUrl(data.secure_url);
         message.success("Tải ảnh lên thành công!");
 
@@ -119,7 +127,11 @@ export const BrandEdit = () => {
         <Form.Item
           label="Tên thương hiệu"
           name={["name"]}
-          rules={[{ required: true, message: "Vui lòng nhập tên thương hiệu" }]}
+          rules={[
+            { required: true, message: "Vui lòng nhập tên thương hiệu" },
+            { max: 30, message: "Tên thương hiệu không được quá 30 ký tự" },
+            { min: 2, message: "Tên thương hiệu phải có ít nhất 2 ký tự" },
+          ]}
         >
           <Input />
         </Form.Item>

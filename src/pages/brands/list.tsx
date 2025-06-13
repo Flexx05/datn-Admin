@@ -1,5 +1,4 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { PlusCircleOutlined } from "@ant-design/icons";
 import {
   DeleteButton,
   EditButton,
@@ -9,6 +8,7 @@ import {
 } from "@refinedev/antd";
 import { useInvalidate } from "@refinedev/core";
 import {
+  Button,
   Image,
   Input,
   message,
@@ -20,10 +20,10 @@ import {
   Typography,
 } from "antd";
 import axios from "axios";
+import dayjs from "dayjs";
 import { useCallback, useState } from "react";
 import { API_URL } from "../../config/dataProvider";
 import { IBrand } from "../../interface/brand";
-import dayjs from "dayjs";
 
 export const BrandList = () => {
   const [filterActive, setFilterActive] = useState<boolean>(true);
@@ -153,7 +153,15 @@ export const BrandList = () => {
         />
         <Table.Column dataIndex="name" title={"Tên thương hiệu"} />
         <Table.Column dataIndex="slug" title={"Đường dẫn"} />
-        <Table.Column dataIndex="createdAt" title="Ngày tạo" render={(value: string) => <Typography.Text>{dayjs(value).format("DD/MM/YYYY")}</Typography.Text>} />
+        <Table.Column
+          dataIndex="createdAt"
+          title="Ngày tạo"
+          render={(value: string) => (
+            <Typography.Text>
+              {dayjs(value).format("DD/MM/YYYY")}
+            </Typography.Text>
+          )}
+        />
         <Table.Column
           dataIndex="isActive"
           title={"Trạng thái"}
@@ -166,43 +174,51 @@ export const BrandList = () => {
           }
         />
         <Table.Column
-          title={"Hành động"}
+          title="Hành động"
           dataIndex="actions"
-          render={(_, record: IBrand) => (
-            <Space>
-              <EditButton hideText size="small" recordItemId={record._id} />
-              <ShowButton hideText size="small" recordItemId={record._id} />
-              {record.isActive ? (
-                <DeleteButton
+          render={(_, record: IBrand) => {
+            const isUnknown = record.slug === "thuong-hieu-khong-xac-dinh"; // thay slug này nếu cần
+            return (
+              <Space>
+                <EditButton
                   hideText
                   size="small"
                   recordItemId={record._id}
-                  confirmTitle="Bạn chắc chắn xóa không ?"
-                  confirmCancelText="Hủy"
-                  confirmOkText="Xóa"
-                  loading={loadingId === record._id}
+                  hidden={!record.isActive || isUnknown}
                 />
-              ) : (
-                <Popconfirm
-                  title="Bạn chắc chắn kích hoạt hiệu lực không ?"
-                  onConfirm={() => handleChangeStatus(record)}
-                  okText="Kích hoạt"
-                  cancelText="Hủy"
-                  okButtonProps={{ loading: loadingId === record._id }}
-                >
-                  <PlusCircleOutlined
-                    style={{
-                      border: "1px solid #404040",
-                      borderRadius: "20%",
-                      padding: 4,
-                      cursor: "pointer",
-                      opacity: loadingId === record._id ? 0.5 : 1,
-                    }}
+                <ShowButton
+                  hideText
+                  size="small"
+                  recordItemId={record._id}
+                  hidden={!record.isActive}
+                />
+                {record.isActive ? (
+                  <DeleteButton
+                    hideText
+                    size="small"
+                    recordItemId={record._id}
+                    confirmTitle="Bạn chắc chắn xóa không ?"
+                    confirmCancelText="Hủy"
+                    confirmOkText="Xóa"
+                    loading={loadingId === record._id}
+                    hidden={isUnknown}
                   />
-                </Popconfirm>
-              )}
-            </Space>
-          )}
+                ) : (
+                  <Popconfirm
+                    title="Bạn chắc chắn kích hoạt hiệu lực không ?"
+                    onConfirm={() => handleChangeStatus(record)}
+                    okText="Kích hoạt"
+                    cancelText="Hủy"
+                    okButtonProps={{ loading: loadingId === record._id }}
+                  >
+                    <Button size="small" type="default">
+                      Kích hoạt
+                    </Button>
+                  </Popconfirm>
+                )}
+              </Space>
+            );
+          }}
         />
       </Table>
     </List>
