@@ -96,6 +96,11 @@ export const BrandShow = () => {
             </Col>
 
             <Col span={24}>
+              <Text strong>Đường dẫn: </Text>
+              <Text>{record?.slug || "Không rõ"}</Text>
+            </Col>
+
+            <Col span={24}>
               <Text strong>Ngày tạo: </Text>
               <Text>
                 {record?.createdAt

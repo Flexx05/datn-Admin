@@ -181,16 +181,6 @@ export const CategoryList = () => {
                   )}
                 />
                 <Table.Column
-                  dataIndex={"isActive"}
-                  render={(value: boolean) =>
-                    value === true ? (
-                      <Tag color="green">Có hiệu lực</Tag>
-                    ) : (
-                      <Tag color="red">Không có hiệu lực</Tag>
-                    )
-                  }
-                />
-                <Table.Column
                   dataIndex="actions"
                   width={180}
                   render={(_, child: ICategory) => (

@@ -3,6 +3,8 @@ import { DataProvider } from "@refinedev/core";
 import axios from "axios";
 
 export const API_URL = "http://localhost:8080/api";
+export const CLOUDINARY_URL =
+  "https://api.cloudinary.com/v1_1/dtwm0rpqg/image/upload";
 
 const axiosInstance = axios.create();
 

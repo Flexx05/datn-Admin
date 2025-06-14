@@ -92,7 +92,6 @@ export const CategoryShow = () => {
           <Skeleton active />
         ) : (
           <Row gutter={[16, 16]}>
-            {/* Tên danh mục */}
             <Col span={24}>
               <Title level={5}>Tên danh mục</Title>
               <Text>{record?.name || "Không rõ"}</Text>
@@ -104,6 +103,10 @@ export const CategoryShow = () => {
                   <Text type="secondary">Không có mô tả</Text>
                 )}
               </Text>
+            </Col>
+            <Col span={24}>
+              <Title level={5}>Đường dẫn: </Title>
+              <Text>{record?.slug || "Không rõ"}</Text>
             </Col>
 
             {/* Loại danh mục */}
