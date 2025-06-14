@@ -15,7 +15,6 @@ import {
   Space,
   Table,
   Tabs,
-  Tag,
   Typography,
 } from "antd";
 import axios from "axios";
@@ -244,17 +243,6 @@ export const CategoryList = () => {
               {dayjs(value).format("DD/MM/YYYY")}
             </Typography.Text>
           )}
-        />
-        <Table.Column
-          title="Trạng thái"
-          dataIndex="isActive"
-          render={(value: boolean) =>
-            value ? (
-              <Tag color="green">Có hiệu lực</Tag>
-            ) : (
-              <Tag color="red">Không có hiệu lực</Tag>
-            )
-          }
         />
         <Table.Column
           title="Hành động"
