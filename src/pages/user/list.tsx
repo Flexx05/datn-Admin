@@ -1,15 +1,24 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { EditButton, List, ShowButton, useTable } from "@refinedev/antd";
 import { CrudFilters, useInvalidate } from "@refinedev/core";
-import { Button, Input, Popconfirm, Space, Table, Tag, message } from "antd";
+import { Button, Input, Popconfirm, Space, Table, Tabs, message } from "antd";
 import axios from "axios";
-import { useState } from "react";
+import dayjs from "dayjs";
+import { useCallback, useState } from "react";
 import { API_URL } from "../../config/dataProvider";
 import { IUser } from "../../interface/user";
 
 export const UserList = () => {
+  const [filterActive, setFilterActive] = useState<boolean>(true);
   const { tableProps, setFilters } = useTable<IUser>({
     syncWithLocation: true,
+    permanentFilter: [
+      {
+        field: "isActive",
+        operator: "eq",
+        value: filterActive,
+      },
+    ],
     resource: "admin/users",
     errorNotification: (error: any) => ({
       message:
@@ -51,8 +60,36 @@ export const UserList = () => {
     }
   };
 
+  const handleTabChange = useCallback(
+    (key: string) => {
+      const isActiveFilter = key === "active";
+      setFilterActive(isActiveFilter);
+
+      // Cập nhật lại filter mới
+      setFilters(
+        [
+          {
+            field: "isActive",
+            operator: "eq",
+            value: isActiveFilter,
+          },
+        ],
+        "replace"
+      );
+    },
+    [setFilters]
+  );
+
   return (
     <List title="Quản lý khách hàng">
+      <Tabs
+        activeKey={filterActive ? "active" : "trash"}
+        onChange={handleTabChange}
+        style={{ marginBottom: 16 }}
+      >
+        <Tabs.TabPane tab="Tài khoản đang hoạt động" key="active" />
+        <Tabs.TabPane tab="Tài khoản bị khóa" key="trash" />
+      </Tabs>
       <Input.Search
         placeholder="Tìm kiếm khách hàng"
         allowClear
@@ -101,20 +138,9 @@ export const UserList = () => {
           render={(value: string) => value || "Chưa cập nhật"}
         />
         <Table.Column
-          dataIndex="isActive"
-          title="Trạng thái"
-          filters={[
-            { text: "Hoạt động", value: true },
-            { text: "Khoá", value: false },
-          ]}
-          filterMultiple={false}
-          render={(value: boolean) =>
-            value ? (
-              <Tag color="green">Hoạt động</Tag>
-            ) : (
-              <Tag color="red">Khoá</Tag>
-            )
-          }
+          dataIndex="createdAt"
+          title="Ngày đăng ký"
+          render={(value: string) => dayjs(value).format("DD/MM/YYYY")}
         />
         <Table.Column
           title="Hành động"
@@ -122,7 +148,12 @@ export const UserList = () => {
           render={(_, record: IUser) => (
             <Space>
               <ShowButton hideText size="small" recordItemId={record._id} />
-              <EditButton hideText size="small" recordItemId={record._id} />
+              <EditButton
+                hideText
+                size="small"
+                recordItemId={record._id}
+                hidden={!record.isActive}
+              />
               <Popconfirm
                 title={
                   record.isActive
@@ -135,6 +166,7 @@ export const UserList = () => {
                 okButtonProps={{ loading: loadingId === record._id }}
               >
                 <Button
+                  danger={record.isActive}
                   size="small"
                   type={record.isActive ? "default" : "primary"}
                 >

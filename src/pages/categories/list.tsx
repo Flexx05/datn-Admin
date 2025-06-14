@@ -131,7 +131,7 @@ export const CategoryList = () => {
         onChange={handleTabChange}
         style={{ marginBottom: 16 }}
       >
-        <Tabs.TabPane tab="Thương hiệu đang hoạt động" key="active" />
+        <Tabs.TabPane tab="Danh mục đang hoạt động" key="active" />
         <Tabs.TabPane tab="Thùng rác" key="trash" />
       </Tabs>
       <Input.Search
