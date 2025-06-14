@@ -72,6 +72,11 @@ export const AttributeShow = () => {
               </Tag>
             </Col>
 
+            <Col span={24}>
+              <Title level={5}>Đường dẫn: </Title>
+              <Text>{record?.slug || "Không rõ"}</Text>
+            </Col>
+
             {/* Giá trị thuộc tính */}
             <Col span={24}>
               <Title level={5}>Giá trị thuộc tính</Title>

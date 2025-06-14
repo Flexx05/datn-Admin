@@ -5,6 +5,7 @@ import { Form, Image, Input, message, Upload } from "antd";
 import type { UploadFile } from "antd/es/upload/interface";
 import axios from "axios";
 import { useState } from "react";
+import { CLOUDINARY_URL } from "../../config/dataProvider";
 
 export const BrandCreate = () => {
   const { formProps, saveButtonProps } = useForm({
@@ -41,10 +42,8 @@ export const BrandCreate = () => {
       formData.append("file", file);
       formData.append("upload_preset", "Binova_Upload");
 
-      const endpoint = "https://api.cloudinary.com/v1_1/dtwm0rpqg/image/upload";
-
       try {
-        const { data } = await axios.post(endpoint, formData);
+        const { data } = await axios.post(CLOUDINARY_URL, formData);
         if (!data || !data.secure_url) {
           throw new Error("Không nhận được URL từ Cloudinary");
         }

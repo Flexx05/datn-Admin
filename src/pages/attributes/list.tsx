@@ -14,7 +14,6 @@ import {
   Space,
   Table,
   Tabs,
-  Tag,
   Typography,
   message,
 } from "antd";
@@ -177,17 +176,6 @@ export const AttributeList = () => {
               {dayjs(value).format("DD/MM/YYYY")}
             </Typography.Text>
           )}
-        />
-        <Table.Column
-          dataIndex="isActive"
-          title={"Trạng thái"}
-          render={(value: boolean) =>
-            value ? (
-              <Tag color="green">Có hiệu lực</Tag>
-            ) : (
-              <Tag color="red">Không có hiệu lực</Tag>
-            )
-          }
         />
         <Table.Column
           title={"Hành động"}

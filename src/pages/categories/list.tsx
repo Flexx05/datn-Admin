@@ -15,7 +15,6 @@ import {
   Space,
   Table,
   Tabs,
-  Tag,
   Typography,
 } from "antd";
 import axios from "axios";
@@ -131,7 +130,7 @@ export const CategoryList = () => {
         onChange={handleTabChange}
         style={{ marginBottom: 16 }}
       >
-        <Tabs.TabPane tab="Thương hiệu đang hoạt động" key="active" />
+        <Tabs.TabPane tab="Danh mục đang hoạt động" key="active" />
         <Tabs.TabPane tab="Thùng rác" key="trash" />
       </Tabs>
       <Input.Search
@@ -179,16 +178,6 @@ export const CategoryList = () => {
                       {dayjs(value).format("DD/MM/YYYY")}
                     </Typography.Text>
                   )}
-                />
-                <Table.Column
-                  dataIndex={"isActive"}
-                  render={(value: boolean) =>
-                    value === true ? (
-                      <Tag color="green">Có hiệu lực</Tag>
-                    ) : (
-                      <Tag color="red">Không có hiệu lực</Tag>
-                    )
-                  }
                 />
                 <Table.Column
                   dataIndex="actions"
@@ -254,17 +243,6 @@ export const CategoryList = () => {
               {dayjs(value).format("DD/MM/YYYY")}
             </Typography.Text>
           )}
-        />
-        <Table.Column
-          title="Trạng thái"
-          dataIndex="isActive"
-          render={(value: boolean) =>
-            value ? (
-              <Tag color="green">Có hiệu lực</Tag>
-            ) : (
-              <Tag color="red">Không có hiệu lực</Tag>
-            )
-          }
         />
         <Table.Column
           title="Hành động"

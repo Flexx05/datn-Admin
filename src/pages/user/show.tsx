@@ -2,7 +2,12 @@ import { Show } from "@refinedev/antd";
 import { useShow } from "@refinedev/core";
 import { Card, Col, Row, Tag, Typography } from "antd";
 import dayjs from "dayjs";
+import utc from "dayjs/plugin/utc";
+import timezone from "dayjs/plugin/timezone";
 import { IUser } from "../../interface/user";
+
+dayjs.extend(utc);
+dayjs.extend(timezone);
 
 const { Title, Text } = Typography;
 
@@ -14,7 +19,11 @@ export const UserShow = () => {
   const record = data?.data;
 
   return (
-    <Show isLoading={isLoading} title="Chi tiết người dùng">
+    <Show
+      isLoading={isLoading}
+      title="Chi tiết người dùng"
+      canEdit={record?.isActive}
+    >
       <Card bordered style={{ maxWidth: 600, margin: "0 auto" }}>
         <Row gutter={[16, 16]}>
           <Col span={24}>
@@ -47,7 +56,9 @@ export const UserShow = () => {
             <Title level={5}>Ngày Đăng ký</Title>
             <Text>
               {record?.createdAt
-                ? dayjs(record.createdAt).format("DD/MM/YYYY HH:mm")
+                ? dayjs(record.createdAt)
+                    .tz("Asia/Ho_Chi_Minh")
+                    .format("DD/MM/YYYY HH:mm")
                 : ""}
             </Text>
           </Col>
@@ -56,7 +67,9 @@ export const UserShow = () => {
             <Text>
               {record?.userUpdated || "Không có"} (
               {record?.updatedAt
-                ? dayjs(record.createdAt).format("DD/MM/YYYY HH:mm")
+                ? dayjs(record.updatedAt)
+                    .tz("Asia/Ho_Chi_Minh")
+                    .format("DD/MM/YYYY HH:mm")
                 : ""}
               )
             </Text>
