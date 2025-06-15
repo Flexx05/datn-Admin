@@ -106,6 +106,9 @@ export const BrandCreate = () => {
           label="Hình ảnh"
           name={["logoUrl"]}
           valuePropName="fileList"
+          rules={[
+            { required: true, message: "Vui lòng tải ảnh cho thương hiệu" },
+          ]}
           getValueFromEvent={normFile}
         >
           <Upload
@@ -118,7 +121,7 @@ export const BrandCreate = () => {
             {fileList.length >= 1 ? null : (
               <div>
                 <PlusOutlined />
-                <div style={{ marginTop: 8 }}>Upload</div>
+                <div style={{ marginTop: 8 }}>Tải ảnh</div>
               </div>
             )}
           </Upload>

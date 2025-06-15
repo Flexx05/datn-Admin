@@ -108,6 +108,10 @@ export const ProductEdit = () => {
     for (let i = 0; i < updatedFileList.length; i++) {
       const file = updatedFileList[i];
       const originFile = file.originFileObj as File;
+      if (file.type !== "image/jpeg" && file.type !== "image/png") {
+        message.error("Vui lòng chỉ tải lên ảnh định dạng JPEG hoặc PNG.");
+        return;
+      }
 
       if (!file.url && originFile) {
         try {
@@ -163,7 +167,7 @@ export const ProductEdit = () => {
     optionValue: "_id",
     pagination: { mode: "off" },
     meta: {
-      fields: ["isColor"],
+      fields: ["isColor", "values", "name", "isActive"],
     },
   });
 
@@ -203,6 +207,16 @@ export const ProductEdit = () => {
     try {
       if (uploadedImageUrls.length === 0) {
         message.error("Bạn chưa tải ảnh hoặc ảnh chưa upload xong.");
+        return;
+      }
+
+      if (values.variation && values.variation.length === 0) {
+        message.error("Bạn chưa tạo biến thể sản phẩm.");
+        return;
+      }
+
+      if (values.attributes && values.attributes.length === 0) {
+        message.error("Bạn chưa thêm thuộc tính cho sản phẩm.");
         return;
       }
 
