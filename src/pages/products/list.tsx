@@ -8,16 +8,7 @@ import {
   useTable,
 } from "@refinedev/antd";
 import { useInvalidate } from "@refinedev/core";
-import {
-  Image,
-  Input,
-  message,
-  Popconfirm,
-  Space,
-  Table,
-  Tabs,
-  Tag,
-} from "antd";
+import { Image, Input, message, Popconfirm, Space, Table, Tabs } from "antd";
 import axios from "axios";
 import { useCallback, useState } from "react";
 import { API_URL } from "../../config/dataProvider";
@@ -28,6 +19,7 @@ import {
 } from "../../interface/product";
 import { ColorDots } from "./ColorDots";
 import { VariationTable } from "./VariationTable";
+import dayjs from "dayjs";
 
 export const ProductList = () => {
   const [filterActive, setFilterActive] = useState<boolean>(true);
@@ -208,15 +200,9 @@ export const ProductList = () => {
           }
         />
         <Table.Column
-          title="Trạng thái"
-          dataIndex="isActive"
-          render={(value: boolean) =>
-            value ? (
-              <Tag color="green">Có hiệu lực</Tag>
-            ) : (
-              <Tag color="red">Không có hiệu lực</Tag>
-            )
-          }
+          title="Ngày tạo"
+          dataIndex="createdAt"
+          render={(value: string) => dayjs(value).format("DD/MM/YYYY")}
         />
         <Table.Column
           title="Hành động"
