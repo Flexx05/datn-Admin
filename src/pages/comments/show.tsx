@@ -9,7 +9,7 @@ import {
   message,
   Form,
   Input,
-  Button, Popconfirm
+  Button, Popconfirm, Image, Space
 } from "antd";
 import {
   CalendarOutlined,
@@ -38,7 +38,7 @@ export const CommentShow = () => {
   useEffect(() => {
     if (record) {
       form.setFieldsValue({
-        replyContent: record.replyContent || "",
+        adminReply: record.adminReply || "",
       });
     }
   }, [record, form]);
@@ -73,7 +73,7 @@ export const CommentShow = () => {
   };
   
   // Hàm xử lý gửi phản hồi bình luận
-  const handleReply = (values: { replyContent: string }) => {
+  const handleReply = (values: { adminReply: string }) => {
     if (!record) return;
     setReplyLoading(true);
     mutate(
@@ -81,7 +81,7 @@ export const CommentShow = () => {
         resource: "comments/reply",
         id: record._id,
         values: {
-          replyContent: values.replyContent,
+          adminReply: values.adminReply,
         },
       },
       {
@@ -93,7 +93,6 @@ export const CommentShow = () => {
           setTimeout(() => {
             navigate("/comments");
           }, 1500)
-        
         },
         onError: (error:any) => {
           message.error(
@@ -115,97 +114,157 @@ export const CommentShow = () => {
         labelStyle={{ fontWeight: 600, width: "180px" }}
         contentStyle={{ whiteSpace: "pre-wrap" }}
       >
-        <Descriptions.Item label="ID">{record?._id}</Descriptions.Item>
+        <Descriptions.Item label="ID">#{record?._id}</Descriptions.Item> 
+
+        <Descriptions.Item label="Mã đơn hàng">
+          #{record?.orderId}
+        </Descriptions.Item>
+
         <Descriptions.Item label="Tên sản phẩm">
           {record?.productId?.name}
         </Descriptions.Item>
+
+        <Descriptions.Item label="Phân loại">
+          {record?.variationId}
+        </Descriptions.Item>
+
         <Descriptions.Item label="Người bình luận">
           <UserOutlined /> {record?.userId?.fullName}
         </Descriptions.Item>
+
         <Descriptions.Item label="Email người dùng">
           <MailOutlined /> {record?.userId?.email}
         </Descriptions.Item>
+
         <Descriptions.Item label="Nội dung bình luận">
           <CommentOutlined /> {record?.content}
         </Descriptions.Item>
+
+        <Descriptions.Item label="Ảnh/Video đính kèm">
+          {record?.images && record.images.length > 0 ? (
+            <Space>
+              {[...record.images]
+                .sort((a, b) => {
+                  const isVideoA = /\.(mp4|webm|ogg)$/i.test(a);
+                  const isVideoB = /\.(mp4|webm|ogg)$/i.test(b);
+                  return isVideoB ? 1 : isVideoA ? -1 : 0; // Video lên trước
+                })
+                .map((media: string, index: number) => {
+                  const isImage = /\.(jpg|jpeg|png|gif|webp)$/i.test(media);
+                  const isVideo = /\.(mp4|webm|ogg)$/i.test(media);
+
+                  return isImage ? (
+                    <Image
+                      key={index}
+                      src={media}
+                      alt={`Ảnh ${index + 1}`}
+                      width={150}
+                      height={150}
+                      style={{ objectFit: 'cover' }}
+                      preview
+                    />
+                  ) : isVideo ? (
+                    <video
+                      key={index}
+                      width={250}
+                      height={200}
+                      controls
+                      style={{ objectFit: 'cover' }}
+                    >
+                      <source src={media} type="video/mp4" />
+                      Trình duyệt của bạn không hỗ trợ video.
+                    </video>
+                  ) : (
+                    <span key={index}>Không hỗ trợ định dạng</span>
+                  );
+                })}
+            </Space>
+          ) : (
+            "Không có ảnh hoặc video"
+          )}
+        </Descriptions.Item>
+
+
+
+        <Descriptions.Item label="Đánh giá">
+          <Rate disabled value={record?.rating || 0} style={{fontSize: "20px"}} />
+        </Descriptions.Item>
+
         <Descriptions.Item label="Trạng thái">
-        <Popconfirm
-          title="Bạn có chắc muốn ẩn bình luận này không?"
-          onConfirm={() => handleToggleStatus(false)}
-          disabled={record?.status !== "visible"}
-        >
-          <Switch
-            checked={record?.status === "visible"}
-            checkedChildren="Hiện"
-            unCheckedChildren="Ẩn"
-            loading={status === String(record?._id)}
-            onChange={(checked) => {
-              if (!checked && record?.status === "visible") {
-                // Nếu chuyển từ hiện sang ẩn thì show Popconfirm (không làm gì ở đây)
-              } else {
-                // Chuyển từ ẩn sang hiện thì cập nhật luôn
-                handleToggleStatus(checked);
-              }
-            }}
-          />
-        </Popconfirm>
-      </Descriptions.Item>
-              <Descriptions.Item label="Số sao đánh giá">
-                <Rate disabled value={record?.rating || 0} />
-              </Descriptions.Item>
-            </Descriptions>
+          <Popconfirm
+            title="Bạn có chắc muốn ẩn bình luận này không?"
+            onConfirm={() => handleToggleStatus(false)}
+            disabled={record?.status !== "visible"}
+          >
+            <Switch
+              checked={record?.status === "visible"}
+              checkedChildren="Hiện"
+              unCheckedChildren="Ẩn"
+              loading={status === String(record?._id)}
+              onChange={(checked) => {
+                if (!checked && record?.status === "visible") {
+                  // Nếu chuyển từ hiện sang ẩn thì show Popconfirm (không làm gì ở đây)
+                } else {
+                  // Chuyển từ ẩn sang hiện thì cập nhật luôn
+                  handleToggleStatus(checked);
+                }
+              }}
+            />
+          </Popconfirm>
+        </Descriptions.Item>
+      </Descriptions>
 
-            <Divider>Phản hồi của Admin</Divider>
+      <Divider>Phản hồi của Admin</Divider>
 
-            <Descriptions
+      <Descriptions
         bordered
         column={1}
         size="middle"
         labelStyle={{ fontWeight: 600, width: "180px" }}
         contentStyle={{ whiteSpace: "pre-wrap" }}
       >
-       <Descriptions.Item label="Trả lời">
-      <Form
-        form={form}
-        layout="vertical"
-        onFinish={handleReply}
-        style={{ marginTop: "10px" }}
-        initialValues={{ replyContent: record?.replyContent || "" }}
-      >
-        <Form.Item
-          name="replyContent"
-          label="Trả lời bình luận"
-          rules={[{ required: true, message: "Vui lòng nhập phản hồi!" }]}
-        >
-          <Input.TextArea
-            rows={4}
-            placeholder={
-              record?.status === "visible"
-                ? "Nhập phản hồi của bạn tại đây..."
-                : record?.replyContent
-            }
-            style={{ width: "100%"}}
-            disabled={record?.status !== "visible"}
-          />
-            {record?.status !== "visible" && (
-              <div style={{ color: "red", marginTop: 4 }}>
-                Bình luận phải được duyệt trước khi trả lời.
-              </div>
-            )}
-        </Form.Item>
-        <Form.Item>
-          <Button
-            type="primary"
-            htmlType="submit"
-            loading={replyLoading}
-            disabled={record?.status !== "visible"}
+        <Descriptions.Item label="Trả lời">
+          <Form
+            form={form}
+            layout="vertical"
+            onFinish={handleReply}
             style={{ marginTop: "10px" }}
+            initialValues={{ adminReply: record?.adminReply || "" }}
           >
-            {record?.replyContent ? "Cập nhật phản hồi" : "Gửi phản hồi"}
-          </Button>
-        </Form.Item>
-      </Form>
-    </Descriptions.Item>
+            <Form.Item
+              name="adminReply"
+              label="Trả lời bình luận"
+              rules={[{ required: true, message: "Vui lòng nhập phản hồi!" }]}
+            >
+              <Input.TextArea
+                rows={4}
+                placeholder={
+                  record?.status === "visible"
+                    ? "Nhập phản hồi của bạn tại đây..."
+                    : record?.adminReply
+                }
+                style={{ width: "100%"}}
+                disabled={record?.status !== "visible"}
+              />
+              {record?.status !== "visible" && (
+                <div style={{ color: "red", marginTop: 4 }}>
+                  Bình luận phải được duyệt trước khi trả lời.
+                </div>
+              )}
+            </Form.Item>
+            <Form.Item>
+              <Button
+                type="primary"
+                htmlType="submit"
+                loading={replyLoading}
+                disabled={record?.status !== "visible"}
+                style={{ marginTop: "10px" }}
+              >
+                {record?.adminReply ? "Cập nhật phản hồi" : "Gửi phản hồi"}
+              </Button>
+            </Form.Item>
+          </Form>
+        </Descriptions.Item>
 
         <Descriptions.Item label="Thời gian trả lời">
           {record?.replyAt ? (
@@ -225,7 +284,7 @@ export const CommentShow = () => {
         size="middle"
         labelStyle={{ fontWeight: 600, width: "180px" }}
       >
-        <Descriptions.Item label="Ngày tạo bình luận">
+        <Descriptions.Item label="Thời gian tạo">
           <CalendarOutlined />{" "}
           {record?.createdAt
             ? new Date(record.createdAt).toLocaleString()

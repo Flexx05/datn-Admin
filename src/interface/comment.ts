@@ -1,11 +1,15 @@
 export interface IComment {
-    _id: number | string;
-    productId: string;
-    userId: string;
+    _id: string | number;
+    productId: string | number;
+    variationId?: string | number;
+    userId: string | number;
+    orderId: string | number;
     content: string;
+    images: string[];
     rating: number;
-    createdAt: string;
     status: "visible" | "hidden";
-    replyContent: string;
+    adminReply: string;
     replyAt: string | null;
+    createdAt: string;
+    updatedAt: string;
 }

@@ -4,36 +4,36 @@ import axios from "axios";
 
 export const API_URL = "http://localhost:8080/api";
 
+// Tạo instance axios với config mặc định
+const axiosInstance = axios.create({
+  baseURL: API_URL,
+});
+
+// Thêm interceptor để tự động thêm token vào header
+axiosInstance.interceptors.request.use((config) => {
+  const token = localStorage.getItem("token");
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
 const dataProvider: DataProvider = {
   getApiUrl: () => API_URL,
   getList: async ({ resource, filters, pagination, sorters, meta }) => {
     let endpoint = `${API_URL}/${resource}`;
     const params: Record<string, any> = {};
     
-// Lấy các filter từ frontend và gán vào params để gửi lên backend API.
-// Mỗi filter sẽ được truyền thành một query param tương ứng
-    if (filters && Array.isArray(filters)) {
+    
+    if (filters) {
       filters.forEach((filter) => {
-        if ("field" in filter && filter.value) {
-          if (filter.field === "productName") {
-            params.productName = filter.value;
-          }
-          if (filter.field === "userName") {
-            params.userName = filter.value;
-          }
-          if (filter.field === "status") {
-            params.status = filter.value;
-          }
-          if (filter.field === "rating") {
-            params.rating = filter.value;
-          }
-          if (filter.field === "startDate") {
-            params.startDate = filter.value;
-          }
-          if (filter.field === "endDate") {
-            params.endDate = filter.value;
-          }
+        // filter.field là tên trường, filter.value là giá trị tìm kiếm
+        if (filter.operator === "contains") {
+          params[filter.field] = filter.value;
+        } else if (filter.operator === "eq") {
+          params[filter.field] = filter.value;
         }
+        // Thêm các operator khác nếu cần
       });
     }
 
@@ -43,16 +43,17 @@ const dataProvider: DataProvider = {
       endpoint += "/search";
     }
     endpoint += "";
-    const { data } = await axios.get(endpoint, { params });
-
+    const { data } = await axiosInstance.get(endpoint, { params });
+  
+    // Trả về data theo cấu trúc mà useTable cần
     return {
-      data,
-      total: data.length,
+     data,
+      total: data.length, 
     };
   },
 
   getOne: async ({ resource, id }) => {
-    const { data } = await axios.get(`${API_URL}/${resource}/id/${id}`);
+    const { data } = await axiosInstance.get(`${API_URL}/${resource}/id/${id}`);
     return { data };
   },
   update: async ({ resource, id, variables }) => {
@@ -62,15 +63,15 @@ const dataProvider: DataProvider = {
     } else {
         url = `${API_URL}/${resource}/edit/${id}`;
     }
-    const { data } = await axios.patch(url, variables);
+    const { data } = await axiosInstance.patch(url, variables);
     return { data };
   },
   create: async ({ resource, variables }) => {
-    const { data } = await axios.post(`${API_URL}/${resource}/add`, variables);
+    const { data } = await axiosInstance.post(`${API_URL}/${resource}/add`, variables);
     return { data };
   },
   deleteOne: async ({ resource, id }) => {
-    const { data } = await axios.delete(`${API_URL}/${resource}/delete/${id}`);
+    const { data } = await axiosInstance.delete(`${API_URL}/${resource}/delete/${id}`);
     return { data };
   },
 };
