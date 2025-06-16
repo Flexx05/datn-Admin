@@ -33,7 +33,6 @@ export const AttributeItem = ({
       label: attr.name,
       value: attr._id,
     }));
-  console.log("Available Attributes:", availableAttributes);
 
   if (availableAttributes.length === 0) {
     availableAttributes.push({
@@ -51,6 +50,24 @@ export const AttributeItem = ({
   const currentAttribute = allAttributes.find(
     (attr) => attr._id === currentAttributeId
   );
+  const isCurrentAttributeValid = !!currentAttribute;
+
+  // Nếu thuộc tính hiện tại không còn hợp lệ, set lại giá trị attributeId về undefined
+  useEffect(() => {
+    if (!isCurrentAttributeValid && currentAttributeId) {
+      form.setFieldValue(["attributes", field.name, "attributeId"], undefined);
+      form.setFieldValue(["attributes", field.name, "values"], []);
+      form.setFieldValue(["attributes", field.name, "isColor"], false);
+    }
+  }, [isCurrentAttributeValid, currentAttributeId, field.name, form]);
+
+  const selectOptions = isCurrentAttributeValid
+    ? availableAttributes
+    : [
+        { label: "Vui lòng chọn thuộc tính mới", value: "" },
+        ...availableAttributes,
+      ];
+
   const isColor = currentAttribute?.isColor;
   const rawValues = currentAttribute?.values || [];
   const valueOptions = rawValues.map((val) => ({
@@ -84,9 +101,14 @@ export const AttributeItem = ({
           filterOption={(input, option) =>
             (option?.label ?? "").toLowerCase().includes(input.toLowerCase())
           }
-          placeholder="Chọn thuộc tính"
-          options={availableAttributes}
-          onChange={(selectedId) => {
+          placeholder={
+            isCurrentAttributeValid
+              ? "Chọn thuộc tính"
+              : "Vui lòng chọn thuộc tính mới"
+          }
+          options={selectOptions}
+          value={isCurrentAttributeValid ? currentAttributeId : ""}
+          onChange={async (selectedId) => {
             const selectedAttr = allAttributes.find(
               (attr) => attr._id === selectedId
             );
@@ -107,22 +129,34 @@ export const AttributeItem = ({
                 }`
               );
               // Reset lại giá trị vừa chọn
-              form.setFieldValue(
+              await form.setFieldValue(
                 ["attributes", field.name, "attributeId"],
                 undefined
               );
-              form.setFieldValue(["attributes", field.name, "values"], []);
-              form.setFieldValue(["attributes", field.name, "isColor"], false);
+              await form.setFieldValue(
+                ["attributes", field.name, "values"],
+                []
+              );
+              await form.setFieldValue(
+                ["attributes", field.name, "isColor"],
+                false
+              );
+              await Promise.resolve();
               return;
             }
-            form.setFieldValue(
+            await form.setFieldValue(
               ["attributes", field.name, "values"],
               selectedAttr?.values || []
             );
-            form.setFieldValue(
+            await form.setFieldValue(
               ["attributes", field.name, "isColor"],
               selectedAttr?.isColor ?? false
             );
+            await form.setFieldValue(
+              ["attributes", field.name, "attributeId"],
+              selectedId
+            );
+            await Promise.resolve();
             setIsValueSelectDisabled(!selectedId);
           }}
         />
@@ -182,10 +216,10 @@ export const AttributeItem = ({
                               display: "inline-flex",
                               alignItems: "center",
                               marginRight: 4,
-                              padding: "0 6px",
+                              padding: "4px",
                               border: "1px solid black",
-                              borderRadius: 12,
-                              backgroundColor: "white",
+                              borderRadius: 8,
+                              backgroundColor: "rgb(49, 49, 49)",
                             }}
                           >
                             <ColorDots colors={[value]} />
@@ -195,7 +229,7 @@ export const AttributeItem = ({
                                 style={{
                                   cursor: "pointer",
                                   fontSize: 12,
-                                  color: "black",
+                                  color: "grey",
                                 }}
                               >
                                 ✕
