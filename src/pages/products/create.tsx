@@ -256,7 +256,14 @@ export const ProductCreate = () => {
           <Form.Item
             label="Tên sản phẩm"
             name="name"
-            rules={[{ required: true, message: "Vui lòng nhập tên sản phẩm" }]}
+            rules={[
+              { required: true, message: "Vui lòng nhập tên sản phẩm" },
+              { min: 3, message: "Tên sản phẩm phải có ít nhất 3 ký tự" },
+              {
+                max: 100,
+                message: "Tên sản phẩm không được vượt quá 100 ký tự",
+              },
+            ]}
           >
             <Input />
           </Form.Item>
@@ -293,7 +300,16 @@ export const ProductCreate = () => {
             name="categoryId"
             rules={[{ required: true, message: "Vui lòng chọn danh mục" }]}
           >
-            <Select loading={category?.isLoading} options={categoryOptions} />
+            <Select loading={category?.isLoading}>
+              <Select.Option value={"684b9ab14a1d82d1e454b374"}>
+                Danh mục không xác định
+              </Select.Option>
+              {categoryOptions.map((item) => (
+                <Select.Option key={item.value} value={item.value}>
+                  {item.label}
+                </Select.Option>
+              ))}
+            </Select>
           </Form.Item>
 
           <Form.Item
@@ -340,10 +356,17 @@ export const ProductCreate = () => {
                 onClick={async () => {
                   setIsSubmitting(true);
                   try {
+                    const attributes =
+                      formProps.form?.getFieldValue("attributes");
+
+                    if (!attributes || attributes.length === 0) {
+                      message.error("Vui lòng thêm thuộc tính trước!");
+                      return;
+                    }
                     const response = await axios.post(
                       `${API_URL}/product/generate-variations`,
                       {
-                        attributes: formProps.form?.getFieldValue("attributes"),
+                        attributes,
                       }
                     );
 
