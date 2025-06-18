@@ -171,25 +171,33 @@ export const ProductList = () => {
         <Table.Column dataIndex="brandName" title="Thương hiệu" />
         <Table.Column dataIndex="categoryName" title="Danh mục" />
         <Table.Column
-          title="Màu sắc"
+          title="Thuộc tính"
           dataIndex="attributes"
-          key="color"
+          key="attributes"
           render={(attrs: IProductAttribute[]) => {
+            // Tìm thuộc tính có giá trị là mã màu
             const colorAttr = attrs.find(
-              (attr) => attr.attributeName === "Màu sắc"
+              (attr) =>
+                Array.isArray(attr.values) &&
+                attr.values.some(
+                  (val) =>
+                    typeof val === "string" &&
+                    (/^#([0-9A-Fa-f]{3}){1,2}$/.test(val) ||
+                      /^rgb(a)?\(/.test(val))
+                )
             );
-            return colorAttr ? <ColorDots colors={colorAttr.values} /> : null;
-          }}
-        />
-        <Table.Column
-          title="Kích thước"
-          dataIndex="attributes"
-          key="size"
-          render={(attrs: IProductAttribute[]) => {
-            const sizeAttr = attrs.find(
-              (attr) => attr.attributeName === "Kích thước"
+            // Tìm thuộc tính còn lại là kích thước hoặc các giá trị khác
+            const otherAttr = attrs.filter((attr) => attr !== colorAttr);
+            return (
+              <div>
+                {colorAttr ? <ColorDots colors={colorAttr.values} /> : null}
+                {otherAttr.length > 0 && (
+                  <div style={{ marginTop: 4, fontSize: 13 }}>
+                    {otherAttr.map((attr) => attr.values.join(", ")).join(", ")}
+                  </div>
+                )}
+              </div>
             );
-            return sizeAttr?.values?.join(", ") || "";
           }}
         />
         <Table.Column
@@ -202,6 +210,9 @@ export const ProductList = () => {
         <Table.Column
           title="Ngày tạo"
           dataIndex="createdAt"
+          sorter={(a: IProduct, b: IProduct) =>
+            new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+          }
           render={(value: string) => dayjs(value).format("DD/MM/YYYY")}
         />
         <Table.Column

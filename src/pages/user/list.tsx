@@ -163,6 +163,9 @@ export const UserList = () => {
         <Table.Column
           dataIndex="createdAt"
           title="Ngày đăng ký"
+          sorter={(a: IUser, b: IUser) =>
+            new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+          }
           render={(value: string) => dayjs(value).format("DD/MM/YYYY")}
         />
         <Table.Column

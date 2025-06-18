@@ -176,6 +176,9 @@ export const AttributeList = () => {
               {dayjs(value).format("DD/MM/YYYY")}
             </Typography.Text>
           )}
+          sorter={(a: IAttribute, b: IAttribute) =>
+            new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+          }
         />
         <Table.Column
           title={"Hành động"}
