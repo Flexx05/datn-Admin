@@ -3,7 +3,8 @@ import { MinusCircleOutlined } from "@ant-design/icons";
 import { Form, Select, Space, Checkbox, message } from "antd";
 import { IAttribute } from "../../interface/attribute";
 import { ColorDots } from "./ColorDots";
-import { useEffect, useState } from "react";
+import { useContext, useEffect, useState } from "react";
+import { ColorModeContext } from "../../contexts/color-mode";
 
 interface AttributeItemProps {
   field: any;
@@ -19,7 +20,7 @@ export const AttributeItem = ({
   form,
 }: AttributeItemProps) => {
   const [isValueSelectDisabled, setIsValueSelectDisabled] = useState(true);
-
+  const { mode } = useContext(ColorModeContext);
   const selectedAttributeIds =
     form
       .getFieldValue("attributes")
@@ -217,9 +218,9 @@ export const AttributeItem = ({
                               alignItems: "center",
                               marginRight: 4,
                               padding: "4px",
-                              border: "1px solid black",
                               borderRadius: 8,
-                              backgroundColor: "rgb(49, 49, 49)",
+                              backgroundColor:
+                                mode === "light" ? "#f0f0f0" : "#333",
                             }}
                           >
                             <ColorDots colors={[value]} />
@@ -229,6 +230,7 @@ export const AttributeItem = ({
                                 style={{
                                   cursor: "pointer",
                                   fontSize: 12,
+                                  fontWeight: 600,
                                   color: "grey",
                                 }}
                               >

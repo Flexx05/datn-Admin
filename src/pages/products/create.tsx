@@ -14,7 +14,7 @@ import {
   message,
 } from "antd";
 import axios from "axios";
-import { useMemo, useState } from "react";
+import { useContext, useMemo, useState } from "react";
 import { API_URL } from "../../config/dataProvider";
 import { IAttribute } from "../../interface/attribute";
 import { IBrand } from "../../interface/brand";
@@ -23,6 +23,7 @@ import { AttributeItem } from "./AttributeItem";
 import { VariationItem } from "./VariationItem";
 import "./variation-animations.css";
 import { CSSTransition, TransitionGroup } from "react-transition-group";
+import { ColorModeContext } from "../../contexts/color-mode";
 
 export const ProductCreate = () => {
   const { formProps, saveButtonProps } = useForm({
@@ -42,6 +43,8 @@ export const ProductCreate = () => {
   const [fileList, setFileList] = useState<UploadFile[]>([]);
   const [uploadedImageUrls, setUploadedImageUrls] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+  const { mode } = useContext(ColorModeContext);
+  const colorMode = mode === "light" ? "light" : "dark";
 
   const normFile = (e: any) => e?.fileList?.slice(0, 5);
 
@@ -292,7 +295,7 @@ export const ProductCreate = () => {
           </Form.Item>
 
           <Form.Item label="Mô tả" name="description">
-            <MDEditor data-color-mode="dark" />
+            <MDEditor data-color-mode={colorMode} />
           </Form.Item>
 
           <Form.Item

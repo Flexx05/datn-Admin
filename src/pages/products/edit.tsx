@@ -14,7 +14,7 @@ import {
   Spin,
 } from "antd";
 import axios from "axios";
-import { useEffect, useMemo, useState } from "react";
+import { useContext, useEffect, useMemo, useState } from "react";
 import { API_URL } from "../../config/dataProvider";
 import { IAttribute } from "../../interface/attribute";
 import { IBrand } from "../../interface/brand";
@@ -24,6 +24,7 @@ import { AttributeItem } from "./AttributeItem";
 import { VariationItem } from "./VariationItem";
 import { CSSTransition, TransitionGroup } from "react-transition-group";
 import "./variation-animations.css";
+import { ColorModeContext } from "../../contexts/color-mode";
 
 export const ProductEdit = () => {
   const { formProps, saveButtonProps, queryResult } = useForm({
@@ -47,6 +48,8 @@ export const ProductEdit = () => {
   const [uploadedImageUrls, setUploadedImageUrls] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [isGenerating, setIsGenerating] = useState<boolean>(false);
+  const { mode } = useContext(ColorModeContext);
+  const colorMode = mode === "light" ? "light" : "dark";
 
   useEffect(() => {
     if (productData) {
@@ -336,7 +339,7 @@ export const ProductEdit = () => {
         </Form.Item>
 
         <Form.Item label="Mô tả" name="description">
-          <MDEditor data-color-mode="dark" />
+          <MDEditor data-color-mode={colorMode} />
         </Form.Item>
 
         <Form.Item
@@ -345,7 +348,7 @@ export const ProductEdit = () => {
           rules={[{ required: true, message: "Vui lòng chọn danh mục" }]}
         >
           <Select loading={category?.isLoading}>
-            <Select.Option value={"684b90f74a1d82d1e454b373"}>
+            <Select.Option value={"684b9ab14a1d82d1e454b374"}>
               Danh mục không xác định
             </Select.Option>
             {categoryOptions.map((option) => (

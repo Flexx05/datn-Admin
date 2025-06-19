@@ -1,7 +1,8 @@
-import { Header, ThemedLayoutV2, ThemedSiderV2 } from "@refinedev/antd";
+import { ThemedLayoutV2, ThemedSiderV2 } from "@refinedev/antd";
 import { Authenticated, ErrorComponent } from "@refinedev/core";
 import { CatchAllNavigate, NavigateToResource } from "@refinedev/react-router";
 import { Outlet, Route, Routes } from "react-router";
+import { Header, TitleLogo } from "../components";
 import {
   AttributeCreate,
   AttributeEdit,
@@ -38,11 +39,7 @@ const AppRoutes = () => {
               <ThemedLayoutV2
                 Header={Header}
                 Sider={(props) => <ThemedSiderV2 {...props} fixed />}
-                Title={() => (
-                  <>
-                    <img src="../../public/logofull.png" width={70} />
-                  </>
-                )}
+                Title={({ collapsed }) => <TitleLogo collapsed={collapsed} />}
               >
                 <Outlet />
               </ThemedLayoutV2>
