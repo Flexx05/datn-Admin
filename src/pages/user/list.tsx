@@ -144,7 +144,9 @@ export const UserList = () => {
         <Table.Column
           dataIndex="phone"
           title="Số điện thoại"
-          render={(value: string) => value || "Chưa cập nhật"}
+          render={(value: string) =>
+            value || <Tag color={"default"}>Chưa cập nhật</Tag>
+          }
         />
         <Table.Column
           dataIndex="isVerify"

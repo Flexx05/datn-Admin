@@ -13,7 +13,6 @@ export const authProvider: AuthProvider = {
         email,
         password,
       });
-      console.log(res);
 
       if (
         res.data &&

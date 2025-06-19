@@ -22,6 +22,7 @@ import dayjs from "dayjs";
 import { useCallback, useState } from "react";
 import { API_URL } from "../../config/dataProvider";
 import { IAttribute } from "../../interface/attribute";
+import { ColorDots } from "../products/ColorDots";
 
 export const AttributeList = () => {
   const [filterActive, setFilterActive] = useState<boolean>(true);
@@ -149,20 +150,7 @@ export const AttributeList = () => {
           title={"Giá trị"}
           render={(_: unknown, record: IAttribute) => {
             return record.isColor ? (
-              <div style={{ display: "flex", gap: 4 }}>
-                {record.values.map((item: string, idx: number) => (
-                  <div
-                    key={idx}
-                    style={{
-                      width: 20,
-                      height: 20,
-                      backgroundColor: item,
-                      borderRadius: "50%",
-                      border: "1px solid grey",
-                    }}
-                  ></div>
-                ))}
-              </div>
+              <ColorDots colors={record.values} />
             ) : (
               record.values.join(", ")
             );

@@ -3,9 +3,10 @@ import { Edit, useForm } from "@refinedev/antd";
 import { Form, Input, Button, Space, Switch, Spin } from "antd";
 import { MinusCircleOutlined, PlusOutlined } from "@ant-design/icons";
 import { useEffect, useState } from "react";
+import { IAttribute } from "../../interface/attribute";
 
 export const AttributeEdit = () => {
-  const { formProps, saveButtonProps, formLoading } = useForm({
+  const { formProps, saveButtonProps, formLoading } = useForm<IAttribute>({
     successNotification: () => ({
       message: "🎉 Cập nhật thành công",
       description: "Thuộc tính đã được cập nhật!",
@@ -41,7 +42,26 @@ export const AttributeEdit = () => {
       saveButtonProps={saveButtonProps}
       canDelete={false}
     >
-      <Form {...formProps} layout="vertical">
+      <Form
+        {...formProps}
+        layout="vertical"
+        onFinish={(values: any) => {
+          // Trim name
+          if (values.name && typeof values.name === "string") {
+            values.name = values.name.trim();
+          }
+          // Trim each value in values
+          if (Array.isArray(values.values)) {
+            values.values = values.values.map((v: any) =>
+              typeof v === "string" ? v.trim() : v
+            );
+          }
+          // Gọi onFinish gốc nếu có
+          if (formProps.onFinish) {
+            return formProps.onFinish(values);
+          }
+        }}
+      >
         <Form.Item
           label="Tên thuộc tính"
           name={["name"]}
@@ -49,6 +69,10 @@ export const AttributeEdit = () => {
             { required: true, message: "Vui lòng nhập tên thuộc tính" },
             { min: 3, message: "Tên thuộc tính phải có ít nhất 3 ký tự" },
             { max: 50, message: "Tên thuộc tính không được vượt quá 50 ký tự" },
+            {
+              pattern: /^[\p{L}0-9\s#]+$/u,
+              message: "Tên thuộc tính không được chứa ký tự đặc biệt",
+            },
           ]}
         >
           <Input />
@@ -112,6 +136,10 @@ export const AttributeEdit = () => {
                       {
                         max: 20,
                         message: "Giá trị không được vượt quá 20 ký tự",
+                      },
+                      {
+                        pattern: /^[\p{L}0-9\s]+$/u,
+                        message: "Giá trị không được chứa ký tự đặc biệt",
                       },
                     ]}
                     getValueFromEvent={(e) => e.target.value}

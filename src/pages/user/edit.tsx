@@ -43,8 +43,9 @@ export const UserEdit = () => {
           name={["phone"]}
           rules={[
             {
-              pattern: /^\(?([0-9]{3})\)?[-.\s]?([0-9]{3})[-.\s]?([0-9]{4})$/,
-              message: "Vui lòng nhập số điện thoại hợp lệ (10 chữ số)",
+              pattern: /^0\d{9}$/,
+              message:
+                "Vui lòng nhập số điện thoại hợp lệ (10 chữ số, bắt đầu bằng 0)",
             },
           ]}
         >

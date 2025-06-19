@@ -310,7 +310,21 @@ export const ProductEdit = () => {
         <Form.Item
           label="Tên sản phẩm"
           name="name"
-          rules={[{ required: true, message: "Vui lòng nhập tên sản phẩm" }]}
+          rules={[
+            { required: true, message: "Vui lòng nhập tên sản phẩm" },
+            {
+              max: 100,
+              message: "Tên sản phẩm không được quá 100 ký tự",
+            },
+            {
+              min: 3,
+              message: "Tên sản phẩm phải có ít nhất 3 ký tự",
+            },
+            {
+              pattern: /^[\p{L}0-9\s]+$/u,
+              message: "Tên sản phẩm không được chứa ký tự đặc biệt",
+            },
+          ]}
         >
           <Input />
         </Form.Item>

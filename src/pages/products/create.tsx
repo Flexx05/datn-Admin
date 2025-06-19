@@ -266,6 +266,10 @@ export const ProductCreate = () => {
                 max: 100,
                 message: "Tên sản phẩm không được vượt quá 100 ký tự",
               },
+              {
+                pattern: /^[\p{L}0-9\s]+$/u,
+                message: "Tên sản phẩm không được chứa ký tự đặc biệt",
+              },
             ]}
           >
             <Input />
