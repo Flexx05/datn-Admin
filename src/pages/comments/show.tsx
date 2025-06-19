@@ -9,7 +9,8 @@ import {
   message,
   Form,
   Input,
-  Button, Popconfirm, Image, Space
+  Button, Popconfirm, Image, Space,
+  Checkbox
 } from "antd";
 import {
   CalendarOutlined,
@@ -20,6 +21,7 @@ import {
 import { Show } from "@refinedev/antd";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
+import { send } from "process";
 
 const { Title } = Typography;
 
@@ -39,6 +41,7 @@ export const CommentShow = () => {
     if (record) {
       form.setFieldsValue({
         adminReply: record.adminReply || "",
+        sendEmail: !record.adminReply, // Mặc định là true nếu chưa có phản hồi
       });
     }
   }, [record, form]);
@@ -73,7 +76,7 @@ export const CommentShow = () => {
   };
   
   // Hàm xử lý gửi phản hồi bình luận
-  const handleReply = (values: { adminReply: string }) => {
+  const handleReply = (values: { adminReply: string, sendEmail: boolean }) => {
     if (!record) return;
     setReplyLoading(true);
     mutate(
@@ -82,6 +85,7 @@ export const CommentShow = () => {
         id: record._id,
         values: {
           adminReply: values.adminReply,
+          sendEmail: values.sendEmail,
         },
       },
       {
@@ -223,48 +227,55 @@ export const CommentShow = () => {
         labelStyle={{ fontWeight: 600, width: "180px" }}
         contentStyle={{ whiteSpace: "pre-wrap" }}
       >
-        <Descriptions.Item label="Trả lời">
-          <Form
-            form={form}
-            layout="vertical"
-            onFinish={handleReply}
-            style={{ marginTop: "10px" }}
-            initialValues={{ adminReply: record?.adminReply || "" }}
+      <Descriptions.Item label="Trả lời">
+        <Form
+          form={form}
+          layout="vertical"
+          onFinish={handleReply}
+          style={{ marginTop: "10px" }}
+        >
+          <Form.Item
+            name="adminReply"
+            label="Trả lời bình luận"
+            rules={[{ required: true, message: "Vui lòng nhập phản hồi!" }]}
           >
-            <Form.Item
-              name="adminReply"
-              label="Trả lời bình luận"
-              rules={[{ required: true, message: "Vui lòng nhập phản hồi!" }]}
+            <Input.TextArea
+              rows={4}
+              placeholder="Nhập phản hồi của bạn tại đây..."
+              disabled={record?.status !== "visible"}
+            />
+          </Form.Item>
+          
+          {record?.status !== "visible" && (
+            <div style={{ color: "red", marginBottom: 10 }}>
+              Bình luận phải được duyệt trước khi trả lời.
+            </div>
+          )}
+
+          <Form.Item
+            name="sendEmail"
+            valuePropName="checked"
+          >
+            <Checkbox disabled={record?.status !== "visible"}>
+              Gửi email thông báo cho khách hàng
+            </Checkbox>
+          </Form.Item>
+
+          <Form.Item>
+            <Button
+              type="primary"
+              htmlType="submit"
+              loading={replyLoading}
+              disabled={record?.status !== "visible"}
+              style={{ marginTop: "10px" }}
             >
-              <Input.TextArea
-                rows={4}
-                placeholder={
-                  record?.status === "visible"
-                    ? "Nhập phản hồi của bạn tại đây..."
-                    : record?.adminReply
-                }
-                style={{ width: "100%"}}
-                disabled={record?.status !== "visible"}
-              />
-              {record?.status !== "visible" && (
-                <div style={{ color: "red", marginTop: 4 }}>
-                  Bình luận phải được duyệt trước khi trả lời.
-                </div>
-              )}
-            </Form.Item>
-            <Form.Item>
-              <Button
-                type="primary"
-                htmlType="submit"
-                loading={replyLoading}
-                disabled={record?.status !== "visible"}
-                style={{ marginTop: "10px" }}
-              >
-                {record?.adminReply ? "Cập nhật phản hồi" : "Gửi phản hồi"}
-              </Button>
-            </Form.Item>
-          </Form>
-        </Descriptions.Item>
+              {record?.adminReply ? "Cập nhật phản hồi" : "Gửi phản hồi"}
+            </Button>
+          </Form.Item>
+        </Form>
+      </Descriptions.Item>
+
+
 
         <Descriptions.Item label="Thời gian trả lời">
           {record?.replyAt ? (
