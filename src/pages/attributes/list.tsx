@@ -162,7 +162,6 @@ export const AttributeList = () => {
           render={(value: number) => (
             <Typography.Text>{value || 0}</Typography.Text>
           )}
-          width={300}
         />
         <Table.Column
           dataIndex="createdAt"
@@ -193,18 +192,21 @@ export const AttributeList = () => {
                 recordItemId={record._id}
                 hidden={!record.isActive}
               />
-              {record.isActive ? (
-                <DeleteButton
-                  hideText
-                  size="small"
-                  recordItemId={record._id}
-                  confirmTitle="Bạn chắc chắn xóa không ?"
-                  confirmCancelText="Hủy"
-                  confirmOkText="Xóa"
-                  loading={loadingId === record._id}
-                  hidden={record.countProduct > 0}
-                />
-              ) : (
+              <DeleteButton
+                hideText
+                size="small"
+                recordItemId={record._id}
+                confirmTitle={
+                  record.isActive
+                    ? "Bạn chắc chắn chuyển vào thùng rác không ?"
+                    : "Bạn chắc chắn xóa vĩnh viễn không ?"
+                }
+                confirmCancelText="Hủy"
+                confirmOkText="Xóa"
+                loading={loadingId === record._id}
+                hidden={record.countProduct > 0}
+              />
+              {record.isActive === false && (
                 <Popconfirm
                   title="Bạn chắc chắn kích hoạt hiệu lực không ?"
                   onConfirm={() => handleChangeStatus(record)}
