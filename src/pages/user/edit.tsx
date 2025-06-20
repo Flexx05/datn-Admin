@@ -30,7 +30,10 @@ export const UserEdit = () => {
   };
 
   return (
-    <Edit saveButtonProps={saveButtonProps} title="Chỉnh sửa thương hiệu">
+    <Edit
+      saveButtonProps={saveButtonProps}
+      title="Chỉnh sửa thông tin khách hàng"
+    >
       <Form {...formProps} layout="vertical" onFinish={handleFinish}>
         <Form.Item label="Tên khách hàng" name={["fullName"]}>
           <Input />
