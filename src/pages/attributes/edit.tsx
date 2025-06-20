@@ -1,10 +1,23 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Edit, useForm } from "@refinedev/antd";
 import { Form, Input, Button, Space, Switch, Spin } from "antd";
 import { MinusCircleOutlined, PlusOutlined } from "@ant-design/icons";
 import { useEffect, useState } from "react";
+import { IAttribute } from "../../interface/attribute";
 
 export const AttributeEdit = () => {
-  const { formProps, saveButtonProps, formLoading } = useForm({});
+  const { formProps, saveButtonProps, formLoading } = useForm<IAttribute>({
+    successNotification: () => ({
+      message: "🎉 Cập nhật thành công",
+      description: "Thuộc tính đã được cập nhật!",
+      type: "success" as const,
+    }),
+    errorNotification: (error: any) => ({
+      message: "❌ Cập nhật thất bại! " + error.response?.data?.message,
+      description: "Có lỗi xảy ra trong quá trình xử lý.",
+      type: "error" as const,
+    }),
+  });
   const [isColorMode, setIsColorMode] = useState(false);
 
   useEffect(() => {
@@ -29,11 +42,38 @@ export const AttributeEdit = () => {
       saveButtonProps={saveButtonProps}
       canDelete={false}
     >
-      <Form {...formProps} layout="vertical">
+      <Form
+        {...formProps}
+        layout="vertical"
+        onFinish={(values: any) => {
+          // Trim name
+          if (values.name && typeof values.name === "string") {
+            values.name = values.name.trim();
+          }
+          // Trim each value in values
+          if (Array.isArray(values.values)) {
+            values.values = values.values.map((v: any) =>
+              typeof v === "string" ? v.trim() : v
+            );
+          }
+          // Gọi onFinish gốc nếu có
+          if (formProps.onFinish) {
+            return formProps.onFinish(values);
+          }
+        }}
+      >
         <Form.Item
           label="Tên thuộc tính"
           name={["name"]}
-          rules={[{ required: true, message: "Vui lòng nhập tên thuộc tính" }]}
+          rules={[
+            { required: true, message: "Vui lòng nhập tên thuộc tính" },
+            { min: 3, message: "Tên thuộc tính phải có ít nhất 3 ký tự" },
+            { max: 50, message: "Tên thuộc tính không được vượt quá 50 ký tự" },
+            {
+              pattern: /^[\p{L}0-9\s#]+$/u,
+              message: "Tên thuộc tính không được chứa ký tự đặc biệt",
+            },
+          ]}
         >
           <Input />
         </Form.Item>
@@ -46,12 +86,7 @@ export const AttributeEdit = () => {
             onChange={(checked) => {
               setIsColorMode(checked);
               formProps.form?.setFieldValue("isColor", checked);
-              const currentValues =
-                formProps.form?.getFieldValue("values") || [];
-              formProps.form?.setFieldValue(
-                "values",
-                currentValues.map(() => (checked ? "#ffffff" : ""))
-              );
+              formProps.form?.setFieldsValue({ values: [] }); // Reset values khi đổi chế độ
             }}
           />
         </Form.Item>
@@ -70,11 +105,6 @@ export const AttributeEdit = () => {
                 const trimmed = values.map((v) =>
                   typeof v === "string" ? v.trim() : v
                 );
-                if (trimmed.some((v) => !v)) {
-                  return Promise.reject(
-                    new Error("Không được để trống giá trị")
-                  );
-                }
 
                 const unique = new Set(trimmed);
                 if (unique.size !== trimmed.length) {
@@ -100,8 +130,20 @@ export const AttributeEdit = () => {
                   <Form.Item
                     {...restField}
                     name={name}
-                    rules={[{ required: true, message: "Không được để trống" }]}
+                    rules={[
+                      { required: true, message: "Không được để trống" },
+                      { min: 1, message: "Giá trị phải có ít nhất 1 ký tự" },
+                      {
+                        max: 20,
+                        message: "Giá trị không được vượt quá 20 ký tự",
+                      },
+                      {
+                        pattern: /^[\p{L}0-9\s]+$/u,
+                        message: "Giá trị không được chứa ký tự đặc biệt",
+                      },
+                    ]}
                     getValueFromEvent={(e) => e.target.value}
+                    valuePropName={isColorMode ? "value" : undefined}
                   >
                     {isColorMode ? (
                       <input
@@ -124,7 +166,7 @@ export const AttributeEdit = () => {
               <Form.Item>
                 <Button
                   type="dashed"
-                  onClick={() => add(isColorMode ? "#ffffff" : "")}
+                  onClick={() => add(isColorMode ? "#000000" : "")}
                   block
                   icon={<PlusOutlined />}
                 >

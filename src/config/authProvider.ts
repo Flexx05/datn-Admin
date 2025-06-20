@@ -1,7 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import type { AuthProvider } from "@refinedev/core";
-import axios from "axios";
-import { API_URL } from "./dataProvider";
+import { axiosInstance } from "../utils/axiosInstance";
 
 export const TOKEN_KEY = "token";
 export const USER_KEY = "user";
@@ -9,11 +8,10 @@ export const USER_KEY = "user";
 export const authProvider: AuthProvider = {
   login: async ({ email, password }) => {
     try {
-      const res = await axios.post(`${API_URL}/login`, {
+      const res = await axiosInstance.post(`/login`, {
         email,
         password,
       });
-      console.log(res);
 
       if (
         res.data &&

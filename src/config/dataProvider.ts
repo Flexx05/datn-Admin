@@ -1,27 +1,17 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { DataProvider } from "@refinedev/core";
-import axios from "axios";
+import { axiosInstance } from "../utils/axiosInstance";
+
 
 export const API_URL = "http://localhost:8080/api";
+export const CLOUDINARY_URL =
+  "https://api.cloudinary.com/v1_1/dtwm0rpqg/image/upload";
 
-// Tạo instance axios với config mặc định
-const axiosInstance = axios.create({
-  baseURL: API_URL,
-});
-
-// Thêm interceptor để tự động thêm token vào header
-axiosInstance.interceptors.request.use((config) => {
-  const token = localStorage.getItem("token");
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-  return config;
-});
 
 const dataProvider: DataProvider = {
   getApiUrl: () => API_URL,
+
   getList: async ({ resource, filters, pagination, sorters, meta }) => {
-    let endpoint = `${API_URL}/${resource}`;
     const params: Record<string, any> = {};
     
     
@@ -37,18 +27,29 @@ const dataProvider: DataProvider = {
       });
     }
 
-    // Nếu resource hỗ trợ tìm kiếm (ví dụ: "attribute", "product"...)
-    const resourcesWithSearchApi = ["attribute", "product", "category"];
-    if (resourcesWithSearchApi.includes(resource)) {
-      endpoint += "/search";
+
+    if (sorters && sorters.length > 0) {
+      const sorter = sorters[0];
+      params._sort = sorter.field;
+      params._order = sorter.order;
+    } else {
+      // Nếu không có, dùng mặc định
+      params._sort = "createdAt";
+      params._order = "desc";
     }
-    endpoint += "";
-    const { data } = await axiosInstance.get(endpoint, { params });
-  
-    // Trả về data theo cấu trúc mà useTable cần
+
+    if (pagination) {
+      params._page = pagination.current || 1;
+      params._limit = pagination.pageSize || 10;
+    }
+
+    const { data } = await axiosInstance.get(`${resource}`, {
+      params,
+    });
+
     return {
-     data,
-      total: data.length, 
+      data: data.docs || data,
+      total: data.length || data.totalDocs || 0,
     };
   },
 

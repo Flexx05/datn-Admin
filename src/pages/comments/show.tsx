@@ -135,8 +135,8 @@ export const CommentShow = () => {
             </div>
           ))
           ) : (
-            <span style={{ fontStyle: "italic", color: "#888" }}>
-              "Không có thông tin biến thể"
+            <span>
+            Không có thông tin biến thể
             </span>
           )}
         </Descriptions.Item>

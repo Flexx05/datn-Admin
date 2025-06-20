@@ -9,22 +9,22 @@ import {
 import { useInvalidate } from "@refinedev/core";
 import {
   Button,
+  Image,
   Input,
+  message,
   Popconfirm,
   Space,
   Table,
   Tabs,
   Typography,
-  message,
 } from "antd";
 import axios from "axios";
 import dayjs from "dayjs";
 import { useCallback, useState } from "react";
 import { API_URL } from "../../config/dataProvider";
-import { IAttribute } from "../../interface/attribute";
-import { ColorDots } from "../products/ColorDots";
+import { IBrand } from "../../interface/brand";
 
-export const AttributeList = () => {
+export const BrandList = () => {
   const [filterActive, setFilterActive] = useState<boolean>(true);
   const { tableProps, setFilters } = useTable({
     syncWithLocation: true,
@@ -49,21 +49,20 @@ export const AttributeList = () => {
       type: "error" as const,
     }),
   });
+
   const invalidate = useInvalidate();
   const [loadingId, setLoadingId] = useState<string | number | null>(null);
 
-  const handleChangeStatus = async (record: IAttribute) => {
+  const handleChangeStatus = async (record: IBrand) => {
     setLoadingId(record._id);
     try {
-      await axios.patch(`${API_URL}/attribute/edit/${record._id}`, {
-        values: record.values,
-        name: record.name,
+      await axios.patch(`${API_URL}/brand/edit/${record._id}`, {
         isActive: !record.isActive,
       });
 
       message.success("Cập nhật trạng thái thành công");
       await invalidate({
-        resource: "attribute",
+        resource: "brand",
         invalidates: ["list"],
       });
     } catch (error) {
@@ -123,17 +122,17 @@ export const AttributeList = () => {
   );
 
   return (
-    <List title={"Quản lý thuộc tính"}>
+    <List title={"Quản lý thương hiệu"}>
       <Tabs
         activeKey={filterActive ? "active" : "trash"}
         onChange={handleTabChange}
         style={{ marginBottom: 16 }}
       >
-        <Tabs.TabPane tab="Thuộc tính đang hoạt động" key="active" />
+        <Tabs.TabPane tab="Thương hiệu đang hoạt động" key="active" />
         <Tabs.TabPane tab="Thùng rác" key="trash" />
       </Tabs>
       <Input.Search
-        placeholder="Tìm kiếm tên thuộc tính"
+        placeholder="Tìm kiếm thương hiệu"
         allowClear
         onSearch={handleSearch}
         style={{ marginBottom: 16, maxWidth: 300 }}
@@ -142,74 +141,75 @@ export const AttributeList = () => {
         <Table.Column
           dataIndex="stt"
           title={"STT"}
-          render={(_: unknown, __: IAttribute, index: number) => index + 1}
+          render={(_: unknown, __: IBrand, index: number) => index + 1}
         />
-        <Table.Column dataIndex="name" title={"Tên thuộc tính"} />
         <Table.Column
-          dataIndex="values"
-          title={"Giá trị"}
-          render={(_: unknown, record: IAttribute) => {
-            return record.isColor ? (
-              <ColorDots colors={record.values} />
-            ) : (
-              record.values.join(", ")
-            );
-          }}
+          dataIndex="logoUrl"
+          title={"Ảnh thương hiệu"}
+          render={(value: string) => (
+            <Image src={value} width={50} height={50} />
+          )}
         />
+        <Table.Column dataIndex="name" title={"Tên thương hiệu"} />
+        <Table.Column dataIndex="slug" title={"Đường dẫn"} />
         <Table.Column
           dataIndex="createdAt"
-          title={"Ngày tạo"}
+          title="Ngày tạo"
           render={(value: string) => (
             <Typography.Text>
               {dayjs(value).format("DD/MM/YYYY")}
             </Typography.Text>
           )}
-          sorter={(a: IAttribute, b: IAttribute) =>
+          sorter={(a: IBrand, b: IBrand) =>
             new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
           }
         />
         <Table.Column
-          title={"Hành động"}
+          title="Hành động"
           dataIndex="actions"
-          render={(_, record: IAttribute) => (
-            <Space>
-              <EditButton
-                hideText
-                size="small"
-                recordItemId={record._id}
-                hidden={!record.isActive}
-              />
-              <ShowButton
-                hideText
-                size="small"
-                recordItemId={record._id}
-                hidden={!record.isActive}
-              />
-              {record.isActive ? (
-                <DeleteButton
+          render={(_, record: IBrand) => {
+            const isUnknown = record.slug === "thuong-hieu-khong-xac-dinh"; // thay slug này nếu cần
+            return (
+              <Space>
+                <EditButton
                   hideText
                   size="small"
                   recordItemId={record._id}
-                  confirmTitle="Bạn chắc chắn xóa không ?"
-                  confirmCancelText="Hủy"
-                  confirmOkText="Xóa"
-                  loading={loadingId === record._id}
+                  hidden={!record.isActive || isUnknown}
                 />
-              ) : (
-                <Popconfirm
-                  title="Bạn chắc chắn kích hoạt hiệu lực không ?"
-                  onConfirm={() => handleChangeStatus(record)}
-                  okText="Kích hoạt"
-                  cancelText="Hủy"
-                  okButtonProps={{ loading: loadingId === record._id }}
-                >
-                  <Button size="small" type="default">
-                    Kích hoạt
-                  </Button>
-                </Popconfirm>
-              )}
-            </Space>
-          )}
+                <ShowButton
+                  hideText
+                  size="small"
+                  recordItemId={record._id}
+                  hidden={!record.isActive}
+                />
+                {record.isActive ? (
+                  <DeleteButton
+                    hideText
+                    size="small"
+                    recordItemId={record._id}
+                    confirmTitle="Bạn chắc chắn xóa không ?"
+                    confirmCancelText="Hủy"
+                    confirmOkText="Xóa"
+                    loading={loadingId === record._id}
+                    hidden={isUnknown}
+                  />
+                ) : (
+                  <Popconfirm
+                    title="Bạn chắc chắn kích hoạt hiệu lực không ?"
+                    onConfirm={() => handleChangeStatus(record)}
+                    okText="Kích hoạt"
+                    cancelText="Hủy"
+                    okButtonProps={{ loading: loadingId === record._id }}
+                  >
+                    <Button size="small" type="default">
+                      Kích hoạt
+                    </Button>
+                  </Popconfirm>
+                )}
+              </Space>
+            );
+          }}
         />
       </Table>
     </List>

@@ -1,22 +1,35 @@
 export const resources = [
   {
-    name: "blog_posts",
-    list: "/blog-posts",
-    create: "/blog-posts/create",
-    edit: "/blog-posts/edit/:id",
-    show: "/blog-posts/show/:id",
+    name: "product",
+    list: "/product",
+    create: "/product/add",
+    edit: "/product/edit/:id",
+    show: "/product/id/:id",
     meta: {
       canDelete: true,
+      label: "Quản lý sản phẩm",
     },
   },
   {
-    name: "categories",
-    list: "/categories",
-    create: "/categories/create",
-    edit: "/categories/edit/:id",
-    show: "/categories/show/:id",
+    name: "category",
+    list: "/category",
+    create: "/category/add",
+    edit: "/category/edit/:id",
+    show: "/category/id/:id",
     meta: {
       canDelete: true,
+      label: "Quản lý danh mục",
+    },
+  },
+  {
+    name: "brand",
+    list: "/brand",
+    create: "/brand/add",
+    edit: "/brand/edit/:id",
+    show: "/brand/id/:id",
+    meta: {
+      canDelete: true,
+      label: "Quản lý thương hiệu",
     },
   },
   {
@@ -36,6 +49,16 @@ export const resources = [
     show: "/comments/id/:id",
     meta: {
       canDelete: true,
+      label: "Quản lý đánh giá",
+    },
+  },
+  {
+    name: "admin/users",
+    list: "/users",
+    show: "/users/show/:id",
+    edit: "/users/edit/:id",
+    meta: {
+      label: "Quản lý Khách hàng",
     },
   },
 ];

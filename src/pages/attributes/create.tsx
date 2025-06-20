@@ -1,10 +1,22 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Create, useForm } from "@refinedev/antd";
 import { Form, Input, Button, Space, Switch } from "antd";
 import { MinusCircleOutlined, PlusOutlined } from "@ant-design/icons";
 import { useState } from "react";
 
 export const AttributeCreate = () => {
-  const { formProps, saveButtonProps } = useForm({});
+  const { formProps, saveButtonProps } = useForm({
+    successNotification: () => ({
+      message: "🎉 Thêm mới thành công",
+      description: "Thuộc tính đã được thêm mới!",
+      type: "success" as const,
+    }),
+    errorNotification: (error: any) => ({
+      message: "❌ Thêm mới thất bại! " + error.response?.data?.message,
+      description: "Có lỗi xảy ra trong quá trình xử lý.",
+      type: "error" as const,
+    }),
+  });
   const [isColorMode, setIsColorMode] = useState(false);
 
   return (
@@ -13,7 +25,15 @@ export const AttributeCreate = () => {
         <Form.Item
           label="Tên thuộc tính"
           name={["name"]}
-          rules={[{ required: true, message: "Vui lòng nhập tên thuộc tính" }]}
+          rules={[
+            { required: true, message: "Vui lòng nhập tên thuộc tính" },
+            { min: 3, message: "Tên thuộc tính phải có ít nhất 3 ký tự" },
+            { max: 50, message: "Tên thuộc tính không được vượt quá 50 ký tự" },
+            {
+              pattern: /^[\p{L}0-9\s]+$/u,
+              message: "Tên thuộc tính không được chứa ký tự đặc biệt",
+            },
+          ]}
         >
           <Input />
         </Form.Item>
@@ -26,6 +46,7 @@ export const AttributeCreate = () => {
             onChange={(checked) => {
               setIsColorMode(checked);
               formProps.form?.setFieldValue("isColor", checked);
+              formProps.form?.setFieldsValue({ values: [] }); // Reset values khi đổi chế độ
             }}
           />
         </Form.Item>
@@ -46,11 +67,6 @@ export const AttributeCreate = () => {
                 const trimmed = values.map((v) =>
                   typeof v === "string" ? v.trim() : v
                 );
-                if (trimmed.some((v) => !v)) {
-                  return Promise.reject(
-                    new Error("Không được để trống giá trị")
-                  );
-                }
 
                 const unique = new Set(trimmed);
                 if (unique.size !== trimmed.length) {
@@ -76,8 +92,19 @@ export const AttributeCreate = () => {
                   <Form.Item
                     {...restField}
                     name={name}
-                    rules={[{ required: true, message: "Không được để trống" }]}
-                    getValueFromEvent={(e) => e.target.value}
+                    rules={[
+                      { required: true, message: "Không được để trống" },
+                      { min: 1, message: "Giá trị phải có ít nhất 1 ký tự" },
+                      {
+                        max: 20,
+                        message: "Giá trị không được vượt quá 20 ký tự",
+                      },
+                      {
+                        pattern: /^[\p{L}0-9\s]+$/u,
+                        message: "Giá trị không được chứa ký tự đặc biệt",
+                      },
+                    ]}
+                    valuePropName={isColorMode ? "value" : undefined} // Thêm dòng này
                   >
                     {isColorMode ? (
                       <input
@@ -100,7 +127,7 @@ export const AttributeCreate = () => {
               <Form.Item>
                 <Button
                   type="dashed"
-                  onClick={() => add()}
+                  onClick={() => add(isColorMode ? "#000000" : "")} // Thêm giá trị mặc định
                   block
                   icon={<PlusOutlined />}
                 >

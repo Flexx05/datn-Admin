@@ -1,9 +1,8 @@
-export interface IAttribute {
-  _id: number | string;
+export interface IBrand {
+  _id: string | number;
   name: string;
   slug: string;
-  isColor: boolean;
-  values: string[];
+  logoUrl: string;
   isActive: boolean;
   createdAt: string;
   updatedAt: string;

@@ -1,0 +1,18 @@
+.variation-fade-enter {
+  opacity: 0;
+  transform: translateY(-30px);
+}
+.variation-fade-enter-active {
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity 400ms, transform 400ms;
+}
+.variation-fade-exit {
+  opacity: 1;
+  transform: translateY(0);
+}
+.variation-fade-exit-active {
+  opacity: 0;
+  transform: translateY(40px);
+  transition: opacity 400ms, transform 400ms;
+}
