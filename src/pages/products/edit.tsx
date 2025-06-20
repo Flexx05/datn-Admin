@@ -14,7 +14,7 @@ import {
   Spin,
 } from "antd";
 import axios from "axios";
-import { useEffect, useMemo, useState } from "react";
+import { useContext, useEffect, useMemo, useState } from "react";
 import { API_URL } from "../../config/dataProvider";
 import { IAttribute } from "../../interface/attribute";
 import { IBrand } from "../../interface/brand";
@@ -24,6 +24,7 @@ import { AttributeItem } from "./AttributeItem";
 import { VariationItem } from "./VariationItem";
 import { CSSTransition, TransitionGroup } from "react-transition-group";
 import "./variation-animations.css";
+import { ColorModeContext } from "../../contexts/color-mode";
 
 export const ProductEdit = () => {
   const { formProps, saveButtonProps, queryResult } = useForm({
@@ -47,6 +48,8 @@ export const ProductEdit = () => {
   const [uploadedImageUrls, setUploadedImageUrls] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [isGenerating, setIsGenerating] = useState<boolean>(false);
+  const { mode } = useContext(ColorModeContext);
+  const colorMode = mode === "light" ? "light" : "dark";
 
   useEffect(() => {
     if (productData) {
@@ -108,6 +111,10 @@ export const ProductEdit = () => {
     for (let i = 0; i < updatedFileList.length; i++) {
       const file = updatedFileList[i];
       const originFile = file.originFileObj as File;
+      if (file.type !== "image/jpeg" && file.type !== "image/png") {
+        message.error("Vui lòng chỉ tải lên ảnh định dạng JPEG hoặc PNG.");
+        return;
+      }
 
       if (!file.url && originFile) {
         try {
@@ -163,7 +170,7 @@ export const ProductEdit = () => {
     optionValue: "_id",
     pagination: { mode: "off" },
     meta: {
-      fields: ["isColor"],
+      fields: ["isColor", "values", "name", "isActive"],
     },
   });
 
@@ -203,6 +210,16 @@ export const ProductEdit = () => {
     try {
       if (uploadedImageUrls.length === 0) {
         message.error("Bạn chưa tải ảnh hoặc ảnh chưa upload xong.");
+        return;
+      }
+
+      if (values.variation && values.variation.length === 0) {
+        message.error("Bạn chưa tạo biến thể sản phẩm.");
+        return;
+      }
+
+      if (values.attributes && values.attributes.length === 0) {
+        message.error("Bạn chưa thêm thuộc tính cho sản phẩm.");
         return;
       }
 
@@ -293,7 +310,21 @@ export const ProductEdit = () => {
         <Form.Item
           label="Tên sản phẩm"
           name="name"
-          rules={[{ required: true, message: "Vui lòng nhập tên sản phẩm" }]}
+          rules={[
+            { required: true, message: "Vui lòng nhập tên sản phẩm" },
+            {
+              max: 100,
+              message: "Tên sản phẩm không được quá 100 ký tự",
+            },
+            {
+              min: 3,
+              message: "Tên sản phẩm phải có ít nhất 3 ký tự",
+            },
+            {
+              pattern: /^[\p{L}0-9\s]+$/u,
+              message: "Tên sản phẩm không được chứa ký tự đặc biệt",
+            },
+          ]}
         >
           <Input />
         </Form.Item>
@@ -322,7 +353,7 @@ export const ProductEdit = () => {
         </Form.Item>
 
         <Form.Item label="Mô tả" name="description">
-          <MDEditor data-color-mode="dark" />
+          <MDEditor data-color-mode={colorMode} />
         </Form.Item>
 
         <Form.Item
@@ -331,7 +362,7 @@ export const ProductEdit = () => {
           rules={[{ required: true, message: "Vui lòng chọn danh mục" }]}
         >
           <Select loading={category?.isLoading}>
-            <Select.Option value={"684b90f74a1d82d1e454b373"}>
+            <Select.Option value={"684b9ab14a1d82d1e454b374"}>
               Danh mục không xác định
             </Select.Option>
             {categoryOptions.map((option) => (

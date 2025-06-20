@@ -169,8 +169,8 @@ export const CategoryList = () => {
                   }
                   width={100}
                 />
-                <Table.Column dataIndex="name" width={200} />
-                <Table.Column dataIndex="slug" width={220} />
+                <Table.Column dataIndex="name" width={350} />
+                <Table.Column dataIndex="slug" width={350} />
                 <Table.Column
                   dataIndex="createdAt"
                   render={(value: string) => (
@@ -243,6 +243,9 @@ export const CategoryList = () => {
               {dayjs(value).format("DD/MM/YYYY")}
             </Typography.Text>
           )}
+          sorter={(a: ICategory, b: ICategory) =>
+            new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+          }
         />
         <Table.Column
           title="Hành động"

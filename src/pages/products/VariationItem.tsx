@@ -158,7 +158,20 @@ export const VariationItem: React.FC<VariationItemProps> = ({
               name={[field.name, "regularPrice"]}
               rules={[
                 { required: true, message: "Vui lòng nhập giá!" },
-                { type: "number", min: 0, message: "Giá không được âm!" },
+                {
+                  pattern: /^[1-9]\d*$/,
+                  message: "Giá phải là số nguyên dương!",
+                },
+                {
+                  type: "number",
+                  min: 1000,
+                  message: "Giá phải lớn hơn hoặc bằng 1000!",
+                },
+                {
+                  type: "number",
+                  max: 1000000000,
+                  message: "Giá không được lớn hơn 1 tỷ!",
+                },
               ]}
             >
               <InputNumber placeholder="Nhập giá" />
@@ -168,7 +181,20 @@ export const VariationItem: React.FC<VariationItemProps> = ({
               label="Giá giảm"
               name={[field.name, "salePrice"]}
               rules={[
-                { type: "number", min: 0, message: "Giá không được âm!" },
+                {
+                  pattern: /^[1-9]\d*$/,
+                  message: "Giá phải là số nguyên dương!",
+                },
+                {
+                  type: "number",
+                  min: 1000,
+                  message: "Giá phải lớn hơn hoặc bằng 1000!",
+                },
+                {
+                  type: "number",
+                  max: 1000000000,
+                  message: "Giá không được lớn hơn 1 tỷ!",
+                },
                 {
                   validator: (_, value) => {
                     const price = form.getFieldValue([
@@ -176,8 +202,8 @@ export const VariationItem: React.FC<VariationItemProps> = ({
                       field.name,
                       "regularPrice",
                     ]);
-                    if (value >= price) {
-                      return Promise.reject("Giá giảm phải nhỏ hơn giá gốc!");
+                    if (value > price) {
+                      return Promise.reject("Giá giảm không lớn hơn giá gốc!");
                     }
                     return Promise.resolve();
                   },
@@ -192,7 +218,18 @@ export const VariationItem: React.FC<VariationItemProps> = ({
         <Form.Item
           label="Tồn kho"
           name={[field.name, "stock"]}
-          rules={[{ required: true, message: "Vui lòng nhập tồn kho!" }]}
+          rules={[
+            { required: true, message: "Vui lòng nhập tồn kho!" },
+            {
+              pattern: /^[0-9]\d*$/,
+              message: "Tồn kho phải là số nguyên dương!",
+            },
+            {
+              type: "number",
+              max: 10000,
+              message: "Tồn kho không được lớn hơn 10.000!",
+            },
+          ]}
         >
           <InputNumber placeholder="Nhập tồn kho" />
         </Form.Item>

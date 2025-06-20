@@ -9,7 +9,7 @@ export const ColorDots = ({ colors }: { colors: string[] }) => (
           height: 20,
           backgroundColor: color,
           borderRadius: "50%",
-          border: "1px solid #ccc",
+          border: "1px solid gray",
           marginRight: 5,
         }}
       />

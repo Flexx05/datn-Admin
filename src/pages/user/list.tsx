@@ -1,7 +1,16 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { EditButton, List, ShowButton, useTable } from "@refinedev/antd";
 import { CrudFilters, useInvalidate } from "@refinedev/core";
-import { Button, Input, Popconfirm, Space, Table, Tabs, message } from "antd";
+import {
+  Button,
+  Input,
+  Popconfirm,
+  Space,
+  Table,
+  Tabs,
+  Tag,
+  message,
+} from "antd";
 import axios from "axios";
 import dayjs from "dayjs";
 import { useCallback, useState } from "react";
@@ -135,11 +144,30 @@ export const UserList = () => {
         <Table.Column
           dataIndex="phone"
           title="Số điện thoại"
-          render={(value: string) => value || "Chưa cập nhật"}
+          render={(value: string) =>
+            value || <Tag color={"default"}>Chưa cập nhật</Tag>
+          }
+        />
+        <Table.Column
+          dataIndex="isVerify"
+          title="Trạng thái xác thực"
+          filters={[
+            { text: "Đã xác thực", value: true },
+            { text: "Chưa xác thực", value: false },
+          ]}
+          onFilter={(value, record) => record.isVerify === value}
+          render={(value: boolean) => (
+            <Tag color={value ? "green" : "red"}>
+              {value ? "Đã xác thực" : "Chưa xác thực"}
+            </Tag>
+          )}
         />
         <Table.Column
           dataIndex="createdAt"
           title="Ngày đăng ký"
+          sorter={(a: IUser, b: IUser) =>
+            new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+          }
           render={(value: string) => dayjs(value).format("DD/MM/YYYY")}
         />
         <Table.Column

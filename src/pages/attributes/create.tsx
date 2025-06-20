@@ -29,6 +29,10 @@ export const AttributeCreate = () => {
             { required: true, message: "Vui lòng nhập tên thuộc tính" },
             { min: 3, message: "Tên thuộc tính phải có ít nhất 3 ký tự" },
             { max: 50, message: "Tên thuộc tính không được vượt quá 50 ký tự" },
+            {
+              pattern: /^[\p{L}0-9\s]+$/u,
+              message: "Tên thuộc tính không được chứa ký tự đặc biệt",
+            },
           ]}
         >
           <Input />
@@ -95,8 +99,11 @@ export const AttributeCreate = () => {
                         max: 20,
                         message: "Giá trị không được vượt quá 20 ký tự",
                       },
+                      {
+                        pattern: /^[\p{L}0-9\s]+$/u,
+                        message: "Giá trị không được chứa ký tự đặc biệt",
+                      },
                     ]}
-                    getValueFromEvent={(e) => e.target.value}
                     valuePropName={isColorMode ? "value" : undefined} // Thêm dòng này
                   >
                     {isColorMode ? (

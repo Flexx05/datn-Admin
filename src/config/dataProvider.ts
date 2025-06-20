@@ -1,24 +1,10 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { DataProvider } from "@refinedev/core";
-import axios from "axios";
+import { axiosInstance } from "../utils/axiosInstance";
 
 export const API_URL = "http://localhost:8080/api";
 export const CLOUDINARY_URL =
   "https://api.cloudinary.com/v1_1/dtwm0rpqg/image/upload";
-
-const axiosInstance = axios.create();
-
-// Thêm interceptor để tự động thêm token vào mọi request
-axiosInstance.interceptors.request.use(
-  (config) => {
-    const token = localStorage.getItem("token");
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-    return config;
-  },
-  (error) => Promise.reject(error)
-);
 
 const dataProvider: DataProvider = {
   getApiUrl: () => API_URL,
@@ -53,7 +39,7 @@ const dataProvider: DataProvider = {
       params._limit = pagination.pageSize || 10;
     }
 
-    const { data } = await axiosInstance.get(`${API_URL}/${resource}`, {
+    const { data } = await axiosInstance.get(`${resource}`, {
       params,
     });
 
@@ -64,27 +50,22 @@ const dataProvider: DataProvider = {
   },
 
   getOne: async ({ resource, id }) => {
-    const { data } = await axiosInstance.get(`${API_URL}/${resource}/id/${id}`);
+    const { data } = await axiosInstance.get(`${resource}/id/${id}`);
     return { data };
   },
   update: async ({ resource, id, variables }) => {
     const { data } = await axiosInstance.patch(
-      `${API_URL}/${resource}/edit/${id}`,
+      `${resource}/edit/${id}`,
       variables
     );
     return { data };
   },
   create: async ({ resource, variables }) => {
-    const { data } = await axiosInstance.post(
-      `${API_URL}/${resource}/add`,
-      variables
-    );
+    const { data } = await axiosInstance.post(`${resource}/add`, variables);
     return { data };
   },
   deleteOne: async ({ resource, id }) => {
-    const { data } = await axiosInstance.delete(
-      `${API_URL}/${resource}/delete/${id}`
-    );
+    const { data } = await axiosInstance.delete(`${resource}/delete/${id}`);
     return { data };
   },
 };

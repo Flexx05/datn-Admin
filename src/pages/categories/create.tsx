@@ -70,6 +70,10 @@ export const CategoryCreate = () => {
             { required: true, message: "Vui lòng nhập tên danh mục" },
             { max: 30, message: "Tên danh mục không được quá 30 ký tự" },
             { min: 3, message: "Tên danh mục phải có ít nhất 3 ký tự" },
+            {
+              pattern: /^[\p{L}0-9\s]+$/u,
+              message: "Tên danh mục không được chứa ký tự đặc biệt",
+            },
           ]}
         >
           <Input />

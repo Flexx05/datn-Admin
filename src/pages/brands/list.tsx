@@ -160,6 +160,9 @@ export const BrandList = () => {
               {dayjs(value).format("DD/MM/YYYY")}
             </Typography.Text>
           )}
+          sorter={(a: IBrand, b: IBrand) =>
+            new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+          }
         />
         <Table.Column
           title="Hành động"

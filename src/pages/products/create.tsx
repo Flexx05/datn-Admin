@@ -14,7 +14,7 @@ import {
   message,
 } from "antd";
 import axios from "axios";
-import { useMemo, useState } from "react";
+import { useContext, useMemo, useState } from "react";
 import { API_URL } from "../../config/dataProvider";
 import { IAttribute } from "../../interface/attribute";
 import { IBrand } from "../../interface/brand";
@@ -23,6 +23,7 @@ import { AttributeItem } from "./AttributeItem";
 import { VariationItem } from "./VariationItem";
 import "./variation-animations.css";
 import { CSSTransition, TransitionGroup } from "react-transition-group";
+import { ColorModeContext } from "../../contexts/color-mode";
 
 export const ProductCreate = () => {
   const { formProps, saveButtonProps } = useForm({
@@ -42,6 +43,8 @@ export const ProductCreate = () => {
   const [fileList, setFileList] = useState<UploadFile[]>([]);
   const [uploadedImageUrls, setUploadedImageUrls] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+  const { mode } = useContext(ColorModeContext);
+  const colorMode = mode === "light" ? "light" : "dark";
 
   const normFile = (e: any) => e?.fileList?.slice(0, 5);
 
@@ -62,6 +65,10 @@ export const ProductCreate = () => {
     for (let i = 0; i < updatedFileList.length; i++) {
       const file = updatedFileList[i];
       const originFile = file.originFileObj as File;
+      if (file.type !== "image/jpeg" && file.type !== "image/png") {
+        message.error("Vui lòng chỉ tải lên ảnh định dạng JPEG hoặc PNG.");
+        return;
+      }
 
       if (!file.url && originFile) {
         try {
@@ -117,7 +124,7 @@ export const ProductCreate = () => {
     optionValue: "_id",
     pagination: { mode: "off" },
     meta: {
-      fields: ["isColor"],
+      fields: ["isColor", "values", "name", "isActive"],
     },
   });
 
@@ -159,6 +166,16 @@ export const ProductCreate = () => {
     try {
       if (uploadedImageUrls.length === 0) {
         message.error("Bạn chưa tải ảnh hoặc ảnh chưa upload xong.");
+        return;
+      }
+
+      if (values.variation && values.variation.length === 0) {
+        message.error("Bạn chưa tạo biến thể sản phẩm.");
+        return;
+      }
+
+      if (values.attributes && values.attributes.length === 0) {
+        message.error("Bạn chưa thêm thuộc tính cho sản phẩm.");
         return;
       }
 
@@ -242,7 +259,18 @@ export const ProductCreate = () => {
           <Form.Item
             label="Tên sản phẩm"
             name="name"
-            rules={[{ required: true, message: "Vui lòng nhập tên sản phẩm" }]}
+            rules={[
+              { required: true, message: "Vui lòng nhập tên sản phẩm" },
+              { min: 3, message: "Tên sản phẩm phải có ít nhất 3 ký tự" },
+              {
+                max: 100,
+                message: "Tên sản phẩm không được vượt quá 100 ký tự",
+              },
+              {
+                pattern: /^[\p{L}0-9\s]+$/u,
+                message: "Tên sản phẩm không được chứa ký tự đặc biệt",
+              },
+            ]}
           >
             <Input />
           </Form.Item>
@@ -271,7 +299,7 @@ export const ProductCreate = () => {
           </Form.Item>
 
           <Form.Item label="Mô tả" name="description">
-            <MDEditor data-color-mode="dark" />
+            <MDEditor data-color-mode={colorMode} />
           </Form.Item>
 
           <Form.Item
@@ -279,7 +307,16 @@ export const ProductCreate = () => {
             name="categoryId"
             rules={[{ required: true, message: "Vui lòng chọn danh mục" }]}
           >
-            <Select loading={category?.isLoading} options={categoryOptions} />
+            <Select loading={category?.isLoading}>
+              <Select.Option value={"684b9ab14a1d82d1e454b374"}>
+                Danh mục không xác định
+              </Select.Option>
+              {categoryOptions.map((item) => (
+                <Select.Option key={item.value} value={item.value}>
+                  {item.label}
+                </Select.Option>
+              ))}
+            </Select>
           </Form.Item>
 
           <Form.Item
@@ -292,6 +329,7 @@ export const ProductCreate = () => {
 
           <Form.Item
             label="Thuộc tính"
+            name="attributes"
             rules={[{ required: true, message: "Thuộc tính bắt buộc nhập" }]}
           >
             <Form.List name="attributes">
@@ -325,10 +363,17 @@ export const ProductCreate = () => {
                 onClick={async () => {
                   setIsSubmitting(true);
                   try {
+                    const attributes =
+                      formProps.form?.getFieldValue("attributes");
+
+                    if (!attributes || attributes.length === 0) {
+                      message.error("Vui lòng thêm thuộc tính trước!");
+                      return;
+                    }
                     const response = await axios.post(
                       `${API_URL}/product/generate-variations`,
                       {
-                        attributes: formProps.form?.getFieldValue("attributes"),
+                        attributes,
                       }
                     );
 
