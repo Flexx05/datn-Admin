@@ -4,6 +4,7 @@ export interface IAttribute {
   slug: string;
   isColor: boolean;
   values: string[];
+  countProduct: number;
   isActive: boolean;
   createdAt: string;
   updatedAt: string;

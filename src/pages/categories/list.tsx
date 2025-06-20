@@ -196,17 +196,20 @@ export const CategoryList = () => {
                         recordItemId={child._id}
                         hidden={!child.isActive}
                       />
-                      {child.isActive ? (
-                        <DeleteButton
-                          hideText
-                          size="small"
-                          recordItemId={child._id}
-                          confirmTitle="Bạn chắc chắn xóa không ?"
-                          confirmCancelText="Hủy"
-                          confirmOkText="Xóa"
-                          loading={loadingId === child._id}
-                        />
-                      ) : (
+                      <DeleteButton
+                        hideText
+                        size="small"
+                        recordItemId={child._id}
+                        confirmTitle={
+                          record.isActive
+                            ? "Bạn chắc chắn chuyển vào thùng rác không ?"
+                            : "Bạn chắc chắn xóa vĩnh viễn không ?"
+                        }
+                        confirmCancelText="Hủy"
+                        confirmOkText="Xóa"
+                        loading={loadingId === child._id}
+                      />
+                      {child.isActive === false && (
                         <Popconfirm
                           title="Bạn chắc chắn kích hoạt hiệu lực không ?"
                           onConfirm={() => handleChangeStatus(child)}
@@ -266,18 +269,21 @@ export const CategoryList = () => {
                   recordItemId={record._id}
                   hidden={!record.isActive}
                 />
-                {record.isActive ? (
-                  <DeleteButton
-                    hideText
-                    size="small"
-                    recordItemId={record._id}
-                    confirmTitle="Bạn chắc chắn xóa không ?"
-                    confirmCancelText="Hủy"
-                    confirmOkText="Xóa"
-                    loading={loadingId === record._id}
-                    hidden={isUnknown}
-                  />
-                ) : (
+                <DeleteButton
+                  hideText
+                  size="small"
+                  recordItemId={record._id}
+                  confirmTitle={
+                    record.isActive
+                      ? "Bạn chắc chắn chuyển vào thùng rác không ?"
+                      : "Bạn chắc chắn xóa vĩnh viễn không ?"
+                  }
+                  confirmCancelText="Hủy"
+                  confirmOkText="Xóa"
+                  loading={loadingId === record._id}
+                  hidden={isUnknown}
+                />
+                {record.isActive === false && (
                   <Popconfirm
                     title="Bạn chắc chắn kích hoạt hiệu lực không ?"
                     onConfirm={() => handleChangeStatus(record)}

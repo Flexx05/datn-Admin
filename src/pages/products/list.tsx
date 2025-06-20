@@ -1,5 +1,4 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { PlusCircleOutlined } from "@ant-design/icons";
 import {
   DeleteButton,
   EditButton,
@@ -8,8 +7,18 @@ import {
   useTable,
 } from "@refinedev/antd";
 import { useInvalidate } from "@refinedev/core";
-import { Image, Input, message, Popconfirm, Space, Table, Tabs } from "antd";
+import {
+  Button,
+  Image,
+  Input,
+  message,
+  Popconfirm,
+  Space,
+  Table,
+  Tabs,
+} from "antd";
 import axios from "axios";
+import dayjs from "dayjs";
 import { useCallback, useState } from "react";
 import { API_URL } from "../../config/dataProvider";
 import {
@@ -19,7 +28,6 @@ import {
 } from "../../interface/product";
 import { ColorDots } from "./ColorDots";
 import { VariationTable } from "./VariationTable";
-import dayjs from "dayjs";
 
 export const ProductList = () => {
   const [filterActive, setFilterActive] = useState<boolean>(true);
@@ -220,20 +228,33 @@ export const ProductList = () => {
           dataIndex="actions"
           render={(_, record: IProduct) => (
             <Space>
-              <EditButton hideText size="small" recordItemId={record._id} />
-              <ShowButton hideText size="small" recordItemId={record._id} />
-              {record.isActive ? (
-                <DeleteButton
-                  hideText
-                  size="small"
-                  recordItemId={record._id}
-                  confirmTitle="Bạn chắc chắn xóa không ?"
-                  confirmCancelText="Hủy"
-                  confirmOkText="Xóa"
-                  loading={loadingId === record._id}
-                  disabled={loadingId === record._id}
-                />
-              ) : (
+              <EditButton
+                hideText
+                size="small"
+                recordItemId={record._id}
+                hidden={!record.isActive}
+              />
+              <ShowButton
+                hideText
+                size="small"
+                recordItemId={record._id}
+                hidden={!record.isActive}
+              />
+              <DeleteButton
+                hideText
+                size="small"
+                recordItemId={record._id}
+                confirmTitle={
+                  record.isActive
+                    ? "Bạn chắc chắn chuyển vào thùng rác không ?"
+                    : "Bạn chắc chắn xóa vĩnh viễn không ?"
+                }
+                confirmCancelText="Hủy"
+                confirmOkText="Xóa"
+                loading={loadingId === record._id}
+                disabled={loadingId === record._id}
+              />
+              {record.isActive === false && (
                 <Popconfirm
                   title="Bạn chắc chắn kích hoạt hiệu lực không ?"
                   onConfirm={() => handleChangeStatus(record)}
@@ -241,17 +262,9 @@ export const ProductList = () => {
                   cancelText="Hủy"
                   okButtonProps={{ loading: loadingId === record._id }}
                 >
-                  <PlusCircleOutlined
-                    style={{
-                      border: "1px solid #404040",
-                      borderRadius: "20%",
-                      padding: 4,
-                      cursor:
-                        loadingId === record._id ? "not-allowed" : "pointer",
-                      opacity: loadingId === record._id ? 0.5 : 1,
-                    }}
-                    disabled={loadingId === record._id}
-                  />
+                  <Button size="small" type="default">
+                    Kích hoạt
+                  </Button>
                 </Popconfirm>
               )}
             </Space>
