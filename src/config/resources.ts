@@ -61,4 +61,12 @@ export const resources = [
       label: "Quản lý Khách hàng",
     },
   },
+  {
+    name: "orders",
+    list: "/orders",
+    show: "/orders/show/:id",
+    meta: {
+      label: "Quản lý đơn hàng",
+    },
+  }
 ];
