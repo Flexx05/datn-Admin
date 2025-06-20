@@ -2,6 +2,7 @@
 import { EditButton, List, ShowButton, useTable } from "@refinedev/antd";
 import { CrudFilters, useInvalidate } from "@refinedev/core";
 import {
+  Avatar,
   Button,
   Input,
   Popconfirm,
@@ -138,6 +139,13 @@ export const UserList = () => {
           dataIndex="stt"
           title="STT"
           render={(_: unknown, __: IUser, index: number) => index + 1}
+        />
+        <Table.Column
+          dataIndex="avatar"
+          title="Avatar"
+          render={(value: string) => (
+            <Avatar src={value ? value : "../../../public/avtDefault.png"} />
+          )}
         />
         <Table.Column dataIndex="fullName" title="Tên người dùng" />
         <Table.Column dataIndex="email" title="Email" />
