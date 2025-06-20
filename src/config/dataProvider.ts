@@ -1,27 +1,53 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { DataProvider } from "@refinedev/core";
 import axios from "axios";
+import { TOKEN_KEY } from "./authProvider";
 
 export const API_URL = "http://localhost:8080/api";
 
+const axiosInstance = axios.create({
+  baseURL: API_URL,
+});
+
+// Request interceptor để thêm token vào mọi request
+axiosInstance.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem(TOKEN_KEY);
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
+
+// Response interceptor để xử lý lỗi authentication
+axiosInstance.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      localStorage.clear();
+      window.location.href = "/login";
+    }
+    return Promise.reject(error);
+  }
+);
+
 const dataProvider: DataProvider = {
   getApiUrl: () => API_URL,
+
   getList: async ({ resource, filters, pagination, sorters, meta }) => {
-    let endpoint = `${API_URL}/${resource}`;
+    let endpoint = `/${resource}`;
     const params: Record<string, any> = {};
 
     if (filters) {
       filters.forEach((filter) => {
-        // filter.field là tên trường, filter.value là giá trị tìm kiếm
-        if (filter.operator === "contains") {
-          params[filter.field] = filter.value;
-        } else if (filter.operator === "eq") {
+        if (filter.operator === "contains" || filter.operator === "eq") {
           params[filter.field] = filter.value;
         }
-        // Thêm các operator khác nếu cần
       });
     }
-    // Nếu resource hỗ trợ tìm kiếm (ví dụ: "attribute", "product"...)
+
     const resourcesWithSearchApi = [
       "attribute",
       "product",
@@ -31,9 +57,8 @@ const dataProvider: DataProvider = {
     if (resourcesWithSearchApi.includes(resource)) {
       endpoint += "/search";
     }
-    endpoint += "";
-    const { data } = await axios.get(endpoint, { params });
-    console.log(params);
+
+    const { data } = await axiosInstance.get(endpoint, { params });
 
     return {
       data,
@@ -42,23 +67,27 @@ const dataProvider: DataProvider = {
   },
 
   getOne: async ({ resource, id }) => {
-    const { data } = await axios.get(`${API_URL}/${resource}/id/${id}`);
+    const { data } = await axiosInstance.get(`/${resource}/id/${id}`);
     return { data };
   },
+
   update: async ({ resource, id, variables }) => {
-    const { data } = await axios.patch(
-      `${API_URL}/${resource}/edit/${id}`,
+    const { data } = await axiosInstance.patch(
+      `/${resource}/edit/${id}`,
       variables
     );
     return { data };
   },
+
   create: async ({ resource, variables }) => {
-    const { data } = await axios.post(`${API_URL}/${resource}/add`, variables);
+    const { data } = await axiosInstance.post(`/${resource}/add`, variables);
     return { data };
   },
+
   deleteOne: async ({ resource, id }) => {
-    const { data } = await axios.delete(`${API_URL}/${resource}/delete/${id}`);
+    const { data } = await axiosInstance.delete(`/${resource}/delete/${id}`);
     return { data };
   },
 };
+
 export default dataProvider;
