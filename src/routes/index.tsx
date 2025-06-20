@@ -9,6 +9,7 @@ import {
   AttributeList,
   AttributeShow,
 } from "../pages/attributes";
+import { CommentList, CommentShow } from "../pages/comments";
 import { BrandCreate, BrandEdit, BrandList, BrandShow } from "../pages/brands";
 import {
   CategoryCreate,
@@ -75,6 +76,10 @@ const AppRoutes = () => {
             <Route index element={<UserList />} />
             <Route path="show/:id" element={<UserShow />} />
             <Route path="edit/:id" element={<UserEdit />} />
+          </Route>
+          <Route path="/comments">
+            <Route index element={<CommentList />} />
+            <Route path="id/:id" element={<CommentShow />} />
           </Route>
           <Route path="*" element={<ErrorComponent />} />
         </Route>

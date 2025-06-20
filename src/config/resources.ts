@@ -44,6 +44,15 @@ export const resources = [
     },
   },
   {
+    name: "comments",
+    list: "/comments",
+    show: "/comments/id/:id",
+    meta: {
+      canDelete: true,
+      label: "Quản lý đánh giá",
+    },
+  },
+  {
     name: "admin/users",
     list: "/users",
     show: "/users/show/:id",
