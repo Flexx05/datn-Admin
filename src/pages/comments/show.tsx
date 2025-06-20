@@ -21,7 +21,6 @@ import {
 import { Show } from "@refinedev/antd";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
-import { send } from "process";
 
 const { Title } = Typography;
 
@@ -129,7 +128,17 @@ export const CommentShow = () => {
         </Descriptions.Item>
 
         <Descriptions.Item label="Phân loại">
-          {record?.variationId}
+        {record?.variationInfo?.attributes?.length > 0 ? (
+           (record?.variationInfo?.attributes || record?.attributes || []).map((attr:any, index:any) => (
+            <div key={index}>
+              {attr.name}: {attr.value}
+            </div>
+          ))
+          ) : (
+            <span style={{ fontStyle: "italic", color: "#888" }}>
+              "Không có thông tin biến thể"
+            </span>
+          )}
         </Descriptions.Item>
 
         <Descriptions.Item label="Người bình luận">
@@ -170,7 +179,7 @@ export const CommentShow = () => {
                   ) : isVideo ? (
                     <video
                       key={index}
-                      width={250}
+                      width={200}
                       height={200}
                       controls
                       style={{ objectFit: 'cover' }}
