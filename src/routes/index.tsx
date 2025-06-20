@@ -26,6 +26,8 @@ import {
 } from "../pages/products";
 import { UserList, UserShow } from "../pages/user";
 import { UserEdit } from "../pages/user/edit";
+import { OrderList } from "../pages/order/list";
+import { OrderShow } from "../pages/order/show";
 
 const AppRoutes = () => {
   return (
@@ -80,6 +82,10 @@ const AppRoutes = () => {
           <Route path="/comments">
             <Route index element={<CommentList />} />
             <Route path="id/:id" element={<CommentShow />} />
+          </Route>
+          <Route path="/orders">
+            <Route index element={<OrderList />} />
+            <Route path="show/:id" element={<OrderShow />} />
           </Route>
           <Route path="*" element={<ErrorComponent />} />
         </Route>
