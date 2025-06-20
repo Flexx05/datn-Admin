@@ -157,6 +157,14 @@ export const AttributeList = () => {
           }}
         />
         <Table.Column
+          dataIndex="countProduct"
+          title={"Số lượng sản phẩm sử dụng"}
+          render={(value: number) => (
+            <Typography.Text>{value || 0}</Typography.Text>
+          )}
+          width={300}
+        />
+        <Table.Column
           dataIndex="createdAt"
           title={"Ngày tạo"}
           render={(value: string) => (
@@ -194,6 +202,7 @@ export const AttributeList = () => {
                   confirmCancelText="Hủy"
                   confirmOkText="Xóa"
                   loading={loadingId === record._id}
+                  hidden={record.countProduct > 0}
                 />
               ) : (
                 <Popconfirm
