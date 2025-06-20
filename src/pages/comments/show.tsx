@@ -117,11 +117,6 @@ export const CommentShow = () => {
         labelStyle={{ fontWeight: 600, width: "180px" }}
         contentStyle={{ whiteSpace: "pre-wrap" }}
       >
-        <Descriptions.Item label="ID">#{record?._id}</Descriptions.Item> 
-
-        <Descriptions.Item label="Mã đơn hàng">
-          #{record?.orderId}
-        </Descriptions.Item>
 
         <Descriptions.Item label="Tên sản phẩm">
           {record?.productId?.name}
