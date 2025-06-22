@@ -167,10 +167,11 @@ export const CategoryList = () => {
                   render={(_: unknown, __: ICategory, index: number) =>
                     index + 1
                   }
-                  width={100}
+                  width={90}
                 />
-                <Table.Column dataIndex="name" width={350} />
-                <Table.Column dataIndex="slug" width={350} />
+                <Table.Column dataIndex="name" width={250} />
+                <Table.Column dataIndex="slug" width={270} />
+                <Table.Column dataIndex="countProduct" width={300} />
                 <Table.Column
                   dataIndex="createdAt"
                   render={(value: string) => (
@@ -201,8 +202,11 @@ export const CategoryList = () => {
                         size="small"
                         recordItemId={child._id}
                         confirmTitle={
-                          record.isActive
-                            ? "Bạn chắc chắn chuyển vào thùng rác không ?"
+                          child.isActive
+                            ? `Bạn chắc chắn chuyển vào thùng rác ${
+                                child.countProduct &&
+                                `và chuyển ${child.countProduct} sản phẩm vào Danh mục không xác định`
+                              } không ?`
                             : "Bạn chắc chắn xóa vĩnh viễn không ?"
                         }
                         confirmCancelText="Hủy"
@@ -237,7 +241,11 @@ export const CategoryList = () => {
           render={(_: unknown, __: ICategory, index: number) => index + 1}
         />
         <Table.Column dataIndex="name" title="Tên danh mục" />
-        <Table.Column dataIndex="slug" title={"Đường dẫn"} />
+        <Table.Column dataIndex="slug" title="Đường dẫn" />
+        <Table.Column
+          dataIndex="countProduct"
+          title="Số sản phẩm trong danh mục"
+        />
         <Table.Column
           dataIndex="createdAt"
           title="Ngày tạo"
@@ -275,7 +283,10 @@ export const CategoryList = () => {
                   recordItemId={record._id}
                   confirmTitle={
                     record.isActive
-                      ? "Bạn chắc chắn chuyển vào thùng rác không ?"
+                      ? `Bạn chắc chắn chuyển vào thùng rác ${
+                          record.countProduct &&
+                          `và chuyển ${record.countProduct} sản phẩm vào Danh mục không xác định`
+                        } không ?`
                       : "Bạn chắc chắn xóa vĩnh viễn không ?"
                   }
                   confirmCancelText="Hủy"

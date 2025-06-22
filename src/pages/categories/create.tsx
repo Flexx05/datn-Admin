@@ -39,7 +39,12 @@ export const CategoryCreate = () => {
   // Lọc ra các danh mục cha hợp lệ
   const filteredOptions = useMemo(() => {
     return allCategories
-      .filter((item: ICategory) => item.parentId === null && item.isActive)
+      .filter(
+        (item: ICategory) =>
+          item.parentId === null &&
+          item.isActive &&
+          item.slug !== "danh-muc-khong-xac-dinh"
+      )
       .map((item) => ({
         label: item.name,
         value: item._id,

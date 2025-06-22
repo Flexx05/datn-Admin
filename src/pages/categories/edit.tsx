@@ -50,7 +50,8 @@ export const CategoryEdit = () => {
         (item: ICategory) =>
           item._id !== editingRecord._id &&
           item.parentId === null &&
-          item.isActive === true
+          item.isActive === true &&
+          item.slug !== "danh-muc-khong-xac-dinh"
       )
       .map((item) => ({
         label: item.name,
@@ -84,6 +85,8 @@ export const CategoryEdit = () => {
       saveButtonProps={saveButtonProps}
       title="Cập nhật danh mục"
       canDelete={false}
+      isLoading={editQueryResult?.isLoading}
+      // Note: Thêm loading cho các trang edit khác
     >
       <Form {...formProps} layout="vertical" onFinish={handleFinish}>
         <Form.Item

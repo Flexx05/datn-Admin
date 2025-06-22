@@ -101,7 +101,11 @@ export const BrandEdit = () => {
   };
 
   return (
-    <Edit saveButtonProps={saveButtonProps} title="Chỉnh sửa thương hiệu">
+    <Edit
+      saveButtonProps={saveButtonProps}
+      title="Chỉnh sửa thương hiệu"
+      isLoading={queryResult?.isLoading}
+    >
       <Form
         {...formProps}
         layout="vertical"
