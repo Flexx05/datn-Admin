@@ -19,11 +19,7 @@ export const UserShow = () => {
   const record = data?.data;
 
   return (
-    <Show
-      isLoading={isLoading}
-      title="Chi tiết người dùng"
-      canEdit={record?.isActive}
-    >
+    <Show isLoading={isLoading} title="Chi tiết người dùng" canEdit={false}>
       <Card bordered style={{ maxWidth: 600, margin: "0 auto" }}>
         <Row gutter={[16, 16]}>
           <Col span={24}>

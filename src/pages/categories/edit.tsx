@@ -59,17 +59,24 @@ export const CategoryEdit = () => {
   }, [allCategories, editingRecord]);
 
   const handleFinish = async (values: any) => {
-    const parentId = values.parentId ?? null;
-
-    if (parentId) {
-      const parent = allCategories.find((item) => item._id === parentId);
-      if (!parent || !parent.isActive || parent.parentId !== null) {
-        message.error("Danh mục cha không hợp lệ hoặc đã bị xoá.");
-        return;
+    try {
+      const parentId = values.parentId ?? null;
+      if (parentId) {
+        const parent = allCategories.find((item) => item._id === parentId);
+        if (!parent || !parent.isActive || parent.parentId !== null) {
+          message.error("Danh mục cha không hợp lệ hoặc đã bị xoá.");
+          return;
+        }
       }
-    }
 
-    formProps?.onFinish?.({ ...values, parentId });
+      if (values.name && typeof values.name === "string") {
+        values.name = values.name.trim();
+      }
+
+      formProps?.onFinish?.({ ...values, parentId });
+    } catch (error) {
+      message.error("Có lỗi xảy ra trong quá trình xử lý.");
+    }
   };
 
   return (

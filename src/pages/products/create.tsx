@@ -179,6 +179,15 @@ export const ProductCreate = () => {
         return;
       }
 
+      if (values.attributes && values.attributes.length <= 1) {
+        message.error("Vui lòng thêm ít nhất 2 thuộc tính cho sản phẩm.");
+        return;
+      }
+
+      if (values.name && typeof values.name === "string") {
+        values.name = values.name.trim();
+      }
+
       // Kiểm tra danh mục còn hoạt động
       const selectedCategory = allCategories.find(
         (cat) => cat._id === values.categoryId

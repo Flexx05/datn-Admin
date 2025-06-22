@@ -77,6 +77,10 @@ export const BrandCreate = () => {
               return;
             }
 
+            if (values.name && typeof values.name === "string") {
+              values.name = values.name.trim();
+            }
+
             const payload = {
               name: values.name,
               logoUrl: uploadedImageUrl, // ✅ dùng URL từ Cloudinary

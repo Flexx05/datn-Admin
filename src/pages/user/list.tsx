@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { EditButton, List, ShowButton, useTable } from "@refinedev/antd";
+import { List, ShowButton, useTable } from "@refinedev/antd";
 import { CrudFilters, useInvalidate } from "@refinedev/core";
 import {
   Avatar,
@@ -184,12 +184,6 @@ export const UserList = () => {
           render={(_, record: IUser) => (
             <Space>
               <ShowButton hideText size="small" recordItemId={record._id} />
-              <EditButton
-                hideText
-                size="small"
-                recordItemId={record._id}
-                hidden={!record.isActive}
-              />
               <Popconfirm
                 title={
                   record.isActive

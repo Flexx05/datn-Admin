@@ -27,25 +27,33 @@ export const VariationTable = ({
         )}
       />
       <Table.Column
-        title="Màu sắc"
+        title="Thuộc tính"
         dataIndex="attributes"
-        key="color"
+        key="attributes"
         render={(attrs: IProductAttribute[]) => {
+          // Tìm thuộc tính có giá trị là mã màu
           const colorAttr = attrs.find(
-            (attr) => attr.attributeName === "Màu sắc"
+            (attr) =>
+              Array.isArray(attr.values) &&
+              attr.values.some(
+                (val) =>
+                  typeof val === "string" &&
+                  (/^#([0-9A-Fa-f]{3}){1,2}$/.test(val) ||
+                    /^rgb(a)?\(/.test(val))
+              )
           );
-          return colorAttr ? <ColorDots colors={colorAttr.values} /> : null;
-        }}
-      />
-      <Table.Column
-        title="Kích thước"
-        dataIndex="attributes"
-        key="size"
-        render={(attrs: IProductAttribute[]) => {
-          const sizeAttr = attrs.find(
-            (attr) => attr.attributeName === "Kích thước"
+          // Tìm thuộc tính còn lại là kích thước hoặc các giá trị khác
+          const otherAttr = attrs.filter((attr) => attr !== colorAttr);
+          return (
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              {colorAttr ? <ColorDots colors={colorAttr.values} /> : null}
+              {otherAttr.length > 0 && (
+                <span>
+                  {otherAttr.map((attr) => attr.values.join(", ")).join(", ")}
+                </span>
+              )}
+            </div>
           );
-          return sizeAttr?.values?.join(", ") || "";
         }}
       />
       <Table.Column dataIndex="regularPrice" title="Giá bán" />
