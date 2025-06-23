@@ -2,19 +2,16 @@
 import { DataProvider } from "@refinedev/core";
 import { axiosInstance } from "../utils/axiosInstance";
 
-
 export const API_URL = "http://localhost:8080/api";
 export const CLOUDINARY_URL =
   "https://api.cloudinary.com/v1_1/dtwm0rpqg/image/upload";
-
 
 const dataProvider: DataProvider = {
   getApiUrl: () => API_URL,
 
   getList: async ({ resource, filters, pagination, sorters, meta }) => {
     const params: Record<string, any> = {};
-    
-    
+
     if (filters) {
       filters.forEach((filter) => {
         // filter.field là tên trường, filter.value là giá trị tìm kiếm
@@ -27,7 +24,6 @@ const dataProvider: DataProvider = {
       });
     }
 
-
     if (sorters && sorters.length > 0) {
       const sorter = sorters[0];
       params._sort = sorter.field;
@@ -38,9 +34,9 @@ const dataProvider: DataProvider = {
       params._order = "desc";
     }
 
-    if (pagination) {
+    if (pagination && pagination.pageSize) {
       params._page = pagination.current || 1;
-      params._limit = pagination.pageSize || 10;
+      params._limit = 10000;
     }
 
     const { data } = await axiosInstance.get(`${resource}`, {
@@ -60,19 +56,24 @@ const dataProvider: DataProvider = {
   update: async ({ resource, id, variables }) => {
     let url = "";
     if (resource === "comments/reply") {
-        url = `${API_URL}/comments/reply/${id}`;
+      url = `${API_URL}/comments/reply/${id}`;
     } else {
-        url = `${API_URL}/${resource}/edit/${id}`;
+      url = `${API_URL}/${resource}/edit/${id}`;
     }
     const { data } = await axiosInstance.patch(url, variables);
     return { data };
   },
   create: async ({ resource, variables }) => {
-    const { data } = await axiosInstance.post(`${API_URL}/${resource}/add`, variables);
+    const { data } = await axiosInstance.post(
+      `${API_URL}/${resource}/add`,
+      variables
+    );
     return { data };
   },
   deleteOne: async ({ resource, id }) => {
-    const { data } = await axiosInstance.delete(`${API_URL}/${resource}/delete/${id}`);
+    const { data } = await axiosInstance.delete(
+      `${API_URL}/${resource}/delete/${id}`
+    );
     return { data };
   },
 };

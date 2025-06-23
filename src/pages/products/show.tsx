@@ -97,13 +97,13 @@ export const ProductShow: React.FC = () => {
       <Descriptions title="Thuộc tính" bordered column={1}>
         {record?.attributes?.map((attr: IProductAttribute) => (
           <Descriptions.Item key={attr.attributeId} label={attr.attributeName}>
-            {attr.isColor
-              ? attr.values.map((color: string, idx: number) => (
-                  <ColorDots key={idx} colors={[color]} />
-                ))
-              : attr.values.map((val: string, idx: number) => (
-                  <Tag key={idx}>{val}</Tag>
-                ))}
+            {attr.values.map((val: string, idx: number) =>
+              /^#([0-9A-Fa-f]{3}){1,2}$/.test(val) || /^rgb(a)?\(/.test(val) ? (
+                <ColorDots key={idx} colors={[val]} />
+              ) : (
+                <Tag key={idx}>{val}</Tag>
+              )
+            )}
           </Descriptions.Item>
         ))}
       </Descriptions>
@@ -148,7 +148,13 @@ export const ProductShow: React.FC = () => {
           }}
         />
         <Table.Column title="Giá gốc" dataIndex="regularPrice" />
-        <Table.Column title="Giá khuyến mãi" dataIndex="salePrice" />
+        <Table.Column
+          title="Giá khuyến mãi"
+          dataIndex="salePrice"
+          render={(value: number) =>
+            value || <Tag color="yellow">Không có</Tag>
+          }
+        />
         <Table.Column title="Tồn kho" dataIndex="stock" />
         <Table.Column
           title="Trạng thái"

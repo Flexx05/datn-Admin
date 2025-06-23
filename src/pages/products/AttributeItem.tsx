@@ -51,23 +51,6 @@ export const AttributeItem = ({
   const currentAttribute = allAttributes.find(
     (attr) => attr._id === currentAttributeId
   );
-  const isCurrentAttributeValid = !!currentAttribute;
-
-  // Nếu thuộc tính hiện tại không còn hợp lệ, set lại giá trị attributeId về undefined
-  useEffect(() => {
-    if (!isCurrentAttributeValid && currentAttributeId) {
-      form.setFieldValue(["attributes", field.name, "attributeId"], undefined);
-      form.setFieldValue(["attributes", field.name, "values"], []);
-      form.setFieldValue(["attributes", field.name, "isColor"], false);
-    }
-  }, [isCurrentAttributeValid, currentAttributeId, field.name, form]);
-
-  const selectOptions = isCurrentAttributeValid
-    ? availableAttributes
-    : [
-        { label: "Vui lòng chọn thuộc tính mới", value: "" },
-        ...availableAttributes,
-      ];
 
   const isColor = currentAttribute?.isColor;
   const rawValues = currentAttribute?.values || [];
@@ -102,13 +85,8 @@ export const AttributeItem = ({
           filterOption={(input, option) =>
             (option?.label ?? "").toLowerCase().includes(input.toLowerCase())
           }
-          placeholder={
-            isCurrentAttributeValid
-              ? "Chọn thuộc tính"
-              : "Vui lòng chọn thuộc tính mới"
-          }
-          options={selectOptions}
-          value={isCurrentAttributeValid ? currentAttributeId : ""}
+          placeholder={"Chọn thuộc tính"}
+          options={availableAttributes}
           onChange={async (selectedId) => {
             const selectedAttr = allAttributes.find(
               (attr) => attr._id === selectedId
@@ -255,7 +233,7 @@ export const AttributeItem = ({
         style={{ margin: 0 }}
         hidden
       >
-        <Checkbox>Có phải màu sắc?</Checkbox>
+        <Checkbox></Checkbox>
       </Form.Item>
 
       <MinusCircleOutlined onClick={() => remove(field.name)} />

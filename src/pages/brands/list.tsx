@@ -153,6 +153,10 @@ export const BrandList = () => {
         <Table.Column dataIndex="name" title={"Tên thương hiệu"} />
         <Table.Column dataIndex="slug" title={"Đường dẫn"} />
         <Table.Column
+          dataIndex="countProduct"
+          title={"Số lượng sản phẩm trong thương hiệu"}
+        />
+        <Table.Column
           dataIndex="createdAt"
           title="Ngày tạo"
           render={(value: string) => (
@@ -189,7 +193,10 @@ export const BrandList = () => {
                   recordItemId={record._id}
                   confirmTitle={
                     record.isActive
-                      ? "Bạn chắc chắn chuyển vào thùng rác không ?"
+                      ? `Bạn chắc chắn chuyển vào thùng rác ${
+                          record.countProduct &&
+                          `và chuyển ${record.countProduct} sản phẩm vào Thương hiệu không xác định`
+                        } không ?`
                       : "Bạn chắc chắn xóa vĩnh viễn không ?"
                   }
                   confirmCancelText="Hủy"

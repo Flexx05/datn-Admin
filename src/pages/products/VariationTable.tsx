@@ -57,7 +57,11 @@ export const VariationTable = ({
         }}
       />
       <Table.Column dataIndex="regularPrice" title="Giá bán" />
-      <Table.Column dataIndex="salePrice" title="Giá sale" />
+      <Table.Column
+        dataIndex="salePrice"
+        title="Giá khuyến mãi"
+        render={(value: number) => value || <Tag color="yellow">Không có</Tag>}
+      />
       <Table.Column title="Tồn kho" dataIndex="stock" />
       <Table.Column
         title="Trạng thái"

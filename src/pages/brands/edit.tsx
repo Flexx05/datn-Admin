@@ -105,6 +105,7 @@ export const BrandEdit = () => {
       saveButtonProps={saveButtonProps}
       title="Chỉnh sửa thương hiệu"
       isLoading={queryResult?.isLoading}
+      canDelete={false}
     >
       <Form
         {...formProps}
@@ -140,7 +141,7 @@ export const BrandEdit = () => {
             { max: 30, message: "Tên thương hiệu không được quá 30 ký tự" },
             { min: 2, message: "Tên thương hiệu phải có ít nhất 2 ký tự" },
             {
-              pattern: /^[\p{L}0-9\s]+$/u,
+              pattern: /^[\p{L}0-9\s-]+$/u,
               message: "Tên thương hiệu không được chứa ký tự đặc biệt",
             },
           ]}
