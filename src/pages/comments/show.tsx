@@ -117,22 +117,45 @@ export const CommentShow = () => {
         labelStyle={{ fontWeight: 600, width: "180px" }}
         contentStyle={{ whiteSpace: "pre-wrap" }}
       >
+       
+       <Descriptions.Item label="Mã đơn hàng">
+          #{record?.orderId}
+        </Descriptions.Item>
 
         <Descriptions.Item label="Tên sản phẩm">
-          {record?.productId?.name}
+        {record?.productId
+          ? record.productId.name
+          : <span style={{ color: "red"}}>Sản phẩm không tồn tại</span>
+        }
         </Descriptions.Item>
 
         <Descriptions.Item label="Phân loại">
-        {record?.variationInfo?.attributes?.length > 0 ? (
-           (record?.variationInfo?.attributes || record?.attributes || []).map((attr:any, index:any) => (
-            <div key={index}>
-              {attr.name}: {attr.value}
-            </div>
-          ))
+          {record?.variationInfo?.attributes?.length > 0 ? (
+            (record?.variationInfo?.attributes || record?.attributes || []).map((attr: any, index: any) => (
+              <div key={index}>
+                {attr.name}:
+                {/* Nếu value là mã màu thì hiển thị ô màu, ngược lại hiển thị text */}
+                {/^#([0-9A-F]{3}){1,2}$/i.test(attr.value) ? (
+                  <span
+                    style={{
+                      display: "inline-block",
+                      width: 25,
+                      height: 25,
+                      borderRadius: "50%",
+                      border: "1px solid black",
+                      background: attr.value,
+                      marginLeft: 4,
+                      verticalAlign: "middle",
+                    }}
+                    title={attr.value}
+                  />
+                ) : (
+                  <span style={{ marginLeft: 4 }}>{attr.value}</span>
+                )}
+              </div>
+            ))
           ) : (
-            <span>
-            Không có thông tin biến thể
-            </span>
+            <span>Không có thông tin biến thể</span>
           )}
         </Descriptions.Item>
 
