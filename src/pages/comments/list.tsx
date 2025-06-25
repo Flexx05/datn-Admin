@@ -4,7 +4,7 @@ import {
   useTable,
 } from "@refinedev/antd";
 import { IComment } from "../../interface/comment";
-import { Space, Table, Rate, message, Switch, Popconfirm, Form, Input, Button, Select, DatePicker } from "antd";
+import { Space, Table, Rate, message, Switch, Popconfirm, Form, Input, Button, Select, DatePicker, Tooltip } from "antd";
 import { useUpdate } from "@refinedev/core";
 import { useState } from "react";
 import { LogicalFilter } from "@refinedev/core";
@@ -144,21 +144,69 @@ export const CommentList = () => {
             )}
           />
 
-        <Table.Column
-            dataIndex="status"
-            title="Trạng thái"
-            filters={[
-              { text: "Hiển thị", value: "visible" },
-              { text: "Ẩn", value: "hidden" },
-            ]}
-            onFilter={(value, record) => record.status === value}
-            render={(value: string, record: IComment) => {
-              const isVisible = value === "visible";
-              return (
-                <Popconfirm
-                  title="Bạn có chắc muốn ẩn bình luận này không?"
-                  onConfirm={() => {
-                    const newStatus = isVisible ? "hidden" : "visible";
+
+
+<Table.Column
+    dataIndex="status"
+    title="Trạng thái"
+    filters={[
+      { text: "Hiển thị", value: "visible" },
+      { text: "Ẩn", value: "hidden" },
+    ]}
+    onFilter={(value, record) => record.status === value}
+    render={(value: string, record: IComment) => {
+      const isVisible = value === "visible";
+      const isProductDeleted = !record.productId;
+      const switchDisabled = !isVisible && isProductDeleted;
+      return (
+        <Popconfirm
+          title="Bạn có chắc muốn ẩn bình luận này không?"
+          onConfirm={() => {
+            const newStatus = isVisible ? "hidden" : "visible";
+            setStatus(String(record._id));
+            mutate(
+              {
+                resource: "comments",
+                id: record._id,
+                values: { status: newStatus },
+              },
+              {
+                onSuccess: () => {
+                  message.success("Cập nhật trạng thái thành công");
+                  setStatus(null);
+                },
+                onError: () => {
+                  message.error("Cập nhật trạng thái thất bại");
+                  setStatus(null);
+                },
+              }
+            );
+          }}
+          disabled={!isVisible}
+        >
+          <Tooltip
+            title={
+              switchDisabled
+                ? "Không thể chuyển sang trạng thái hiển thị vì sản phẩm đã bị xóa"
+                : ""
+            }
+          >
+            <span>
+              <Switch
+                checked={isVisible}
+                checkedChildren="Hiện"
+                unCheckedChildren="Ẩn"
+                loading={status === String(record._id)}
+                disabled={switchDisabled}
+                onChange={(checked) => {
+                  if (!checked && isVisible) {
+                    // Nếu chuyển từ hiện sang ẩn thì show confirm
+                  } else {
+                    // Nếu chuyển từ ẩn sang hiện mà sản phẩm đã bị xóa thì không làm gì
+                    if (checked && isProductDeleted) {
+                      return;
+                    }
+                    const newStatus = checked ? "visible" : "hidden";
                     setStatus(String(record._id));
                     mutate(
                       {
@@ -177,44 +225,15 @@ export const CommentList = () => {
                         },
                       }
                     );
-                  }}
-                  disabled={!isVisible}
-                >
-                  <Switch
-                    checked={isVisible}
-                    checkedChildren="Hiện"
-                    unCheckedChildren="Ẩn"
-                    loading={status === String(record._id)}
-                    onChange={(checked) => {
-                      if (!checked && isVisible) {
-                        // Nếu chuyển từ hiện sang ẩn thì show confirm
-                      } else {
-                        const newStatus = checked ? "visible" : "hidden";
-                        setStatus(String(record._id));
-                        mutate(
-                          {
-                            resource: "comments",
-                            id: record._id,
-                            values: { status: newStatus },
-                          },
-                          {
-                            onSuccess: () => {
-                              message.success("Cập nhật trạng thái thành công");
-                              setStatus(null);
-                            },
-                            onError: () => {
-                              message.error("Cập nhật trạng thái thất bại");
-                              setStatus(null);
-                            },
-                          }
-                        );
-                      }
-                    }}
-                  />
-                </Popconfirm>
-              );
-            }}
-          />
+                  }
+                }}
+              />
+            </span>
+          </Tooltip>
+        </Popconfirm>
+      );
+    }}
+/>
 
         <Table.Column
           dataIndex="adminReply"
