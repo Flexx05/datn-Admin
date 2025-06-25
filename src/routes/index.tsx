@@ -28,6 +28,10 @@ import { UserList, UserShow } from "../pages/user";
 import { UserEdit } from "../pages/user/edit";
 import { OrderList } from "../pages/order/list";
 import { OrderShow } from "../pages/order/show";
+import VoucherList from "../pages/voucher/list";
+import VoucherCreate from "../pages/voucher/create";
+import VoucherEdit from "../pages/voucher/edit";
+import VoucherShow from "../pages/voucher/show";
 
 const AppRoutes = () => {
   return (
@@ -88,6 +92,12 @@ const AppRoutes = () => {
             <Route path="show/:id" element={<OrderShow />} />
           </Route>
           <Route path="*" element={<ErrorComponent />} />
+          <Route path="/vouchers">
+            <Route index element={<VoucherList />} />
+            <Route path="add" element={<VoucherCreate />} />
+            <Route path="edit/:id" element={<VoucherEdit />} />
+            <Route path="id/:id" element={<VoucherShow />} />
+          </Route>
         </Route>
         <Route
           element={
