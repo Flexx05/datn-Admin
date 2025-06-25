@@ -44,10 +44,10 @@ const VoucherList = () => {
   
       <Table.Column
             title="Trạng thái"
-            dataIndex="status"
+            dataIndex="voucherStatus"
             filters={[
                 { text: "Có hiệu lực", value: "active" },
-                { text: "Chưa hiệu lực", value: "inactive" },
+                { text: "Không có hiệu lực", value: "inactive" },
                 { text: "Hết hạn", value: "expired" },
             ]}
             onFilter={(value, record) => record.voucherStatus === value}
@@ -55,7 +55,7 @@ const VoucherList = () => {
                 if (status === "active")
                 return <Tag color="green">Có hiệu lực</Tag>;
                 if (status === "inactive")
-                return <Tag color="blue">Chưa hiệu lực</Tag>;
+                return <Tag color="yellow">Không có hiệu lực</Tag>;
                 if (status === "expired")
                 return <Tag color="red">Hết hạn</Tag>;
                 return status;
@@ -73,7 +73,7 @@ const VoucherList = () => {
                 if (type === "product")
                 return <Tag color="purple">Dành cho sản phẩm</Tag>;
                 if (type === "shipping")
-                return <Tag color="orange">Dành cho phí vận chuyển</Tag>;
+                return <Tag color="blue">Dành cho phí vận chuyển</Tag>;
                 return type;
             }}
       />
