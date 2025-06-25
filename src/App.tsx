@@ -7,8 +7,10 @@ import { App as AntdApp } from "antd";
 import { BrowserRouter } from "react-router";
 import RefineConfig from "./config/RefineConfig";
 import { ColorModeContextProvider } from "./contexts/color-mode";
+import { useAccountSocket } from "./socket/useAccountSocket";
 
 function App() {
+  useAccountSocket();
   return (
     <BrowserRouter>
       <RefineKbarProvider>
