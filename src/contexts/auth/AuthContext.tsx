@@ -6,6 +6,7 @@ import {
   useState,
 } from "react";
 import { IUser } from "../../interface/user";
+import { Spin } from "antd";
 
 interface AuthContextType {
   user: IUser | null;
@@ -13,6 +14,7 @@ interface AuthContextType {
   login: (user: IUser | null, token: string | null) => void;
   logout: () => void;
   isAuthenticated: boolean;
+  isLoading: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -20,6 +22,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthContextProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<IUser | null>(null);
   const [token, setToken] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
 
   useEffect(() => {
     const storedUser = localStorage.getItem("user");
@@ -29,6 +32,7 @@ export const AuthContextProvider = ({ children }: { children: ReactNode }) => {
       setUser(JSON.parse(storedUser));
       setToken(storedToken);
     }
+    setIsLoading(false);
   }, []);
 
   const login = (user: IUser | null, token: string | null) => {
@@ -45,9 +49,18 @@ export const AuthContextProvider = ({ children }: { children: ReactNode }) => {
     setToken(null);
   };
 
+  if (isLoading) return <Spin />;
+
   return (
     <AuthContext.Provider
-      value={{ user, token, login, logout, isAuthenticated: !!user && !!token }}
+      value={{
+        user,
+        token,
+        login,
+        logout,
+        isAuthenticated: !!user && !!token,
+        isLoading,
+      }}
     >
       {children}
     </AuthContext.Provider>

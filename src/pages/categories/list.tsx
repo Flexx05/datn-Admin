@@ -15,6 +15,7 @@ import {
   Space,
   Table,
   Tabs,
+  Tooltip,
   Typography,
 } from "antd";
 import axios from "axios";
@@ -162,18 +163,22 @@ export const CategoryList = () => {
         const isUnknown = record.slug === "danh-muc-khong-xac-dinh";
         return (
           <Space>
-            <EditButton
-              hideText
-              size="small"
-              recordItemId={record._id}
-              hidden={!record.isActive || isUnknown}
-            />
-            <ShowButton
-              hideText
-              size="small"
-              recordItemId={record._id}
-              hidden={!record.isActive}
-            />
+            <Tooltip title="Chỉnh sửa danh mục">
+              <EditButton
+                hideText
+                size="small"
+                recordItemId={record._id}
+                hidden={!record.isActive || isUnknown}
+              />
+            </Tooltip>
+            <Tooltip title="Xem chi tiết">
+              <ShowButton
+                hideText
+                size="small"
+                recordItemId={record._id}
+                hidden={!record.isActive}
+              />
+            </Tooltip>
             <DeleteButton
               hideText
               size="small"

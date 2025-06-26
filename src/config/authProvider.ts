@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import type { AuthProvider } from "@refinedev/core";
 import { axiosInstance } from "../utils/axiosInstance";
-import { useAuth } from "../contexts/auth/authContext";
+import { useAuth } from "../contexts/auth/AuthContext";
 
 export const TOKEN_KEY = "token";
 export const USER_KEY = "user";

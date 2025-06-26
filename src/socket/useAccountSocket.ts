@@ -1,7 +1,7 @@
 import { useEffect, useRef } from "react";
 import { Socket } from "socket.io-client";
 import Swal from "sweetalert2";
-import { useAuth } from "../contexts/auth/authContext";
+import { useAuth } from "../contexts/auth/AuthContext";
 import { socket } from "./socket";
 export const useAccountSocket = () => {
   const { user, logout } = useAuth();

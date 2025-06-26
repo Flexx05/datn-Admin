@@ -172,7 +172,7 @@ export const ProductShow: React.FC = () => {
               <Popconfirm
                 title="Bạn chắc chắn thay đổi hiệu lực không ?"
                 onConfirm={() => handleChangeStatus(record)}
-                okText="Kích hoạt"
+                okText="Thay đổi"
                 cancelText="Hủy"
                 okButtonProps={{ loading: loadingId === record._id }}
               >

@@ -10,6 +10,7 @@ import {
   Table,
   Tabs,
   Tag,
+  Tooltip,
   message,
 } from "antd";
 import axios from "axios";
@@ -144,7 +145,7 @@ export const UserList = () => {
           dataIndex="avatar"
           title="Avatar"
           render={(value: string) => (
-            <Avatar src={value ? value : "../../../public/avtDefault.png"} />
+            <Avatar src={value ? value : "../../../avtDefault.png"} />
           )}
         />
         <Table.Column dataIndex="fullName" title="Tên người dùng" />
@@ -171,6 +172,10 @@ export const UserList = () => {
           )}
         />
         <Table.Column
+          dataIndex={"countOrderNotSuccess"}
+          title="Đơn hàng chưa hoàn thành"
+        />
+        <Table.Column
           dataIndex="createdAt"
           title="Ngày đăng ký"
           sorter={(a: IUser, b: IUser) =>
@@ -183,7 +188,10 @@ export const UserList = () => {
           dataIndex="actions"
           render={(_, record: IUser) => (
             <Space>
-              <ShowButton hideText size="small" recordItemId={record._id} />
+              <Tooltip title="Xem chi tiết" key="show">
+                <ShowButton hideText size="small" recordItemId={record._id} />
+              </Tooltip>
+
               <Popconfirm
                 title={
                   record.isActive
@@ -199,6 +207,7 @@ export const UserList = () => {
                   danger={record.isActive}
                   size="small"
                   type={record.isActive ? "default" : "primary"}
+                  disabled={record.countOrderNotSuccess > 0}
                 >
                   {record.isActive ? "Khoá" : "Mở khoá"}
                 </Button>
