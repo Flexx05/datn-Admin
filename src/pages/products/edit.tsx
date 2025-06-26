@@ -153,6 +153,9 @@ export const ProductEdit = () => {
     optionLabel: "name",
     optionValue: "_id",
     pagination: { mode: "off" },
+    meta: {
+      _limit: "off",
+    },
   });
 
   const { queryResult: brand } = useSelect({
@@ -160,6 +163,9 @@ export const ProductEdit = () => {
     optionLabel: "name",
     optionValue: "_id",
     pagination: { mode: "off" },
+    meta: {
+      _limit: "off",
+    },
   });
 
   const { queryResult: attribute } = useSelect({
@@ -169,6 +175,7 @@ export const ProductEdit = () => {
     pagination: { mode: "off" },
     meta: {
       fields: ["isColor", "values", "name", "isActive"],
+      _limit: "off",
     },
   });
 

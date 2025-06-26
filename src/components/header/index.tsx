@@ -10,6 +10,7 @@ import {
 } from "antd";
 import React, { useContext } from "react";
 import { ColorModeContext } from "../../contexts/color-mode";
+import Nontification from "../Nontification";
 
 const { Text } = Typography;
 const { useToken } = theme;
@@ -34,6 +35,7 @@ export const Header: React.FC<RefineThemedLayoutV2HeaderProps> = ({
     alignItems: "center",
     padding: "0px 30px",
     height: "64px",
+    gap: "8px",
   };
 
   if (sticky) {
@@ -45,6 +47,7 @@ export const Header: React.FC<RefineThemedLayoutV2HeaderProps> = ({
   return (
     <AntdLayout.Header style={headerStyles}>
       <Space>
+        <Nontification />
         <Switch
           checkedChildren="🌛"
           unCheckedChildren="🔆"

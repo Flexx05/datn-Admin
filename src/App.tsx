@@ -7,10 +7,11 @@ import { App as AntdApp } from "antd";
 import { BrowserRouter } from "react-router";
 import RefineConfig from "./config/RefineConfig";
 import { ColorModeContextProvider } from "./contexts/color-mode";
-import { useAccountSocket } from "./socket/useAccountSocket";
+import { useAccountSocket, useNontificationSocket } from "./socket";
 
 function App() {
   useAccountSocket();
+  useNontificationSocket();
   return (
     <BrowserRouter>
       <RefineKbarProvider>
