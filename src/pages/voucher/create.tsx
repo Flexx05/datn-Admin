@@ -80,9 +80,20 @@ const VoucherCreate = () => {
           name="code"
           rules={[{ required: true, message: "Vui lòng nhập mã giảm giá" },
             {
-              validator: (_, value) => {
+              validator: async(_, value) => {
                 if (value && value.trim().length === 0) {
                   return Promise.reject("Mã giảm giá không được chỉ chứa khoảng trắng");
+                }
+                try {
+                  const response = await fetch(`/api/vouchers?code=${value.trim()}`);
+                  const data = await response.json();
+        
+                  // Nếu trả về danh sách có ít nhất 1 phần tử → trùng
+                  if (data?.docs?.length > 0) {
+                    return Promise.reject("Mã giảm giá đã tồn tại");
+                  }
+                } catch (error) {
+                  console.error("Lỗi kiểm tra mã:", error);
                 }
                 return Promise.resolve();
               },
