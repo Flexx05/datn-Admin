@@ -47,7 +47,11 @@ const VoucherShow = () => {
         </Descriptions.Item>
 
         <Descriptions.Item label="Giá trị giảm">
-          {voucher?.discountValue?.toLocaleString()}đ
+          {voucher?.discountType === "fixed"
+            ? `${voucher?.discountValue?.toLocaleString()}đ`
+            : voucher?.discountType === "percent"
+              ? `${voucher?.discountValue}%`
+              : ""}
         </Descriptions.Item>
 
         <Descriptions.Item label="Đơn tối thiểu">
