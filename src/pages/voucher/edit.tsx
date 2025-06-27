@@ -262,6 +262,26 @@ const VoucherEdit = () => {
               min: 0,
               message: "Giá trị đơn tối thiểu phải lớn hơn hoặc bằng 0",
             },
+            {
+              validator: (_, value) => {
+                const discountType = formProps.form?.getFieldValue("discountType");
+                const discountValue = formProps.form?.getFieldValue("discountValue");
+        
+                if (discountType === "fixed") {
+                  if (
+                    typeof value === "number" &&
+                    typeof discountValue === "number" &&
+                    value <= discountValue
+                  ) {
+                    return Promise.reject(
+                      "Giá trị đơn tối thiểu phải lớn hơn số tiền giảm"
+                    );
+                  }
+                }
+        
+                return Promise.resolve();
+              },
+            },    
           ]}
         >
           <InputNumber
