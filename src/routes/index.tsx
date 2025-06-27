@@ -27,6 +27,7 @@ import {
 import { UserList, UserShow } from "../pages/user";
 import { OrderList } from "../pages/order/list";
 import { OrderShow } from "../pages/order/show";
+import { Dashboard } from "../pages/dashboard";
 
 const AppRoutes = () => {
   return (
@@ -48,7 +49,10 @@ const AppRoutes = () => {
             </Authenticated>
           }
         >
-          <Route index element={<NavigateToResource resource="product" />} />
+          <Route index element={<NavigateToResource resource="dashboard" />} />
+          <Route path="/dashboard">
+            <Route index element={<Dashboard />} />
+          </Route>
           <Route path="/product">
             <Route index element={<ProductList />} />
             <Route path="add" element={<ProductCreate />} />
