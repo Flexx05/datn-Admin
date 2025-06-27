@@ -65,18 +65,24 @@ export const OrderShow = () => {
     }
   };
 
-  const getStatusDisplayText = (status: string): string => {
-    const statusMap: { [key: string]: string } = {
-      "Cho xac nhan": "Chờ xác nhận",
-      "Da xac nhan": "Đã xác nhận", 
-      "Dang giao hang": "Đang giao hàng",
-      "Da giao hang": "Đã giao hàng",
-      "Hoan thanh": "Hoàn thành",
-      "Da huy": "Đã hủy",
-      "Chua thanh toan": 'Chưa thanh toán',
-      "Da thanh toan": 'Đã thanh toán',
-      "That bai": 'Thất bại',
-      "Da hoan tien": 'Đã hoàn tiền'
+  const getStatusDisplayText = (status: number): string => {
+    const statusMap: { [key: number]: string } = {
+      0: "Chờ xác nhận",
+      1: "Đã xác nhận",
+      2: "Đang giao hàng",
+      3: "Đã giao hàng",
+      4: "Hoàn thành",
+      5: "Đã hủy",
+    };
+
+    return statusMap[status] || status;
+  };
+
+  const getPaymentStatusDisplayText = (status: number): string => {
+    const statusMap: { [key: number]: string } = {
+      0: 'Chưa thanh toán',
+      1: 'Đã thanh toán',
+      2: 'Đã hoàn tiền'
     };
 
     return statusMap[status] || status;
@@ -101,24 +107,23 @@ export const OrderShow = () => {
   };
 
   // Hàm lấy màu cho trạng thái đơn hàng
-  const getStatusColor = (status: string) => {
-    const statusLower = status.toLowerCase();
-    if (statusLower.includes('cho') || statusLower.includes('pending')) return 'orange';
-    if (statusLower.includes('xac nhan') || statusLower.includes('confirmed')) return 'blue';
-    if (statusLower.includes('dang giao') || statusLower.includes('shipping')) return 'purple';
-    if (statusLower.includes('da giao') || statusLower.includes('delivered')) return 'green';
-    if (statusLower.includes('hoan thanh') || statusLower.includes('completed')) return 'cyan';
-    if (statusLower.includes('huy') || statusLower.includes('cancelled')) return 'red';
+  const getStatusColor = (status: number) => {
+    const statusLower = status;
+    if (statusLower === 0) return 'orange';
+    if (statusLower === 1) return 'blue';
+    if (statusLower === 2) return 'purple';
+    if (statusLower === 3) return 'green';
+    if (statusLower === 4) return 'cyan';
+    if (statusLower === 5) return 'red';
     return 'default';
   };
 
   // Hàm lấy màu cho trạng thái thanh toán
-  const getPaymentStatusColor = (status: string) => {
-    const statusLower = status.toLowerCase();
-    if (statusLower.includes('chua') || statusLower.includes('pending')) return 'orange';
-    if (statusLower.includes('da') || statusLower.includes('paid')) return 'green';
-    if (statusLower.includes('that bai') || statusLower.includes('failed')) return 'red';
-    if (statusLower.includes('hoan') || statusLower.includes('refunded')) return 'purple';
+  const getPaymentStatusColor = (status: number) => {
+    const statusLower = status;
+    if (statusLower === 0) return 'orange';
+    if (statusLower === 1) return 'green';
+    if (statusLower === 2) return 'purple';
     return 'default';
   };
 
@@ -160,8 +165,8 @@ export const OrderShow = () => {
           {record.variantAttributes?.length > 0 ? (
             <Space direction="vertical" size="small">
               {record.variantAttributes.map((attr: any, index: number) => (
-                <div key={index} style={{ 
-                  padding: '4px 8px', 
+                <div key={index} style={{
+                  padding: '4px 8px',
                   backgroundColor: 'Background', // Nền trong suốt
                   borderRadius: '4px',
                   fontSize: '12px'
@@ -192,8 +197,8 @@ export const OrderShow = () => {
                   ) : (
                     // Hiển thị thông thường cho các thuộc tính khác
                     <Text style={{ color: '#000' }}> {/* Chữ màu đen */}
-                      {attr.values && attr.values.length > 0 
-                        ? attr.values.join(', ') 
+                      {attr.values && attr.values.length > 0
+                        ? attr.values.join(', ')
                         : 'N/A'
                       }
                     </Text>
@@ -324,7 +329,7 @@ export const OrderShow = () => {
               </Descriptions.Item>
               <Descriptions.Item label="Trạng thái thanh toán">
                 <Tag color={getPaymentStatusColor(orderData.paymentStatus)}>
-                  {getStatusDisplayText(orderData.paymentStatus)}
+                  {getPaymentStatusDisplayText(orderData.paymentStatus)}
                 </Tag>
               </Descriptions.Item>
             </Descriptions>
