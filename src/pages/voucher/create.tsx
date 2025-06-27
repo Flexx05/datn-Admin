@@ -22,6 +22,10 @@ const VoucherCreate = () => {
   });
 
   const [discountType, setDiscountType] = useState("fixed");
+  const [fixedValue, setFixedValue] = useState<number | undefined>(undefined);
+  const [percentValue, setPercentValue] = useState<number | undefined>(undefined);
+  const [maxDiscount, setMaxDiscount] = useState<number | undefined>(undefined);
+  
   const { form } = formProps;
 
   const handleFinish = (values: any) => {
@@ -80,9 +84,20 @@ const VoucherCreate = () => {
           name="code"
           rules={[{ required: true, message: "Vui lòng nhập mã giảm giá" },
             {
-              validator: (_, value) => {
+              validator: async(_, value) => {
                 if (value && value.trim().length === 0) {
                   return Promise.reject("Mã giảm giá không được chỉ chứa khoảng trắng");
+                }
+                try {
+                  const response = await fetch(`/api/vouchers?code=${value.trim()}`);
+                  const data = await response.json();
+        
+                  // Nếu trả về danh sách có ít nhất 1 phần tử → trùng
+                  if (data?.docs?.length > 0) {
+                    return Promise.reject("Mã giảm giá đã tồn tại");
+                  }
+                } catch (error) {
+                  console.error("Lỗi kiểm tra mã:", error);
                 }
                 return Promise.resolve();
               },
@@ -124,10 +139,32 @@ const VoucherCreate = () => {
           name="discountType"
           rules={[{ required: true, message: "Vui lòng chọn kiểu giảm giá" }]}
         >
-          <Select onChange={setDiscountType} placeholder="Chọn kiểu giảm giá">
-            <Select.Option value="fixed">Giảm cố định</Select.Option>
-            <Select.Option value="percent">Giảm phần trăm</Select.Option>
-          </Select>
+          <Select
+          onChange={(value) => {
+            // Lưu giá trị hiện tại trước khi chuyển
+            const currentDiscountValue = form?.getFieldValue("discountValue");
+            const currentMaxDiscount = form?.getFieldValue("maxDiscount");
+
+            if (discountType === "fixed") {
+              setFixedValue(currentDiscountValue);
+            } else {
+              setPercentValue(currentDiscountValue);
+              setMaxDiscount(currentMaxDiscount);
+            }
+
+            // Chuyển loại và set lại form
+            setDiscountType(value);
+            form?.setFieldsValue({
+              discountValue: value === "fixed" ? fixedValue : percentValue,
+              maxDiscount: value === "percent" ? maxDiscount : undefined,
+            });
+          }}
+          placeholder="Chọn kiểu giảm giá"
+        >
+          <Select.Option value="fixed">Giảm cố định</Select.Option>
+          <Select.Option value="percent">Giảm phần trăm</Select.Option>
+        </Select>
+
         </Form.Item>
 
         <Form.Item
@@ -190,6 +227,21 @@ const VoucherCreate = () => {
               type: "number",
               min: 0,
               message: "Giá trị đơn tối thiểu phải lớn hơn hoặc bằng 0",
+            },
+            {
+              validator: (_, value) => {
+                const discountType = form?.getFieldValue("discountType");
+                const discountValue = form?.getFieldValue("discountValue");
+          
+                if (discountType === "fixed") {
+                  if (typeof value === "number" && typeof discountValue === "number") {
+                    if (value <= discountValue) {
+                      return Promise.reject("Giá trị đơn tối thiểu phải lớn hơn số tiền giảm");
+                    }
+                  }
+                }
+                return Promise.resolve();
+              },
             },
           ]}
         >
