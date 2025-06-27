@@ -145,7 +145,6 @@ export const ProductCreate = () => {
     [brand?.data?.data]
   );
 
-  console.log(allBrands);
   const allAttributes = useMemo(
     () => (attribute?.data?.data as IAttribute[]) || [],
     [attribute?.data?.data]
