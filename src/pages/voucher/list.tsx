@@ -2,11 +2,10 @@ import { DeleteButton, EditButton, List, ShowButton, useTable } from "@refinedev
 import { Input, Space, Table, Tag, Tooltip } from "antd";
 import { IVoucher } from "../../interface/voucher";
 import { useState } from "react";
-import { useNotification } from "@refinedev/core";
+
 
 const VoucherList = () => {
     const [search, setSearch] = useState("");
-    const { open } = useNotification();
     const { tableProps, setFilters } = useTable<IVoucher>({
       resource: "vouchers",
       filters: {
@@ -82,38 +81,43 @@ const VoucherList = () => {
 
 
         <Table.Column<IVoucher>
-                title="Thao tác"
-                dataIndex="actions"
-                render={(_, record: IVoucher) => {
-                    const isDeletable = record.voucherStatus === "inactive";
-                    const deleteButton = (
-                        <DeleteButton
-                            hideText
-                            size="middle"
-                            recordItemId={record._id}
-                            disabled={!isDeletable}
-                            confirmTitle="Bạn có chắc muốn xóa voucher này vĩnh viễn không?"
-                        />
-                    );
-                    return (
-                        <Space>
-                            <EditButton hideText size="middle" recordItemId={record._id} />
-                            <ShowButton hideText size="middle" recordItemId={record._id} />
-                            {isDeletable ? (
-                                deleteButton
-                            ) : (
-                                <Tooltip title="Chỉ có thể xóa voucher ở trạng thái 'Không có hiệu lực'">
-                                    <span>{deleteButton}</span>
-                                </Tooltip>
-                            )}
-                        </Space>
-                    );
-                }}
+               render={(_, record: IVoucher) => {
+                const isDeletable = record.voucherStatus === "inactive";
+                const isEditable = record.voucherStatus === "inactive";
+                const deleteButton = (
+                    <DeleteButton
+                        hideText
+                        size="middle"
+                        recordItemId={record._id}
+                        disabled={!isDeletable}
+                        confirmTitle="Bạn có chắc muốn xóa voucher này vĩnh viễn không?"
+                    />
+                );
+                const editButton = isEditable ? (
+                    <EditButton hideText size="middle" recordItemId={record._id} />
+                ) : (
+                    <Tooltip title="Chỉ có thể chỉnh sửa voucher ở trạng thái 'Không có hiệu lực'">
+                        <span>
+                            <EditButton hideText size="middle" recordItemId={record._id} disabled />
+                        </span>
+                    </Tooltip>
+                );
+                return (
+                    <Space>
+                        {editButton}
+                        <ShowButton hideText size="middle" recordItemId={record._id} />
+                        {isDeletable ? (
+                            deleteButton
+                        ) : (
+                            <Tooltip title="Chỉ có thể xóa voucher ở trạng thái 'Không có hiệu lực'">
+                                <span>{deleteButton}</span>
+                            </Tooltip>
+                        )}
+                    </Space>
+                );
+            }}
                 />
       </Table>
-
-     
-      
     </List>
   );
 };
