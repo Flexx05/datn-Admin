@@ -1,31 +1,31 @@
-import type React from "react";
-import { useList } from "@refinedev/core";
 import {
-  Row,
-  Col,
-  Card,
-  Statistic,
-  Typography,
-  List,
-  Avatar,
-  Space,
-} from "antd";
-import {
-  ShoppingOutlined,
   AppstoreOutlined,
+  ShoppingOutlined,
   TagsOutlined,
-  DollarOutlined,
-  UserOutlined,
-  RiseOutlined,
 } from "@ant-design/icons";
+import { useList } from "@refinedev/core";
+import { Card, Col, Row, Statistic, Typography } from "antd";
+import type React from "react";
 import { Link } from "react-router-dom";
+import { IBrand } from "../../interface/brand";
+import { ICategory } from "../../interface/category";
+import { IProduct } from "../../interface/product";
+import LineChartComponent from "./LineChartComponent";
+import TopSellingProducts from "./TopSellingProducts";
 
-const { Title, Text } = Typography;
+const { Title } = Typography;
 
 export const Dashboard: React.FC = () => {
-  const { data: productsData } = useList({
+  const { data: productsData } = useList<IProduct>({
     resource: "product",
     pagination: { pageSize: 5 },
+    filters: [
+      {
+        field: "isActive",
+        operator: "eq",
+        value: true,
+      },
+    ],
   });
 
   const { data: ordersData } = useList({
@@ -33,17 +33,32 @@ export const Dashboard: React.FC = () => {
     pagination: { pageSize: 5 },
   });
 
-  const { data: categoriesData } = useList({
+  const { data: categoriesData } = useList<ICategory>({
     resource: "category",
+    filters: [
+      {
+        field: "isActive",
+        operator: "eq",
+        value: true,
+      },
+    ],
+  });
+
+  const { data: brandsData } = useList<IBrand>({
+    resource: "brand",
+    filters: [
+      {
+        field: "isActive",
+        operator: "eq",
+        value: true,
+      },
+    ],
   });
 
   const totalProducts = productsData?.total || 0;
   const totalOrders = ordersData?.total || 0;
   const totalCategories = categoriesData?.total || 0;
-
-  // Mock revenue data
-  const totalRevenue = 12580;
-  const revenueIncrease = 15.8;
+  const totalBrands = brandsData?.total || 0;
 
   return (
     <div style={{ padding: "20px" }}>
@@ -53,60 +68,52 @@ export const Dashboard: React.FC = () => {
         <Col xs={24} sm={12} md={6}>
           <Card bordered={false}>
             <Statistic
-              title="Total Products"
+              title="Tổng sản phẩm"
               value={totalProducts}
               prefix={<AppstoreOutlined />}
               valueStyle={{ color: "#1677ff" }}
             />
             <div style={{ marginTop: 8 }}>
-              <Link to="/product">View all products</Link>
+              <Link to="/product">Xem danh sách</Link>
             </div>
           </Card>
         </Col>
         <Col xs={24} sm={12} md={6}>
           <Card bordered={false}>
             <Statistic
-              title="Total Orders"
+              title="Tổng đơn hàng"
               value={totalOrders}
               prefix={<ShoppingOutlined />}
               valueStyle={{ color: "#52c41a" }}
             />
             <div style={{ marginTop: 8 }}>
-              <Link to="/orders">View all orders</Link>
+              <Link to="/orders">Xem danh sách</Link>
             </div>
           </Card>
         </Col>
         <Col xs={24} sm={12} md={6}>
           <Card bordered={false}>
             <Statistic
-              title="Danh mục"
+              title="Tổng danh mục"
               value={totalCategories}
               prefix={<TagsOutlined />}
               valueStyle={{ color: "#fa8c16" }}
             />
             <div style={{ marginTop: 8 }}>
-              <Link to="/category">View all categories</Link>
+              <Link to="/category">Xem danh sách</Link>
             </div>
           </Card>
         </Col>
         <Col xs={24} sm={12} md={6}>
           <Card bordered={false}>
             <Statistic
-              title="Total Revenue"
-              value={totalRevenue}
-              prefix={<DollarOutlined />}
-              suffix={
-                <Space>
-                  <Text type="success">
-                    <RiseOutlined /> {revenueIncrease}%
-                  </Text>
-                </Space>
-              }
-              precision={2}
-              valueStyle={{ color: "#722ed1" }}
+              title="Tổng thương hiệu"
+              value={totalBrands}
+              prefix={<TagsOutlined />}
+              valueStyle={{ color: "#995ed5" }}
             />
             <div style={{ marginTop: 8 }}>
-              <Text type="secondary">Compared to last month</Text>
+              <Link to="/category">Xem danh sách</Link>
             </div>
           </Card>
         </Col>
@@ -114,75 +121,13 @@ export const Dashboard: React.FC = () => {
 
       <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
         <Col xs={24} md={12}>
-          <Card
-            title="Recent Orders"
-            bordered={false}
-            extra={<Link to="/order">View All</Link>}
-          >
-            <List
-              dataSource={ordersData?.data || []}
-              renderItem={(item) => (
-                <List.Item
-                  key={item.id}
-                  actions={[
-                    <Link key="view" to={`/order/show/${item.id}`}>
-                      View
-                    </Link>,
-                  ]}
-                >
-                  <List.Item.Meta
-                    avatar={<Avatar icon={<UserOutlined />} />}
-                    title={
-                      <Link to={`/order/show/${item.id}`}>
-                        Order #{item.id}
-                      </Link>
-                    }
-                    description={`${
-                      item.customer?.name || "Customer"
-                    } - ${new Date(item.orderDate).toLocaleDateString()}`}
-                  />
-                  <div>${item.totalAmount?.toFixed(2)}</div>
-                </List.Item>
-              )}
-            />
+          <Card title="Doanh thu" bordered={false}>
+            <LineChartComponent />
           </Card>
         </Col>
         <Col xs={24} md={12}>
-          <Card
-            title="Recent Products"
-            bordered={false}
-            extra={<Link to="/product">View All</Link>}
-          >
-            <List
-              dataSource={productsData?.data || []}
-              renderItem={(item) => (
-                <List.Item
-                  key={item.id}
-                  actions={[
-                    <Link key="view" to={`/product/show/${item.id}`}>
-                      View
-                    </Link>,
-                  ]}
-                >
-                  <List.Item.Meta
-                    avatar={
-                      <Avatar
-                        src={item.thumbnail}
-                        shape="square"
-                        style={{ backgroundColor: "#f0f0f0" }}
-                      />
-                    }
-                    title={
-                      <Link to={`/product/show/${item.id}`}>{item.name}</Link>
-                    }
-                    description={`${
-                      item.category?.name || "Danh mục không xác định"
-                    } - ${item.inventory} in stock`}
-                  />
-                  <div>${item.price?.toFixed(2)}</div>
-                </List.Item>
-              )}
-            />
+          <Card title="Top 10 sản phẩm bán chạy" bordered={false}>
+            <TopSellingProducts />
           </Card>
         </Col>
       </Row>
