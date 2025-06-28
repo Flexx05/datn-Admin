@@ -1,16 +1,38 @@
-import { CheckOutlined, CloseOutlined, EyeOutlined, ShoppingOutlined, TruckOutlined, StarOutlined, UndoOutlined } from "@ant-design/icons";
+import {
+  CheckOutlined,
+  CloseOutlined,
+  EyeOutlined,
+  ShoppingOutlined,
+  TruckOutlined,
+  StarOutlined,
+  UndoOutlined,
+} from "@ant-design/icons";
 import { List, useTable } from "@refinedev/antd";
 import { useInvalidate } from "@refinedev/core";
-import { Button, Input, Popconfirm, Select, Space, Table, Tag, Tooltip, message } from "antd";
+import {
+  Button,
+  Input,
+  Popconfirm,
+  Select,
+  Space,
+  Table,
+  Tag,
+  Tooltip,
+  message,
+} from "antd";
 import axios from "axios";
 import { useState, useMemo } from "react";
 // import { Link } from "react-router-dom";
 import { API_URL } from "../../config/dataProvider";
 import { Link } from "react-router";
+import { formatCurrency } from "./formatCurrency";
 // import { IOrder } from "../../interface/order";
 
 // Enum mapping
-const statusMap: Record<number, { text: string; color: string; icon: React.ReactNode }> = {
+const statusMap: Record<
+  number,
+  { text: string; color: string; icon: React.ReactNode }
+> = {
   0: { text: "Chờ xác nhận", color: "orange", icon: <ShoppingOutlined /> },
   1: { text: "Đã xác nhận", color: "blue", icon: <CheckOutlined /> },
   2: { text: "Đang giao hàng", color: "purple", icon: <TruckOutlined /> },
@@ -31,7 +53,8 @@ export const OrderList = () => {
     syncWithLocation: true,
     resource: "order",
     errorNotification: (error: any) => ({
-      message: "❌ Lỗi hệ thống " + (error.response?.data?.message || error.message),
+      message:
+        "❌ Lỗi hệ thống " + (error.response?.data?.message || error.message),
       description: "Có lỗi xảy ra trong quá trình xử lý.",
       type: "error",
     }),
@@ -46,26 +69,37 @@ export const OrderList = () => {
   const invalidate = useInvalidate();
   const [loadingId, setLoadingId] = useState<string | null>(null);
   const [searchText, setSearchText] = useState<string>("");
-  const [orderStatusFilter, setOrderStatusFilter] = useState<number | undefined>(undefined);
-  const [paymentStatusFilter, setPaymentStatusFilter] = useState<number | undefined>(undefined);
+  const [orderStatusFilter, setOrderStatusFilter] = useState<
+    number | undefined
+  >(undefined);
+  const [paymentStatusFilter, setPaymentStatusFilter] = useState<
+    number | undefined
+  >(undefined);
 
   // Filter logic
   const filteredData = useMemo(() => {
     if (!tableProps.dataSource) return [];
     let filtered = [...tableProps.dataSource];
     if (searchText) {
-      filtered = filtered.filter(order =>
+      filtered = filtered.filter((order) =>
         order.orderCode?.toLowerCase().includes(searchText.toLowerCase())
       );
     }
     if (orderStatusFilter !== undefined) {
-      filtered = filtered.filter(order => order.status === orderStatusFilter);
+      filtered = filtered.filter((order) => order.status === orderStatusFilter);
     }
     if (paymentStatusFilter !== undefined) {
-      filtered = filtered.filter(order => order.paymentStatus === paymentStatusFilter);
+      filtered = filtered.filter(
+        (order) => order.paymentStatus === paymentStatusFilter
+      );
     }
     return filtered;
-  }, [tableProps.dataSource, searchText, orderStatusFilter, paymentStatusFilter]);
+  }, [
+    tableProps.dataSource,
+    searchText,
+    orderStatusFilter,
+    paymentStatusFilter,
+  ]);
 
   // Đổi trạng thái đơn hàng
   const handleChangeStatus = async (record: IOrder, newStatus: number) => {
@@ -73,15 +107,19 @@ export const OrderList = () => {
     try {
       let paymentStatus = record.paymentStatus;
       if (newStatus === 3) paymentStatus = 1; // Đã giao hàng thì thanh toán luôn
-      await axios.patch(`${API_URL}/order/status/${record._id}`, {
-        status: newStatus,
-        paymentStatus,
-      }, {
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem("token")}`
+      await axios.patch(
+        `${API_URL}/order/status/${record._id}`,
+        {
+          status: newStatus,
+          paymentStatus,
+        },
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
         }
-      });
+      );
       await invalidate({ resource: "order", invalidates: ["list"] });
       message.success("Cập nhật trạng thái thành công");
     } catch (error: any) {
@@ -97,23 +135,15 @@ export const OrderList = () => {
     setPaymentStatusFilter(undefined);
   };
 
-  const formatCurrency = (amount: number) => {
-    if (!amount || isNaN(amount)) return "0 ₫";
-    return new Intl.NumberFormat('vi-VN', {
-      style: 'currency',
-      currency: 'VND'
-    }).format(amount);
-  };
-
   const formatDate = (dateString: string) => {
     if (!dateString) return "N/A";
     try {
-      return new Date(dateString).toLocaleString('vi-VN', {
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit'
+      return new Date(dateString).toLocaleString("vi-VN", {
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
       });
     } catch {
       return "Invalid Date";
@@ -138,7 +168,9 @@ export const OrderList = () => {
           onChange={setOrderStatusFilter}
         >
           {Object.entries(statusMap).map(([key, val]) => (
-            <Select.Option key={key} value={Number(key)}>{val.text}</Select.Option>
+            <Select.Option key={key} value={Number(key)}>
+              {val.text}
+            </Select.Option>
           ))}
         </Select>
         <Select
@@ -149,14 +181,19 @@ export const OrderList = () => {
           onChange={setPaymentStatusFilter}
         >
           {Object.entries(paymentStatusMap).map(([key, val]) => (
-            <Select.Option key={key} value={Number(key)}>{val.text}</Select.Option>
+            <Select.Option key={key} value={Number(key)}>
+              {val.text}
+            </Select.Option>
           ))}
         </Select>
-        {(searchText || orderStatusFilter !== undefined || paymentStatusFilter !== undefined) && (
+        {(searchText ||
+          orderStatusFilter !== undefined ||
+          paymentStatusFilter !== undefined) && (
           <Button onClick={handleClearAllFilters}>Xóa tất cả bộ lọc</Button>
         )}
-        <div style={{ color: '#666', fontSize: '12px' }}>
-          Hiển thị {filteredData.length} / {tableProps.dataSource?.length || 0} đơn hàng
+        <div style={{ color: "#666", fontSize: "12px" }}>
+          Hiển thị {filteredData.length} / {tableProps.dataSource?.length || 0}{" "}
+          đơn hàng
         </div>
       </Space>
 
@@ -172,8 +209,8 @@ export const OrderList = () => {
           width={120}
           fixed="left"
           render={(code: string) => (
-            <Tag color="blue" style={{ fontWeight: 'bold' }}>
-              #{code || 'N/A'}
+            <Tag color="blue" style={{ fontWeight: "bold" }}>
+              #{code || "N/A"}
             </Tag>
           )}
         />
@@ -182,9 +219,15 @@ export const OrderList = () => {
           width={180}
           render={(_, record: IOrder) => (
             <div>
-              <div style={{ fontWeight: 500 }}>{record.recipientInfo?.name || 'N/A'}</div>
-              <div style={{ fontSize: '12px', color: '#888' }}>{record.recipientInfo?.phone}</div>
-              <div style={{ fontSize: '12px', color: '#888' }}>{record.recipientInfo?.email}</div>
+              <div style={{ fontWeight: 500 }}>
+                {record.recipientInfo?.name || "N/A"}
+              </div>
+              <div style={{ fontSize: "12px", color: "#888" }}>
+                {record.recipientInfo?.phone}
+              </div>
+              <div style={{ fontSize: "12px", color: "#888" }}>
+                {record.recipientInfo?.email}
+              </div>
             </div>
           )}
         />
@@ -192,8 +235,8 @@ export const OrderList = () => {
           title="Địa chỉ"
           width={200}
           render={(_, record: IOrder) => (
-            <div style={{ fontSize: '13px', color: '#555' }}>
-              {record.shippingAddress || 'N/A'}
+            <div style={{ fontSize: "13px", color: "#555" }}>
+              {record.shippingAddress || "N/A"}
             </div>
           )}
         />
@@ -202,8 +245,8 @@ export const OrderList = () => {
           dataIndex="createdAt"
           width={150}
           render={(createdAt: string) => (
-            <div style={{ fontSize: '13px', color: '#555' }}>
-              {createdAt ? formatDate(createdAt) : 'N/A'}
+            <div style={{ fontSize: "13px", color: "#555" }}>
+              {createdAt ? formatDate(createdAt) : "N/A"}
             </div>
           )}
         />
@@ -214,7 +257,11 @@ export const OrderList = () => {
           render={(status: number) => {
             const s = statusMap[status];
             return (
-              <Tag color={s?.color} icon={s?.icon} style={{ fontWeight: 'bold' }}>
+              <Tag
+                color={s?.color}
+                icon={s?.icon}
+                style={{ fontWeight: "bold" }}
+              >
                 {s?.text || status}
               </Tag>
             );
@@ -227,7 +274,7 @@ export const OrderList = () => {
           render={(paymentStatus: number) => {
             const p = paymentStatusMap[paymentStatus];
             return (
-              <Tag color={p?.color} style={{ fontWeight: 'bold' }}>
+              <Tag color={p?.color} style={{ fontWeight: "bold" }}>
                 {p?.text || paymentStatus}
               </Tag>
             );
@@ -237,11 +284,11 @@ export const OrderList = () => {
           title="Tổng tiền"
           dataIndex="totalAmount"
           width={120}
-          render={(value: number) =>
+          render={(value: number) => (
             <span style={{ fontWeight: 500, color: "#d4380d" }}>
               {formatCurrency(value)}
             </span>
-          }
+          )}
         />
         <Table.Column
           title="Hành động"
@@ -263,7 +310,12 @@ export const OrderList = () => {
                     cancelText="Huỷ"
                     okButtonProps={{ loading: loadingId === record._id }}
                   >
-                    <Button size="small" type="primary" icon={<CheckOutlined />} loading={loadingId === record._id}>
+                    <Button
+                      size="small"
+                      type="primary"
+                      icon={<CheckOutlined />}
+                      loading={loadingId === record._id}
+                    >
                       Xác nhận
                     </Button>
                   </Popconfirm>
@@ -282,10 +334,14 @@ export const OrderList = () => {
               )}
               {record.status === 1 && (
                 <>
-                <Button size="small" onClick={() => handleChangeStatus(record, 2)} icon={<TruckOutlined />}>
-                  Giao hàng
-                </Button>
-                <Popconfirm
+                  <Button
+                    size="small"
+                    onClick={() => handleChangeStatus(record, 2)}
+                    icon={<TruckOutlined />}
+                  >
+                    Giao hàng
+                  </Button>
+                  <Popconfirm
                     title="Huỷ đơn hàng này?"
                     onConfirm={() => handleChangeStatus(record, 5)}
                     okText="Huỷ đơn"
@@ -299,7 +355,12 @@ export const OrderList = () => {
                 </>
               )}
               {record.status === 2 && (
-                <Button size="small" type="primary" onClick={() => handleChangeStatus(record, 3)} icon={<CheckOutlined />}>
+                <Button
+                  size="small"
+                  type="primary"
+                  onClick={() => handleChangeStatus(record, 3)}
+                  icon={<CheckOutlined />}
+                >
                   Đã giao
                 </Button>
               )}
@@ -309,7 +370,9 @@ export const OrderList = () => {
                 </Button>
               )}
               {record.status === 6 && (
-                <Tag color="cyan" icon={<UndoOutlined />}>Hoàn hàng</Tag>
+                <Tag color="cyan" icon={<UndoOutlined />}>
+                  Hoàn hàng
+                </Tag>
               )}
             </Space>
           )}

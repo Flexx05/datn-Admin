@@ -1,6 +1,7 @@
 import { Image, Table, Tag, Typography } from "antd";
 import { IVariation, IProductAttribute } from "../../interface/product";
 import { ColorDots } from "./ColorDots";
+import { formatCurrency } from "../order/formatCurrency";
 
 export const VariationTable = ({
   variations,
@@ -56,11 +57,17 @@ export const VariationTable = ({
           );
         }}
       />
-      <Table.Column dataIndex="regularPrice" title="Giá bán" />
+      <Table.Column
+        dataIndex="regularPrice"
+        title="Giá bán"
+        render={(value: number) => formatCurrency(value)}
+      />
       <Table.Column
         dataIndex="salePrice"
         title="Giá khuyến mãi"
-        render={(value: number) => value || <Tag color="yellow">Không có</Tag>}
+        render={(value: number) =>
+          formatCurrency(value) || <Tag color="yellow">Không có</Tag>
+        }
       />
       <Table.Column title="Tồn kho" dataIndex="stock" />
       <Table.Column

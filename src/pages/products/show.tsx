@@ -16,6 +16,7 @@ import React, { useState } from "react";
 import { API_URL } from "../../config/dataProvider";
 import { IProductAttribute, IVariation } from "../../interface/product";
 import { ColorDots } from "./ColorDots";
+import { formatCurrency } from "../order/formatCurrency";
 
 export const ProductShow: React.FC = () => {
   const { queryResult } = useShow({
@@ -147,12 +148,16 @@ export const ProductShow: React.FC = () => {
             );
           }}
         />
-        <Table.Column title="Giá gốc" dataIndex="regularPrice" />
+        <Table.Column
+          title="Giá gốc"
+          dataIndex="regularPrice"
+          render={(value: number) => formatCurrency(value)}
+        />
         <Table.Column
           title="Giá khuyến mãi"
           dataIndex="salePrice"
           render={(value: number) =>
-            value || <Tag color="yellow">Không có</Tag>
+            formatCurrency(value) || <Tag color="yellow">Không có</Tag>
           }
         />
         <Table.Column title="Tồn kho" dataIndex="stock" />
