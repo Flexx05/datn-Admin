@@ -48,11 +48,13 @@ const LineChartComponent = () => {
     pagination: { mode: "off" },
   });
 
+  const orderSuccess = data?.data?.filter((order) => order.status === 4);
+
   // Xử lý dữ liệu nhóm theo lựa chọn
   const revenueData = useMemo(() => {
-    if (!data?.data) return [];
+    if (!orderSuccess) return [];
     const group: Record<string, number> = {};
-    data.data.forEach((order: any) => {
+    orderSuccess.forEach((order: any) => {
       let key = "";
       if (groupBy === "day") key = dayjs(order.createdAt).format("DD/MM/YYYY");
       else if (groupBy === "month")
@@ -82,7 +84,7 @@ const LineChartComponent = () => {
           ).unix()
       )
       .map(([data, value]) => ({ data, value }));
-  }, [data, groupBy]);
+  }, [orderSuccess, groupBy]);
 
   return (
     <>

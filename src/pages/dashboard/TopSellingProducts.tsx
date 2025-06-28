@@ -1,16 +1,8 @@
-import { List, Avatar } from "antd";
-import { Link } from "react-router-dom";
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useList } from "@refinedev/core";
+import { Avatar, List } from "antd";
+import { Link } from "react-router-dom";
 import { IProduct } from "../../interface/product";
-
-interface IOrderItem {
-  productId: string;
-  quantity: number;
-}
-
-interface IOrder {
-  items: IOrderItem[];
-}
 
 const TopSellingProducts: React.FC = () => {
   const { data: productsData } = useList<IProduct>({
@@ -19,15 +11,17 @@ const TopSellingProducts: React.FC = () => {
     filters: [{ field: "isActive", operator: "eq", value: true }],
   });
 
-  const { data: ordersData } = useList<IOrder>({
+  const { data: ordersData } = useList({
     resource: "order",
     pagination: { mode: "off" },
   });
 
+  const orderSuccess = ordersData?.data?.filter((order) => order.status === 4);
+
   // Tính tổng số lượng bán cho từng sản phẩm
   const productSales: Record<string, number> = {};
-  ordersData?.data?.forEach((order: IOrder) => {
-    order.items?.forEach((item) => {
+  orderSuccess?.forEach((order) => {
+    order?.items?.forEach((item: any) => {
       const id = item.productId;
       productSales[id] = (productSales[id] || 0) + (item.quantity || 0);
     });
