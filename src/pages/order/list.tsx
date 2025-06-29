@@ -1,13 +1,12 @@
-import { CheckOutlined, CloseOutlined, EyeOutlined, ShoppingOutlined, TruckOutlined, StarOutlined, UndoOutlined } from "@ant-design/icons";
+import { CheckOutlined, CloseOutlined, EyeOutlined, ShoppingOutlined, TruckOutlined, UndoOutlined } from "@ant-design/icons";
 import { List, useTable } from "@refinedev/antd";
 import { useInvalidate } from "@refinedev/core";
-import { Button, Input, Popconfirm, Select, Space, Table, Tag, Tooltip, message } from "antd";
+import { Button, Input, Popconfirm, Space, Table, Tag, Tooltip, message } from "antd";
 import axios from "axios";
-import { useState, useMemo } from "react";
-// import { Link } from "react-router-dom";
-import { API_URL } from "../../config/dataProvider";
+import { useMemo, useState } from "react";
 import { Link } from "react-router";
-// import { IOrder } from "../../interface/order";
+import { API_URL } from "../../config/dataProvider";
+import { Order } from "../../interface/order";
 
 // Enum mapping
 const statusMap: Record<number, { text: string; color: string; icon: React.ReactNode }> = {
@@ -15,7 +14,7 @@ const statusMap: Record<number, { text: string; color: string; icon: React.React
   1: { text: "Đã xác nhận", color: "blue", icon: <CheckOutlined /> },
   2: { text: "Đang giao hàng", color: "purple", icon: <TruckOutlined /> },
   3: { text: "Đã giao hàng", color: "green", icon: <CheckOutlined /> },
-  4: { text: "Hoàn thành", color: "red", icon: <CheckOutlined /> },
+  4: { text: "Hoàn thành", color: "cyan", icon: <CheckOutlined /> },
   5: { text: "Đã huỷ", color: "red", icon: <CloseOutlined /> },
   6: { text: "Hoàn hàng", color: "cyan", icon: <UndoOutlined /> },
 };
@@ -27,7 +26,7 @@ const paymentStatusMap: Record<number, { text: string; color: string }> = {
 };
 
 export const OrderList = () => {
-  const { tableProps } = useTable<IOrder>({
+  const { tableProps } = useTable<Order>({
     syncWithLocation: true,
     resource: "order",
     errorNotification: (error: any) => ({
@@ -41,6 +40,8 @@ export const OrderList = () => {
         total: response.data?.pagination?.totalOrders || 0,
       }),
     },
+    // Sắp xếp mặc định theo ngày đặt mới nhất
+    // sorters: [{ field: "createdAt", order: "desc" }],
   });
 
   const invalidate = useInvalidate();
@@ -52,10 +53,15 @@ export const OrderList = () => {
   // Filter logic
   const filteredData = useMemo(() => {
     if (!tableProps.dataSource) return [];
-    let filtered = [...tableProps.dataSource];
+    let filtered: Order[] = [...tableProps.dataSource];
+    // Tìm kiếm theo tên, sđt, email người nhận
     if (searchText) {
+      const lower = searchText.toLowerCase();
       filtered = filtered.filter(order =>
-        order.orderCode?.toLowerCase().includes(searchText.toLowerCase())
+        order.recipientInfo?.name?.toLowerCase().includes(lower) ||
+        order.recipientInfo?.phone?.toLowerCase().includes(lower) ||
+        order.recipientInfo?.email?.toLowerCase().includes(lower) ||
+        order.orderCode?.toLowerCase().includes(lower)
       );
     }
     if (orderStatusFilter !== undefined) {
@@ -64,11 +70,13 @@ export const OrderList = () => {
     if (paymentStatusFilter !== undefined) {
       filtered = filtered.filter(order => order.paymentStatus === paymentStatusFilter);
     }
+    // Sắp xếp lại cho chắc chắn (nếu backend không sort)
+    filtered.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
     return filtered;
   }, [tableProps.dataSource, searchText, orderStatusFilter, paymentStatusFilter]);
 
   // Đổi trạng thái đơn hàng
-  const handleChangeStatus = async (record: IOrder, newStatus: number) => {
+  const handleChangeStatus = async (record: Order, newStatus: number) => {
     setLoadingId(record._id);
     try {
       let paymentStatus = record.paymentStatus;
@@ -124,42 +132,13 @@ export const OrderList = () => {
     <List title="Quản lý đơn hàng">
       <Space style={{ marginBottom: 16 }} wrap>
         <Input.Search
-          placeholder="Tìm kiếm theo mã đơn hàng"
+          placeholder="Tìm kiếm theo tên, SĐT, email khách hàng"
           allowClear
           value={searchText}
           onChange={(e) => setSearchText(e.target.value)}
           style={{ width: 300 }}
         />
-        <Select
-          placeholder="Lọc trạng thái đơn hàng"
-          allowClear
-          value={orderStatusFilter}
-          style={{ width: 200 }}
-          onChange={setOrderStatusFilter}
-        >
-          {Object.entries(statusMap).map(([key, val]) => (
-            <Select.Option key={key} value={Number(key)}>{val.text}</Select.Option>
-          ))}
-        </Select>
-        <Select
-          placeholder="Lọc trạng thái thanh toán"
-          allowClear
-          value={paymentStatusFilter}
-          style={{ width: 200 }}
-          onChange={setPaymentStatusFilter}
-        >
-          {Object.entries(paymentStatusMap).map(([key, val]) => (
-            <Select.Option key={key} value={Number(key)}>{val.text}</Select.Option>
-          ))}
-        </Select>
-        {(searchText || orderStatusFilter !== undefined || paymentStatusFilter !== undefined) && (
-          <Button onClick={handleClearAllFilters}>Xóa tất cả bộ lọc</Button>
-        )}
-        <div style={{ color: '#666', fontSize: '12px' }}>
-          Hiển thị {filteredData.length} / {tableProps.dataSource?.length || 0} đơn hàng
-        </div>
       </Space>
-
       <Table
         {...tableProps}
         dataSource={filteredData}
@@ -180,7 +159,7 @@ export const OrderList = () => {
         <Table.Column
           title="Khách hàng"
           width={180}
-          render={(_, record: IOrder) => (
+          render={(_, record: Order) => (
             <div>
               <div style={{ fontWeight: 500 }}>{record.recipientInfo?.name || 'N/A'}</div>
               <div style={{ fontSize: '12px', color: '#888' }}>{record.recipientInfo?.phone}</div>
@@ -191,7 +170,7 @@ export const OrderList = () => {
         <Table.Column
           title="Địa chỉ"
           width={200}
-          render={(_, record: IOrder) => (
+          render={(_, record: Order) => (
             <div style={{ fontSize: '13px', color: '#555' }}>
               {record.shippingAddress || 'N/A'}
             </div>
@@ -201,6 +180,8 @@ export const OrderList = () => {
           title="Ngày đặt"
           dataIndex="createdAt"
           width={150}
+          sorter={(a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()}
+          // defaultSortOrder="ascend"
           render={(createdAt: string) => (
             <div style={{ fontSize: '13px', color: '#555' }}>
               {createdAt ? formatDate(createdAt) : 'N/A'}
@@ -211,12 +192,24 @@ export const OrderList = () => {
           title="Trạng thái"
           dataIndex="status"
           width={150}
+          filters={Object.entries(statusMap).map(([key, val]) => ({
+            text: val.text,
+            value: Number(key),
+          }))}
+          onFilter={(value, record) => record.status === value}
           render={(status: number) => {
             const s = statusMap[status];
             return (
-              <Tag color={s?.color} icon={s?.icon} style={{ fontWeight: 'bold' }}>
-                {s?.text || status}
-              </Tag>
+              <div>
+                <Tag color={s?.color} icon={s?.icon} style={{ fontWeight: 'bold' }}>
+                  {s?.text || status}
+                </Tag>
+                {/* {status === 3 && (
+                  <div style={{ fontSize: '12px', color: '#888', marginTop: '4px' }}>
+                    Đơn hàng tự động hoàn thành sau 3 ngày
+                  </div>
+                )} */}
+              </div>
             );
           }}
         />
@@ -224,6 +217,11 @@ export const OrderList = () => {
           title="Thanh toán"
           dataIndex="paymentStatus"
           width={130}
+          filters={Object.entries(paymentStatusMap).map(([key, val]) => ({
+            text: val.text,
+            value: Number(key),
+          }))}
+          onFilter={(value, record) => record.paymentStatus === value}
           render={(paymentStatus: number) => {
             const p = paymentStatusMap[paymentStatus];
             return (
@@ -247,7 +245,7 @@ export const OrderList = () => {
           title="Hành động"
           width={220}
           fixed="right"
-          render={(_, record: IOrder) => (
+          render={(_, record: Order) => (
             <Space>
               <Tooltip title="Xem chi tiết">
                 <Link to={`/orders/show/${record._id}`}>
@@ -282,10 +280,10 @@ export const OrderList = () => {
               )}
               {record.status === 1 && (
                 <>
-                <Button size="small" onClick={() => handleChangeStatus(record, 2)} icon={<TruckOutlined />}>
-                  Giao hàng
-                </Button>
-                <Popconfirm
+                  <Button size="small" onClick={() => handleChangeStatus(record, 2)} icon={<TruckOutlined />}>
+                    Giao hàng
+                  </Button>
+                  <Popconfirm
                     title="Huỷ đơn hàng này?"
                     onConfirm={() => handleChangeStatus(record, 5)}
                     okText="Huỷ đơn"
@@ -303,11 +301,11 @@ export const OrderList = () => {
                   Đã giao
                 </Button>
               )}
-              {record.status === 3 && (
+              {/* {record.status === 3 && (
                 <Button size="small" icon={<StarOutlined />} disabled>
                   Hoàn thành
                 </Button>
-              )}
+              )} */}
               {record.status === 6 && (
                 <Tag color="cyan" icon={<UndoOutlined />}>Hoàn hàng</Tag>
               )}
