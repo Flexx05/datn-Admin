@@ -14,6 +14,7 @@ import {
   Popconfirm,
   Row,
   Space,
+  Steps,
   Table,
   Tag,
   Typography
@@ -22,16 +23,15 @@ import axios from "axios";
 import { useState } from "react";
 import { useParams } from "react-router";
 import { API_URL } from "../../config/dataProvider";
-import { IOrderDetail } from "../../interface/order";
+import { IOrderDetail, Order } from "../../interface/order";
+
 
 const { Title, Text } = Typography;
 
-// Interface cập nhật theo API response
-
 export const OrderShow = () => {
   const { id } = useParams();
-  
-  const { queryResult } = useShow<IOrderDetail>({
+
+  const { queryResult } = useShow<Order>({
     resource: "order",
     id: id,
     errorNotification: (error: any) => ({
@@ -44,20 +44,21 @@ export const OrderShow = () => {
     },
   });
 
-  const { data: order, isLoading } = queryResult;
-  const orderData = order?.data
+  const { data: order, isLoading, refetch } = queryResult;
+  const orderData: any | undefined = order?.data;
   console.log("Order Data:", orderData);
 
-  const [loadingAction, setLoadingAction] = useState<string | null>(null);
+  const [loadingAction, setLoadingAction] = useState<number | null>(null);
 
   // Hàm cập nhật trạng thái đơn hàng
-  const handleUpdateStatus = async (newStatus: string) => {
+  const handleUpdateStatus = async (newStatus: number) => {
     setLoadingAction(newStatus);
     try {
       await axios.patch(`${API_URL}/order/status/${orderData?._id}`, {
         status: newStatus,
       });
-      message.success(`Cập nhật trạng thái đơn hàng thành công: ${newStatus}`);
+      message.success(`Cập nhật trạng thái đơn hàng thành công`);
+      await refetch();
     } catch (error) {
       message.error("Cập nhật trạng thái đơn hàng thất bại");
     } finally {
@@ -74,18 +75,16 @@ export const OrderShow = () => {
       4: "Hoàn thành",
       5: "Đã hủy",
     };
-
-    return statusMap[status] || status;
+    return statusMap[status] || status.toString();
   };
 
   const getPaymentStatusDisplayText = (status: number): string => {
     const statusMap: { [key: number]: string } = {
-      0: 'Chưa thanh toán',
-      1: 'Đã thanh toán',
-      2: 'Đã hoàn tiền'
+      0: "Chưa thanh toán",
+      1: "Đã thanh toán",
+      2: "Đã hoàn tiền",
     };
-
-    return statusMap[status] || status;
+    return statusMap[status] || status.toString();
   };
 
   // Hàm in đơn hàng
@@ -93,150 +92,163 @@ export const OrderShow = () => {
     window.print();
   };
 
-  // Hàm format tiền tệ
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('vi-VN', {
-      style: 'currency',
-      currency: 'VND'
+    return new Intl.NumberFormat("vi-VN", {
+      style: "currency",
+      currency: "VND",
     }).format(amount);
   };
 
-  // Hàm format ngày
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleString('vi-VN');
+    return new Date(dateString).toLocaleString("vi-VN");
   };
 
-  // Hàm lấy màu cho trạng thái đơn hàng
   const getStatusColor = (status: number) => {
-    const statusLower = status;
-    if (statusLower === 0) return 'orange';
-    if (statusLower === 1) return 'blue';
-    if (statusLower === 2) return 'purple';
-    if (statusLower === 3) return 'green';
-    if (statusLower === 4) return 'cyan';
-    if (statusLower === 5) return 'red';
-    return 'default';
+    if (status === 0) return "orange";
+    if (status === 1) return "blue";
+    if (status === 2) return "purple";
+    if (status === 3) return "green";
+    if (status === 4) return "cyan";
+    if (status === 5) return "red";
+    return "default";
   };
 
-  // Hàm lấy màu cho trạng thái thanh toán
   const getPaymentStatusColor = (status: number) => {
-    const statusLower = status;
-    if (statusLower === 0) return 'orange';
-    if (statusLower === 1) return 'green';
-    if (statusLower === 2) return 'purple';
-    return 'default';
+    if (status === 0) return "orange";
+    if (status === 1) return "green";
+    if (status === 2) return "purple";
+    return "default";
   };
 
-  // Hàm lấy text cho phương thức thanh toán
   const getPaymentMethodText = (method: string) => {
     const methodUpper = method.toUpperCase();
     switch (methodUpper) {
-      case 'COD':
-        return 'Thanh toán khi nhận hàng (COD)';
-      case 'VNPAY':
-        return 'VNPay';
-      case 'MOMO':
-        return 'MoMo';
-      case 'BANK_TRANSFER':
-        return 'Chuyển khoản ngân hàng';
-      case 'CREDIT_CARD':
-        return 'Thẻ tín dụng';
+      case "COD":
+        return "Thanh toán khi nhận hàng (COD)";
+      case "VNPAY":
+        return "Thanh toán qua VNPAY";
       default:
         return method;
     }
   };
 
-  // Cột cho bảng sản phẩm
-  const productColumns = [
+  // Quy trình giao hàng
+  const deliverySteps = [
     {
-      title: 'Sản phẩm',
-      key: 'product',
-      render: (_: any, record: IOrderDetail['items'][0]) => (
-        <div>
-          <div><strong>{record.productName}</strong></div>
-        </div>
-      )
+      title: "Chờ xác nhận",
+      description: "Đơn hàng đang chờ xác nhận",
     },
     {
-      title: 'Phân loại',
-      key: 'variant',
-      render: (_: any, record: IOrderDetail['items'][0]) => (
+      title: "Đã xác nhận",
+      description: "Đơn hàng đã được xác nhận",
+    },
+    {
+      title: "Đang giao hàng",
+      description: "Đơn hàng đang được vận chuyển",
+    },
+    {
+      title: "Đã giao hàng",
+      description: "Đơn hàng đã giao thành công",
+    },
+    {
+      title: "Hoàn thành",
+      description: "Đơn hàng đã hoàn thành",
+    },
+  ];
+
+  const getCurrentStep = (status: number) => {
+    if (status === 5) return -1; // Đã hủy không hiển thị trong quy trình
+    return Math.min(status, 4); // Giới hạn bước tối đa là 4 (Hoàn thành)
+  };
+
+  const productColumns = [
+    {
+      title: "Sản phẩm",
+      key: "product",
+      render: (_: any, record: IOrderDetail["items"][0]) => (
+        <div>
+          <strong>{record.productName}</strong>
+        </div>
+      ),
+    },
+    {
+      title: "Phân loại",
+      key: "variant",
+      render: (_: any, record: IOrderDetail["items"][0]) => (
         <div>
           {record.variantAttributes?.length > 0 ? (
             <Space direction="vertical" size="small">
               {record.variantAttributes.map((attr: any, index: number) => (
-                <div key={index} style={{
-                  padding: '4px 8px',
-                  backgroundColor: 'Background', // Nền trong suốt
-                  borderRadius: '4px',
-                  fontSize: '12px'
-                }}>
-                  <Text strong style={{ color: '#000' }}> {/* Chữ màu đen */}
+                <div
+                  key={index}
+                  style={{
+                    padding: "4px 8px",
+                    backgroundColor: "#f0f0f0",
+                    borderRadius: "4px",
+                    fontSize: "12px",
+                  }}
+                >
+                  <Text strong style={{ color: "#000" }}>
                     {attr.attributeName}:
-                  </Text>{' '}
-                  {attr.attributeName.toLowerCase().includes('màu') ? (
-                    // Hiển thị màu sắc với ô màu
+                  </Text>{" "}
+                  {attr.attributeName.toLowerCase().includes("màu") ? (
                     <Space size="small">
                       {attr.values?.map((value: string, valueIndex: number) => (
                         <Space key={valueIndex} size="small">
                           <div
                             style={{
-                              width: '16px',
-                              height: '16px',
+                              width: "16px",
+                              height: "16px",
                               backgroundColor: value,
-                              border: '1px solid #d9d9d9',
-                              borderRadius: '2px',
-                              display: 'inline-block',
-                              marginBottom: '-4px',
-                              marginLeft: '6px',
+                              border: "1px solid #d9d9d9",
+                              borderRadius: "2px",
+                              display: "inline-block",
+                              marginBottom: "-4px",
+                              marginLeft: "6px",
                             }}
                           />
                         </Space>
                       ))}
                     </Space>
                   ) : (
-                    // Hiển thị thông thường cho các thuộc tính khác
-                    <Text style={{ color: '#000' }}> {/* Chữ màu đen */}
+                    <Text style={{ color: "#000" }}>
                       {attr.values && attr.values.length > 0
-                        ? attr.values.join(', ')
-                        : 'N/A'
-                      }
+                        ? attr.values.join(", ")
+                        : "N/A"}
                     </Text>
                   )}
                 </div>
               ))}
             </Space>
           ) : (
-            <Tag color="default">Không có phân loại</Tag>
+            <Text>Không có phân loại</Text>
           )}
         </div>
-      )
+      ),
     },
-    
-    
     {
-      title: 'Đơn giá',
-      key: 'price',
-      render: (_: any, record: IOrderDetail['items'][0]) => (
+      title: "Đơn giá",
+      key: "price",
+      render: (_: any, record: IOrderDetail["items"][0]) => (
         <Text strong>{formatCurrency(record.priceAtOrder)}</Text>
-      )
+      ),
     },
     {
-      title: 'Số lượng',
-      key: 'quantity',
-      render: (_: any, record: IOrderDetail['items'][0]) => (
+      title: "Số lượng",
+      key: "quantity",
+      render: (_: any, record: IOrderDetail["items"][0]) => (
         <Text strong>{record.quantity}</Text>
-      )
+      ),
     },
     {
-      title: 'Thành tiền',
-      key: 'totalPrice',
-      render: (_: any, record: IOrderDetail['items'][0]) => (
-        <Text strong style={{ color: '#f5222d' }}>
+      title: "Thành tiền",
+      key: "totalPrice",
+      render: (_: any, record: IOrderDetail["items"][0]) => (
+        <Text strong style={{ color: "#f5222d" }}>
           {formatCurrency(record.totalPrice)}
         </Text>
-      )
-    }
+      ),
+    },
   ];
 
   if (isLoading) {
@@ -250,19 +262,30 @@ export const OrderShow = () => {
   return (
     <Show
       title={`Chi tiết đơn hàng ${orderData.orderCode}`}
-      headerButtons={({ defaultButtons }) => (
+      headerButtons={() => (
         <Space>
-          {defaultButtons}
-          <Button 
-            icon={<PrinterOutlined />} 
-            onClick={handlePrintOrder}
-          >
+          <Button icon={<PrinterOutlined />} onClick={handlePrintOrder}>
             In đơn hàng
           </Button>
         </Space>
       )}
     >
       <Row gutter={[24, 24]}>
+        {/* Quy trình giao hàng */}
+        <Col span={24}>
+          <Card title="Quy trình giao hàng" size="small">
+            {orderData.status === 5 ? (
+              <Tag color="red">Đơn hàng đã bị hủy</Tag>
+            ) : (
+              <Steps
+                current={getCurrentStep(orderData.status)}
+                items={deliverySteps}
+                style={{ marginTop: 16 }}
+              />
+            )}
+          </Card>
+        </Col>
+
         {/* Thông tin tổng quan */}
         <Col span={24}>
           <Card title="Thông tin đơn hàng" size="small">
@@ -270,7 +293,7 @@ export const OrderShow = () => {
               <Col span={12}>
                 <Descriptions column={1} size="small">
                   <Descriptions.Item label="Mã đơn hàng">
-                    <Text strong style={{ color: '#1890ff', fontSize: '16px' }}>
+                    <Text strong style={{ color: "#1890ff", fontSize: "16px" }}>
                       {orderData.orderCode}
                     </Text>
                   </Descriptions.Item>
@@ -281,24 +304,33 @@ export const OrderShow = () => {
                     </Space>
                   </Descriptions.Item>
                   <Descriptions.Item label="Ngày giao hàng">
-                    {orderData.expectedDeliveryDate ? formatDate(orderData.expectedDeliveryDate) : 'Chưa xác định'}
+                    <Text>
+                      {orderData.status === 4 && orderData.updatedAt
+                        ? formatDate(orderData.updatedAt)
+                        // : orderData.expectedDeliveryDate
+                        //   ? formatDate(orderData.expectedDeliveryDate)
+                          : "Chưa xác định"}
+                    </Text>
                   </Descriptions.Item>
                 </Descriptions>
               </Col>
               <Col span={12}>
                 <Descriptions column={1} size="small">
                   <Descriptions.Item label="Trạng thái đơn hàng">
-                    <Tag color={getStatusColor(orderData.status)} style={{ fontSize: '14px' }}>
+                    <Tag
+                      color={getStatusColor(orderData.status)}
+                      style={{ fontSize: "14px" }}
+                    >
                       {getStatusDisplayText(orderData.status)}
                     </Tag>
                   </Descriptions.Item>
                   <Descriptions.Item label="Tổng tiền">
-                    <Text strong style={{ color: '#f5222d', fontSize: '18px' }}>
+                    <Text strong style={{ color: "#f5222d", fontSize: "18px" }}>
                       {formatCurrency(orderData.totalAmount)}
                     </Text>
                   </Descriptions.Item>
                   <Descriptions.Item label="Cập nhật lần cuối">
-                    {formatDate(orderData.updatedAt)}
+                    <Text>{formatDate(orderData.updatedAt)}</Text>
                   </Descriptions.Item>
                 </Descriptions>
               </Col>
@@ -309,12 +341,13 @@ export const OrderShow = () => {
         {/* Địa chỉ giao hàng */}
         <Col span={12}>
           <Card title="Địa chỉ giao hàng" size="small">
-            <Space direction="vertical" style={{ width: '100%' }}>
+            <Space direction="vertical" style={{ width: "100%" }}>
               <div>
-                <EnvironmentOutlined /> {orderData.shippingAddress.address}
+                <EnvironmentOutlined /> {orderData.recipientInfo.name} (
+                {orderData.recipientInfo.phone})
               </div>
               <div>
-                <strong>{orderData.shippingAddress.city}, {orderData.shippingAddress.country}</strong>
+                <strong>{orderData.shippingAddress}</strong>
               </div>
             </Space>
           </Card>
@@ -368,7 +401,7 @@ export const OrderShow = () => {
                         <Text>Giảm giá:</Text>
                       </Table.Summary.Cell>
                       <Table.Summary.Cell index={1}>
-                        <Text style={{ color: '#52c41a' }}>
+                        <Text style={{ color: "#52c41a" }}>
                           -{formatCurrency(orderData.discountAmount)}
                         </Text>
                       </Table.Summary.Cell>
@@ -376,10 +409,15 @@ export const OrderShow = () => {
                   )}
                   <Table.Summary.Row>
                     <Table.Summary.Cell index={0} colSpan={4}>
-                      <Text strong style={{ fontSize: '16px' }}>Tổng cộng:</Text>
+                      <Text strong style={{ fontSize: "16px" }}>
+                        Tổng cộng:
+                      </Text>
                     </Table.Summary.Cell>
                     <Table.Summary.Cell index={1}>
-                      <Text strong style={{ fontSize: '16px', color: '#f5222d' }}>
+                      <Text
+                        strong
+                        style={{ fontSize: "16px", color: "#f5222d" }}
+                      >
                         {formatCurrency(orderData.totalAmount)}
                       </Text>
                     </Table.Summary.Cell>
@@ -395,7 +433,7 @@ export const OrderShow = () => {
           <Col span={24}>
             <Card title="Voucher sử dụng" size="small">
               <Space wrap>
-                {orderData.voucherId.map((voucherId, index) => (
+                {orderData.voucherId.map((voucherId: any, index: number) => (
                   <Tag key={index} color="green">
                     {voucherId}
                   </Tag>
@@ -409,65 +447,50 @@ export const OrderShow = () => {
         <Col span={24}>
           <Card title="Hành động" size="small">
             <Space>
-              {orderData.status === 'Cho xac nhan' && (
+              {orderData.status === 0 && (
                 <>
                   <Popconfirm
                     title="Xác nhận đơn hàng này?"
-                    onConfirm={() => handleUpdateStatus('Da xac nhan')}
+                    onConfirm={() => handleUpdateStatus(1)}
                     okText="Xác nhận"
                     cancelText="Huỷ"
                   >
-                    <Button 
-                      type="primary" 
-                      loading={loadingAction === 'Da xac nhan'}
-                    >
+                    <Button type="primary" loading={loadingAction === 1}>
                       Xác nhận đơn hàng
                     </Button>
                   </Popconfirm>
-                  
                   <Popconfirm
                     title="Huỷ đơn hàng này?"
-                    onConfirm={() => handleUpdateStatus('Da huy')}
+                    onConfirm={() => handleUpdateStatus(5)}
                     okText="Huỷ đơn"
                     cancelText="Không"
                   >
-                    <Button 
-                      danger 
-                      loading={loadingAction === 'Da huy'}
-                    >
+                    <Button danger loading={loadingAction === 5}>
                       Huỷ đơn hàng
                     </Button>
                   </Popconfirm>
                 </>
               )}
-              
-              {orderData.status === 'Da xac nhan' && (
+              {orderData.status === 1 && (
                 <Popconfirm
                   title="Chuyển đơn hàng sang trạng thái đang giao?"
-                  onConfirm={() => handleUpdateStatus('Dang giao hang')}
+                  onConfirm={() => handleUpdateStatus(2)}
                   okText="Giao hàng"
                   cancelText="Huỷ"
                 >
-                  <Button 
-                    type="primary" 
-                    loading={loadingAction === 'Dang giao hang'}
-                  >
+                  <Button type="primary" loading={loadingAction === 2}>
                     Bắt đầu giao hàng
                   </Button>
                 </Popconfirm>
               )}
-              
-              {orderData.status === 'Dang giao hang' && (
+              {orderData.status === 2 && (
                 <Popconfirm
                   title="Xác nhận đã giao hàng thành công?"
-                  onConfirm={() => handleUpdateStatus('Da giao hang')}
+                  onConfirm={() => handleUpdateStatus(3)}
                   okText="Đã giao"
                   cancelText="Huỷ"
                 >
-                  <Button 
-                    type="primary" 
-                    loading={loadingAction === 'Da giao hang'}
-                  >
+                  <Button type="primary" loading={loadingAction === 3}>
                     Xác nhận đã giao
                   </Button>
                 </Popconfirm>
