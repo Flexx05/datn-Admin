@@ -1,26 +1,22 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { useList } from "@refinedev/core";
 import { Avatar, List } from "antd";
 import { Link } from "react-router-dom";
 import { IProduct } from "../../interface/product";
 
-const TopSellingProducts: React.FC = () => {
-  const { data: productsData, isLoading } = useList<IProduct>({
-    resource: "product",
-    pagination: { mode: "off" },
-    filters: [{ field: "isActive", operator: "eq", value: true }],
-  });
+type Props = {
+  productsData: IProduct[];
+  ordersData: any;
+  isLoading: boolean;
+};
 
-  const { data: ordersData } = useList({
-    resource: "order",
-    pagination: { mode: "off" },
-  });
-
-  const orderSuccess = ordersData?.data?.filter((order) => order.status === 4);
+const TopSellingProducts = ({ productsData, ordersData, isLoading }: Props) => {
+  const orderSuccess = ordersData?.data?.filter(
+    (order: any) => order.status === 4
+  );
 
   // Tính tổng số lượng bán cho từng sản phẩm
   const productSales: Record<string, number> = {};
-  orderSuccess?.forEach((order) => {
+  orderSuccess?.forEach((order: any) => {
     order?.items?.forEach((item: any) => {
       const id = item.productId;
       productSales[id] = (productSales[id] || 0) + (item.quantity || 0);
@@ -37,7 +33,7 @@ const TopSellingProducts: React.FC = () => {
   const topProducts: (IProduct & { totalSold: number })[] =
     topProductIds
       .map((id) => {
-        const product = productsData?.data?.find((p) => p._id === id);
+        const product = productsData?.find((p) => p._id === id);
         return product ? { ...product, totalSold: productSales[id] } : null;
       })
       .filter(
@@ -54,7 +50,7 @@ const TopSellingProducts: React.FC = () => {
           actions={[
             <span key="sold">Đã bán: {item.totalSold}</span>,
             <Link key="view" to={`/product/id/${item._id}`}>
-              View
+              Chi tiết
             </Link>,
           ]}
         >

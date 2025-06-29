@@ -13,6 +13,7 @@ import { IProduct } from "../../interface/product";
 import LineChartComponent from "./LineChartComponent";
 import TopSellingProducts from "./TopSellingProducts";
 import PieChartComponent from "./PieChartComponent";
+import OrderNearly from "./OrderNearly";
 
 const { Title } = Typography;
 
@@ -33,6 +34,7 @@ export const Dashboard: React.FC = () => {
   const { data: ordersData, isLoading: isLoadingOrders } = useList({
     resource: "order",
     pagination: { pageSize: 5 },
+    sorters: [{ field: "createdAt", order: "desc" }],
   });
 
   const { data: categoriesData, isLoading: isLoadingCategories } =
@@ -128,9 +130,7 @@ export const Dashboard: React.FC = () => {
 
       <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
         <Col xs={24} md={12}>
-          <Card title="Doanh thu" bordered={false}>
-            <LineChartComponent />
-          </Card>
+          <LineChartComponent />
         </Col>
         <Col xs={24} md={12}>
           <PieChartComponent />
@@ -140,7 +140,23 @@ export const Dashboard: React.FC = () => {
       <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
         <Col xs={24} md={12}>
           <Card title="Top 10 sản phẩm bán chạy" bordered={false}>
-            <TopSellingProducts />
+            <TopSellingProducts
+              productsData={productsData?.data ?? []}
+              ordersData={ordersData}
+              isLoading={isLoadingProducts}
+            />
+          </Card>
+        </Col>
+        <Col xs={24} md={12}>
+          <Card
+            title="Đơn hàng gần đây"
+            bordered={false}
+            extra={<Link to="/orders">Xem danh sách</Link>}
+          >
+            <OrderNearly
+              orderData={ordersData?.data ?? []}
+              isLoading={isLoadingOrders}
+            />
           </Card>
         </Col>
       </Row>

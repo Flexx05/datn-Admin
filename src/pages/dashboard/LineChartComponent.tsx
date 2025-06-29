@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useList } from "@refinedev/core";
-import { Select } from "antd";
+import { Card, Select } from "antd";
 import dayjs from "dayjs";
 import { useContext, useMemo, useState } from "react";
 import { Line, LineChart, Tooltip, TooltipProps, XAxis, YAxis } from "recharts";
@@ -88,18 +88,25 @@ const LineChartComponent = () => {
 
   return (
     <>
-      <Select
-        options={groupOptions}
-        value={groupBy}
-        onChange={setGroupBy}
-        style={{ marginBottom: 16, width: 160 }}
-      />
-      <LineChart width={500} height={300} data={revenueData}>
-        <XAxis dataKey="data" />
-        <YAxis />
-        <Tooltip content={<CustomTooltip />} />
-        <Line type="monotone" dataKey="value" stroke="#82ca9d" />
-      </LineChart>
+      <Card
+        title="Doanh thu"
+        bordered={false}
+        extra={
+          <Select
+            options={groupOptions}
+            value={groupBy}
+            onChange={setGroupBy}
+            style={{ width: 160 }}
+          />
+        }
+      >
+        <LineChart width={500} height={300} data={revenueData}>
+          <XAxis dataKey="data" />
+          <YAxis />
+          <Tooltip content={<CustomTooltip />} />
+          <Line type="monotone" dataKey="value" stroke="#82ca9d" />
+        </LineChart>
+      </Card>
     </>
   );
 };
