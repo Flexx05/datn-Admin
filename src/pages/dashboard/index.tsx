@@ -12,6 +12,7 @@ import { ICategory } from "../../interface/category";
 import { IProduct } from "../../interface/product";
 import LineChartComponent from "./LineChartComponent";
 import TopSellingProducts from "./TopSellingProducts";
+import PieChartComponent from "./PieChartComponent";
 
 const { Title } = Typography;
 
@@ -131,6 +132,12 @@ export const Dashboard: React.FC = () => {
             <LineChartComponent />
           </Card>
         </Col>
+        <Col xs={24} md={12}>
+          <PieChartComponent />
+        </Col>
+      </Row>
+
+      <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
         <Col xs={24} md={12}>
           <Card title="Top 10 sản phẩm bán chạy" bordered={false}>
             <TopSellingProducts />
