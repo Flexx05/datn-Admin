@@ -2,6 +2,7 @@ import { DeleteButton, EditButton, List, ShowButton, useTable } from "@refinedev
 import { Input, Space, Table, Tag, Tooltip } from "antd";
 import { IVoucher } from "../../interface/voucher";
 import { useState } from "react";
+import dayjs from "dayjs";
 
 
 const VoucherList = () => {
@@ -42,7 +43,49 @@ const VoucherList = () => {
           title="Mã giảm giá"
           dataIndex="code"
         />
-  
+
+        <Table.Column
+                  title="Loại voucher"
+                  dataIndex="voucherType"
+                  filters={[
+                      { text: "Dành cho sản phẩm", value: "product" },
+                      { text: "Dành cho phí vận chuyển", value: "shipping" },
+                  ]}
+                  onFilter={(value, record) => record.voucherType === value}
+                  render={(type: string) => {
+                      if (type === "product")
+                      return <Tag color="purple">Dành cho sản phẩm</Tag>;
+                      if (type === "shipping")
+                      return <Tag color="blue">Dành cho phí vận chuyển</Tag>;
+                      return type;
+                  }}
+        />
+
+      <Table.Column
+        title="Giảm"
+        render={(_, record) =>
+          record.discountType === "fixed"
+            ? `${record.discountValue.toLocaleString()}đ`
+            : `${record.discountValue}%`
+        }
+      />
+
+      <Table.Column
+        title="Dùng / SL"
+        render={(_, record) => `${record.used} / ${record.quantity}`}
+      />
+
+      <Table.Column
+        title="Hiệu lực"
+        render={(_, record) => (
+          <div>
+            {dayjs(record.startDate).format("HH:mm DD/MM/YYYY")}
+            <br />
+            {dayjs(record.endDate).format("HH:mm DD/MM/YYYY")}
+          </div>
+        )}
+      />
+
       <Table.Column
             title="Trạng thái"
             dataIndex="voucherStatus"
@@ -62,61 +105,47 @@ const VoucherList = () => {
                 return status;
             }}
       />
-      <Table.Column
-            title="Loại voucher"
-            dataIndex="voucherType"
-            filters={[
-                { text: "Dành cho sản phẩm", value: "product" },
-                { text: "Dành cho phí vận chuyển", value: "shipping" },
-            ]}
-            onFilter={(value, record) => record.voucherType === value}
-            render={(type: string) => {
-                if (type === "product")
-                return <Tag color="purple">Dành cho sản phẩm</Tag>;
-                if (type === "shipping")
-                return <Tag color="blue">Dành cho phí vận chuyển</Tag>;
-                return type;
-            }}
-      />
+     
 
 
-        <Table.Column<IVoucher>
-               render={(_, record: IVoucher) => {
-                const isDeletable = record.voucherStatus === "inactive";
-                const isEditable = record.voucherStatus === "inactive";
-                const deleteButton = (
-                    <DeleteButton
-                        hideText
-                        size="middle"
-                        recordItemId={record._id}
-                        disabled={!isDeletable}
-                        confirmTitle="Bạn có chắc muốn xóa voucher này vĩnh viễn không?"
-                    />
-                );
-                const editButton = isEditable ? (
-                    <EditButton hideText size="middle" recordItemId={record._id} />
+    <Table.Column<IVoucher>
+    render={(_, record: IVoucher) => {
+        const isDeletable = record.voucherStatus === "inactive" || record.voucherStatus === "expired";
+        const isEditable = record.voucherStatus === "inactive";
+        const deleteButton = (
+            <DeleteButton
+                hideText
+                size="middle"
+                recordItemId={record._id}
+                disabled={!isDeletable}
+                confirmTitle="Bạn có chắc muốn xóa voucher này vĩnh viễn không?"
+            />
+        );
+        const editButton = isEditable ? (
+            <EditButton hideText size="middle" recordItemId={record._id} />
+        ) : (
+            <Tooltip title="Chỉ có thể chỉnh sửa voucher ở trạng thái 'Không có hiệu lực'">
+                <span>
+                    <EditButton hideText size="middle" recordItemId={record._id} disabled />
+                </span>
+            </Tooltip>
+        );
+        return (
+            <Space>
+                {editButton}
+                <ShowButton hideText size="middle" recordItemId={record._id} />
+                {isDeletable ? (
+                    deleteButton
                 ) : (
-                    <Tooltip title="Chỉ có thể chỉnh sửa voucher ở trạng thái 'Không có hiệu lực'">
-                        <span>
-                            <EditButton hideText size="middle" recordItemId={record._id} disabled />
-                        </span>
+                    <Tooltip title="Chỉ có thể xóa voucher ở trạng thái 'Không có hiệu lực' hoặc 'Hết hạn'">
+                        <span>{deleteButton}</span>
                     </Tooltip>
-                );
-                return (
-                    <Space>
-                        {editButton}
-                        <ShowButton hideText size="middle" recordItemId={record._id} />
-                        {isDeletable ? (
-                            deleteButton
-                        ) : (
-                            <Tooltip title="Chỉ có thể xóa voucher ở trạng thái 'Không có hiệu lực'">
-                                <span>{deleteButton}</span>
-                            </Tooltip>
-                        )}
-                    </Space>
-                );
-            }}
-                />
+                )}
+            </Space>
+        );
+    }}
+/>
+
       </Table>
     </List>
   );
