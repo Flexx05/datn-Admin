@@ -16,35 +16,37 @@ import TopSellingProducts from "./TopSellingProducts";
 const { Title } = Typography;
 
 export const Dashboard: React.FC = () => {
-  const { data: productsData } = useList<IProduct>({
-    resource: "product",
-    pagination: { pageSize: 5 },
-    filters: [
-      {
-        field: "isActive",
-        operator: "eq",
-        value: true,
-      },
-    ],
-  });
+  const { data: productsData, isLoading: isLoadingProducts } =
+    useList<IProduct>({
+      resource: "product",
+      pagination: { pageSize: 5 },
+      filters: [
+        {
+          field: "isActive",
+          operator: "eq",
+          value: true,
+        },
+      ],
+    });
 
-  const { data: ordersData } = useList({
+  const { data: ordersData, isLoading: isLoadingOrders } = useList({
     resource: "order",
     pagination: { pageSize: 5 },
   });
 
-  const { data: categoriesData } = useList<ICategory>({
-    resource: "category",
-    filters: [
-      {
-        field: "isActive",
-        operator: "eq",
-        value: true,
-      },
-    ],
-  });
+  const { data: categoriesData, isLoading: isLoadingCategories } =
+    useList<ICategory>({
+      resource: "category",
+      filters: [
+        {
+          field: "isActive",
+          operator: "eq",
+          value: true,
+        },
+      ],
+    });
 
-  const { data: brandsData } = useList<IBrand>({
+  const { data: brandsData, isLoading: isLoadingBrands } = useList<IBrand>({
     resource: "brand",
     filters: [
       {
@@ -70,6 +72,7 @@ export const Dashboard: React.FC = () => {
             <Statistic
               title="Tổng sản phẩm"
               value={totalProducts}
+              loading={isLoadingProducts}
               prefix={<AppstoreOutlined />}
               valueStyle={{ color: "#1677ff" }}
             />
@@ -83,6 +86,7 @@ export const Dashboard: React.FC = () => {
             <Statistic
               title="Tổng đơn hàng"
               value={totalOrders}
+              loading={isLoadingOrders}
               prefix={<ShoppingOutlined />}
               valueStyle={{ color: "#52c41a" }}
             />
@@ -96,6 +100,7 @@ export const Dashboard: React.FC = () => {
             <Statistic
               title="Tổng danh mục"
               value={totalCategories}
+              loading={isLoadingCategories}
               prefix={<TagsOutlined />}
               valueStyle={{ color: "#fa8c16" }}
             />
@@ -109,6 +114,7 @@ export const Dashboard: React.FC = () => {
             <Statistic
               title="Tổng thương hiệu"
               value={totalBrands}
+              loading={isLoadingBrands}
               prefix={<TagsOutlined />}
               valueStyle={{ color: "#995ed5" }}
             />

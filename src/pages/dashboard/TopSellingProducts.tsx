@@ -5,7 +5,7 @@ import { Link } from "react-router-dom";
 import { IProduct } from "../../interface/product";
 
 const TopSellingProducts: React.FC = () => {
-  const { data: productsData } = useList<IProduct>({
+  const { data: productsData, isLoading } = useList<IProduct>({
     resource: "product",
     pagination: { mode: "off" },
     filters: [{ field: "isActive", operator: "eq", value: true }],
@@ -47,6 +47,7 @@ const TopSellingProducts: React.FC = () => {
   return (
     <List
       dataSource={topProducts}
+      loading={isLoading}
       renderItem={(item: IProduct & { totalSold: number }) => (
         <List.Item
           key={item._id}
