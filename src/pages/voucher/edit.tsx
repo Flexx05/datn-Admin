@@ -97,37 +97,32 @@ const VoucherEdit = () => {
                   name="code"
                   rules={[
                     { required: true, message: "Vui lòng nhập mã giảm giá" },
-                  
+                    { min: 3, message: "Mã giảm giá phải có ít nhất 3 ký tự" },
                     {
-                      validator: (_, value) => {
-                        if (value && value.trim().length === 0) {
-                          return Promise.reject("Mã giảm giá không được chỉ chứa khoảng trắng");
-                        }
-                        return Promise.resolve();
-                      },
-                    },
-                  
-                    {
-                      pattern: /^[A-Za-z0-9_\-\s]+$/,
-                      message: "Mã giảm giá chỉ được chứa chữ cái không dấu, số, dấu gạch ngang hoặc gạch dưới",
+                      pattern: /^[A-Z0-9]+$/,
+                      message: "Mã giảm giá chỉ chứa chữ in hoa và số (Không bao gồm khoảng trắng)",
                     },
                   
                     {
                       validator: async (_, value) => {
                         if (!value || value.trim().length === 0) {
-                          // Đã có các rule khác xử lý, không cần kiểm tra trùng
                           return Promise.resolve();
                         }
 
-                        if (value === record?.code) {
+                        if (value.trim().toLowerCase() === record?.code?.trim().toLowerCase()) {
                           return Promise.resolve();
                         }
                   
                         try {
                           const response = await axiosInstance(`/vouchers?code=${value.trim()}`);
-                          const data = response.data;
+                          const data = response?.data?.docs || [];
                   
-                          if (data?.docs?.length > 0 && data.docs[0].code !== record?.code) {
+                          const isDuplicate = data.some(
+                            (v: any) =>
+                              v.code.trim().toLowerCase() === value.trim().toLowerCase()
+                          );
+                
+                          if (isDuplicate) {
                             return Promise.reject("Mã giảm giá đã tồn tại");
                           }
                         } catch (error) {
