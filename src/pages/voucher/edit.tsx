@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Form, Input, InputNumber, DatePicker, Select, message } from "antd";
 import { Edit, useForm } from "@refinedev/antd";
 import dayjs from "dayjs";
+import { axiosInstance } from "../../utils/axiosInstance";
 
 const { RangePicker } = DatePicker;
 
@@ -65,15 +66,6 @@ const VoucherEdit = () => {
         ]);
         return;
       }
-      if (startDate < now) {
-        formProps.form?.setFields([
-          {
-            name: "dateRange",
-            errors: ["Ngày bắt đầu không được ở quá khứ"],
-          },
-        ]);
-        return;
-      }
     }
 
     const payload = {
@@ -107,21 +99,17 @@ const VoucherEdit = () => {
             { required: true, message: "Vui lòng nhập mã giảm giá" },
             {
               validator: async(_, value) => {
-                if (value && value.trim().length === 0) {
+                if (!value || value.trim().length === 0) {
                   return Promise.reject("Mã giảm giá không được chỉ chứa khoảng trắng");
                 }
-                
-                // Nếu mã không đổi thì bỏ qua kiểm tra trùng
-                if (value && value === record?.code) {
+                if (value === record?.code) {
                   return Promise.resolve();
                 }
-
                 try {
-                  const response = await fetch(`/api/vouchers?code=${value.trim()}`);
-                  const data = await response.json();
-        
-                  // Nếu trả về danh sách có ít nhất 1 phần tử → trùng
-                  if (data?.docs?.length > 0) {
+                  const response = await axiosInstance.get(`/vouchers?code=${value.trim()}`);
+                  const data = response.data;
+                  // Nếu trả về danh sách có ít nhất 1 phần tử và mã khác mã hiện tại → trùng
+                  if (data?.docs?.length > 0 && data.docs[0].code !== record?.code) {
                     return Promise.reject("Mã giảm giá đã tồn tại");
                   }
                 } catch (error) {
@@ -308,6 +296,8 @@ const VoucherEdit = () => {
           />
         </Form.Item>
 
+                
+
         <Form.Item
           label="Thời gian áp dụng"
           name="dateRange"
@@ -342,7 +332,12 @@ const VoucherEdit = () => {
               }
               return {};
             }}
-          />
+            // Chỉ cho chỉnh ngày bắt đầu nếu voucher chưa active và ngày bắt đầu chưa qua
+            disabled={[ 
+              record?.voucherStatus === "active" || dayjs(record?.startDate).isBefore(dayjs(), "minute"), // disable startDate
+              false // endDate vẫn cho chỉnh
+            ]}
+        />
         </Form.Item>
       </Form>
     </Edit>

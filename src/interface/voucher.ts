@@ -13,6 +13,7 @@ export interface IVoucher {
     startDate: Date; 
     endDate: Date; 
     voucherStatus: 'active' | 'inactive' | 'expired';
+    isDeleted: boolean;
     createdAt: string;
     updatedAt: string;
 }
