@@ -190,12 +190,25 @@ const VoucherList = () => {
         />
 
         <Table.Column
-          title="Giảm"
-          render={(_, record) =>
-            record.discountType === "fixed"
-              ? `${record.discountValue.toLocaleString()}đ`
-              : `${record.discountValue}%`
-          }
+          title="Giá trị giảm"
+          render={(_, record) => {
+            if (record.discountType === "fixed") {
+              return `${record.discountValue.toLocaleString()}đ`;
+            }
+
+            const value = `${record.discountValue}%`;
+            const max = record.maxDiscount
+              ? `(Tối đa ${record.maxDiscount.toLocaleString()}đ)`
+              : "";
+
+            return `${value}${max}`;
+          }}
+        />
+        
+        <Table.Column
+          title="Đơn tối thiểu"
+          dataIndex="minOrderValues"
+          render={(value) => `${value.toLocaleString()}đ`}
         />
 
         <Table.Column
