@@ -3,6 +3,7 @@ import { Form, Input, InputNumber, DatePicker, Select } from "antd";
 import { HttpError } from "@refinedev/core";
 import { Create, useForm } from "@refinedev/antd";
 import dayjs from "dayjs";
+import { axiosInstance } from "../../utils/axiosInstance";
 
 const { RangePicker } = DatePicker;
 
@@ -82,31 +83,46 @@ const VoucherCreate = () => {
         <Form.Item
           label="Mã giảm giá"
           name="code"
-          rules={[{ required: true, message: "Vui lòng nhập mã giảm giá" },
+          rules={[
+            { required: true, message: "Vui lòng nhập mã giảm giá" },
+          
             {
-              validator: async(_, value) => {
+              validator: (_, value) => {
                 if (value && value.trim().length === 0) {
                   return Promise.reject("Mã giảm giá không được chỉ chứa khoảng trắng");
                 }
+                return Promise.resolve();
+              },
+            },
+          
+            {
+              pattern: /^[A-Za-z0-9_\-\s]+$/,
+              message: "Mã giảm giá chỉ được chứa chữ cái không dấu, số, dấu gạch ngang hoặc gạch dưới",
+            },
+          
+            {
+              validator: async (_, value) => {
+                if (!value || value.trim().length === 0) {
+                  // Đã có các rule khác xử lý, không cần kiểm tra trùng
+                  return Promise.resolve();
+                }
+          
                 try {
-                  const response = await fetch(`/api/vouchers?code=${value.trim()}`);
-                  const data = await response.json();
-        
-                  // Nếu trả về danh sách có ít nhất 1 phần tử → trùng
+                  const response = await axiosInstance(`/vouchers?code=${value.trim()}`);
+                  const data = response.data;
+          
                   if (data?.docs?.length > 0) {
                     return Promise.reject("Mã giảm giá đã tồn tại");
                   }
                 } catch (error) {
                   console.error("Lỗi kiểm tra mã:", error);
                 }
+          
                 return Promise.resolve();
               },
             },
-            {
-              pattern: /^[A-Za-z0-9_\-\s]+$/,
-              message: "Mã giảm giá chỉ được chứa chữ cái không dấu, số, dấu gạch ngang hoặc gạch dưới",
-            },
           ]}
+          
         >
           <Input placeholder="Nhập mã giảm giá" />
         </Form.Item>

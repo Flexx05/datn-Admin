@@ -92,41 +92,55 @@ const VoucherEdit = () => {
           </Select>
         </Form.Item>
 
-        <Form.Item
-          label="Mã giảm giá"
-          name="code"
-          rules={[
-            { required: true, message: "Vui lòng nhập mã giảm giá" },
-            {
-              validator: async(_, value) => {
-                if (!value || value.trim().length === 0) {
-                  return Promise.reject("Mã giảm giá không được chỉ chứa khoảng trắng");
-                }
-                if (value === record?.code) {
-                  return Promise.resolve();
-                }
-                try {
-                  const response = await axiosInstance.get(`/vouchers?code=${value.trim()}`);
-                  const data = response.data;
-                  // Nếu trả về danh sách có ít nhất 1 phần tử và mã khác mã hiện tại → trùng
-                  if (data?.docs?.length > 0 && data.docs[0].code !== record?.code) {
-                    return Promise.reject("Mã giảm giá đã tồn tại");
-                  }
-                } catch (error) {
-                  console.error("Lỗi kiểm tra mã:", error);
-                }
-                return Promise.resolve();
-              },
-            },
-            
-            {
-              pattern: /^[A-Za-z0-9_\-\s]+$/,
-              message:
-                "Mã giảm giá chỉ được chứa chữ cái không dấu, số, dấu gạch ngang hoặc gạch dưới",
-            },
-          ]}
-        >
-          <Input placeholder="Nhập mã giảm giá" />
+          <Form.Item
+                  label="Mã giảm giá"
+                  name="code"
+                  rules={[
+                    { required: true, message: "Vui lòng nhập mã giảm giá" },
+                  
+                    {
+                      validator: (_, value) => {
+                        if (value && value.trim().length === 0) {
+                          return Promise.reject("Mã giảm giá không được chỉ chứa khoảng trắng");
+                        }
+                        return Promise.resolve();
+                      },
+                    },
+                  
+                    {
+                      pattern: /^[A-Za-z0-9_\-\s]+$/,
+                      message: "Mã giảm giá chỉ được chứa chữ cái không dấu, số, dấu gạch ngang hoặc gạch dưới",
+                    },
+                  
+                    {
+                      validator: async (_, value) => {
+                        if (!value || value.trim().length === 0) {
+                          // Đã có các rule khác xử lý, không cần kiểm tra trùng
+                          return Promise.resolve();
+                        }
+
+                        if (value === record?.code) {
+                          return Promise.resolve();
+                        }
+                  
+                        try {
+                          const response = await axiosInstance(`/vouchers?code=${value.trim()}`);
+                          const data = response.data;
+                  
+                          if (data?.docs?.length > 0 && data.docs[0].code !== record?.code) {
+                            return Promise.reject("Mã giảm giá đã tồn tại");
+                          }
+                        } catch (error) {
+                          console.error("Lỗi kiểm tra mã:", error);
+                        }
+                  
+                        return Promise.resolve();
+                      },
+                    },
+                  ]}
+                  
+                >
+             <Input placeholder="Nhập mã giảm giá" />
         </Form.Item>
 
         <Form.Item label="Link" name="link">
