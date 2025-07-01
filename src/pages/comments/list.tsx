@@ -16,20 +16,11 @@ export const CommentList = () => {
 
   const { tableProps, setFilters } = useTable({
     resource: "comments",
+    syncWithLocation: true,
     pagination: {
       pageSize: 10,
     },
-    sorters: {
-      initial: [
-        {
-          field: "createdAt",
-          order: "desc",
-        },
-      ],
-      
-    },
   });
-  
   
   
   const { mutate } = useUpdate();
@@ -109,10 +100,16 @@ export const CommentList = () => {
       
       <Table {...tableProps} rowKey="_id">
         <Table.Column dataIndex="_id" title="STT" render={(_text, _record, index) => index + 1} />
+
         <Table.Column
           title="Sản phẩm"
           dataIndex={["productId", "name"]}
           key="productName"
+          render={(_text, record: IComment) =>
+            record.productId && typeof record.productId === "object" && "name" in record.productId
+              ? (record.productId as { name: string }).name
+              : <span style={{ color: "red" }}>Sản phẩm không tồn tại</span>
+          }
         />
 
         <Table.Column
@@ -146,94 +143,94 @@ export const CommentList = () => {
 
 
 
-<Table.Column
-    dataIndex="status"
-    title="Trạng thái"
-    filters={[
-      { text: "Hiển thị", value: "visible" },
-      { text: "Ẩn", value: "hidden" },
-    ]}
-    onFilter={(value, record) => record.status === value}
-    render={(value: string, record: IComment) => {
-      const isVisible = value === "visible";
-      const isProductDeleted = !record.productId;
-      const switchDisabled = !isVisible && isProductDeleted;
-      return (
-        <Popconfirm
-          title="Bạn có chắc muốn ẩn bình luận này không?"
-          onConfirm={() => {
-            const newStatus = isVisible ? "hidden" : "visible";
-            setStatus(String(record._id));
-            mutate(
-              {
-                resource: "comments",
-                id: record._id,
-                values: { status: newStatus },
-              },
-              {
-                onSuccess: () => {
-                  message.success("Cập nhật trạng thái thành công");
-                  setStatus(null);
-                },
-                onError: () => {
-                  message.error("Cập nhật trạng thái thất bại");
-                  setStatus(null);
-                },
-              }
-            );
-          }}
-          disabled={!isVisible}
-        >
-          <Tooltip
-            title={
-              switchDisabled
-                ? "Không thể chuyển sang trạng thái hiển thị vì sản phẩm đã bị xóa"
-                : ""
-            }
-          >
-            <span>
-              <Switch
-                checked={isVisible}
-                checkedChildren="Hiện"
-                unCheckedChildren="Ẩn"
-                loading={status === String(record._id)}
-                disabled={switchDisabled}
-                onChange={(checked) => {
-                  if (!checked && isVisible) {
-                    // Nếu chuyển từ hiện sang ẩn thì show confirm
-                  } else {
-                    // Nếu chuyển từ ẩn sang hiện mà sản phẩm đã bị xóa thì không làm gì
-                    if (checked && isProductDeleted) {
-                      return;
-                    }
-                    const newStatus = checked ? "visible" : "hidden";
-                    setStatus(String(record._id));
-                    mutate(
-                      {
-                        resource: "comments",
-                        id: record._id,
-                        values: { status: newStatus },
-                      },
-                      {
-                        onSuccess: () => {
-                          message.success("Cập nhật trạng thái thành công");
-                          setStatus(null);
+          <Table.Column
+              dataIndex="status"
+              title="Trạng thái"
+              filters={[
+                { text: "Hiển thị", value: "visible" },
+                { text: "Ẩn", value: "hidden" },
+              ]}
+              onFilter={(value, record) => record.status === value}
+              render={(value: string, record: IComment) => {
+                const isVisible = value === "visible";
+                const isProductDeleted = !record.productId;
+                const switchDisabled = !isVisible && isProductDeleted;
+                return (
+                  <Popconfirm
+                    title="Bạn có chắc muốn ẩn bình luận này không?"
+                    onConfirm={() => {
+                      const newStatus = isVisible ? "hidden" : "visible";
+                      setStatus(String(record._id));
+                      mutate(
+                        {
+                          resource: "comments",
+                          id: record._id,
+                          values: { status: newStatus },
                         },
-                        onError: () => {
-                          message.error("Cập nhật trạng thái thất bại");
-                          setStatus(null);
-                        },
+                        {
+                          onSuccess: () => {
+                            message.success("Cập nhật trạng thái thành công");
+                            setStatus(null);
+                          },
+                          onError: () => {
+                            message.error("Cập nhật trạng thái thất bại");
+                            setStatus(null);
+                          },
+                        }
+                      );
+                    }}
+                    disabled={!isVisible}
+                  >
+                    <Tooltip
+                      title={
+                        switchDisabled
+                          ? "Không thể chuyển sang trạng thái hiển thị vì sản phẩm đã bị xóa"
+                          : ""
                       }
-                    );
-                  }
-                }}
-              />
-            </span>
-          </Tooltip>
-        </Popconfirm>
-      );
-    }}
-/>
+                    >
+                      <span>
+                        <Switch
+                          checked={isVisible}
+                          checkedChildren="Hiện"
+                          unCheckedChildren="Ẩn"
+                          loading={status === String(record._id)}
+                          disabled={switchDisabled}
+                          onChange={(checked) => {
+                            if (!checked && isVisible) {
+                              // Nếu chuyển từ hiện sang ẩn thì show confirm
+                            } else {
+                              // Nếu chuyển từ ẩn sang hiện mà sản phẩm đã bị xóa thì không làm gì
+                              if (checked && isProductDeleted) {
+                                return;
+                              }
+                              const newStatus = checked ? "visible" : "hidden";
+                              setStatus(String(record._id));
+                              mutate(
+                                {
+                                  resource: "comments",
+                                  id: record._id,
+                                  values: { status: newStatus },
+                                },
+                                {
+                                  onSuccess: () => {
+                                    message.success("Cập nhật trạng thái thành công");
+                                    setStatus(null);
+                                  },
+                                  onError: () => {
+                                    message.error("Cập nhật trạng thái thất bại");
+                                    setStatus(null);
+                                  },
+                                }
+                              );
+                            }
+                          }}
+                        />
+                      </span>
+                    </Tooltip>
+                  </Popconfirm>
+                );
+              }}
+          />
 
         <Table.Column
           dataIndex="adminReply"
