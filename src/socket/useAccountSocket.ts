@@ -20,7 +20,7 @@ export const useAccountSocket = () => {
     });
 
     socket.connect();
-
+    socket.off("account-status");
     socket.on("account-status", (data) => {
       console.log("[socket] Received account-status:", data);
 

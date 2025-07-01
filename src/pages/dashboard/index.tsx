@@ -21,7 +21,6 @@ export const Dashboard: React.FC = () => {
   const { data: productsData, isLoading: isLoadingProducts } =
     useList<IProduct>({
       resource: "product",
-      pagination: { pageSize: 5 },
       filters: [
         {
           field: "isActive",
@@ -29,11 +28,13 @@ export const Dashboard: React.FC = () => {
           value: true,
         },
       ],
+      meta: {
+        _limit: "off",
+      },
     });
 
   const { data: ordersData, isLoading: isLoadingOrders } = useList({
     resource: "order",
-    pagination: { pageSize: 5 },
     sorters: [{ field: "createdAt", order: "desc" }],
   });
 
@@ -122,7 +123,7 @@ export const Dashboard: React.FC = () => {
               valueStyle={{ color: "#995ed5" }}
             />
             <div style={{ marginTop: 8 }}>
-              <Link to="/category">Xem danh sách</Link>
+              <Link to="/brand">Xem danh sách</Link>
             </div>
           </Card>
         </Col>

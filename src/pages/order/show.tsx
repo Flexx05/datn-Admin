@@ -1,7 +1,7 @@
 import {
   CalendarOutlined,
   EnvironmentOutlined,
-  PrinterOutlined
+  PrinterOutlined,
 } from "@ant-design/icons";
 import { Show } from "@refinedev/antd";
 import { useShow } from "@refinedev/core";
@@ -16,7 +16,7 @@ import {
   Space,
   Table,
   Tag,
-  Typography
+  Typography,
 } from "antd";
 import axios from "axios";
 import { useState } from "react";
@@ -30,12 +30,13 @@ const { Title, Text } = Typography;
 
 export const OrderShow = () => {
   const { id } = useParams();
-  
+
   const { queryResult } = useShow<IOrderDetail>({
     resource: "order",
     id: id,
     errorNotification: (error: any) => ({
-      message: "❌ Lỗi hệ thống " + (error.response?.data?.message || error.message),
+      message:
+        "❌ Lỗi hệ thống " + (error.response?.data?.message || error.message),
       description: "Không thể tải thông tin đơn hàng.",
       type: "error",
     }),
@@ -45,7 +46,7 @@ export const OrderShow = () => {
   });
 
   const { data: order, isLoading } = queryResult;
-  const orderData = order?.data
+  const orderData = order?.data;
   console.log("Order Data:", orderData);
 
   const [loadingAction, setLoadingAction] = useState<string | null>(null);
@@ -53,9 +54,12 @@ export const OrderShow = () => {
   // Hàm cập nhật trạng thái đơn hàng
   const handleUpdateStatus = async (newStatus: string) => {
     setLoadingAction(newStatus);
+    const user = localStorage.getItem("user");
+    const parsedUser = user ? JSON.parse(user) : null;
     try {
       await axios.patch(`${API_URL}/order/status/${orderData?._id}`, {
         status: newStatus,
+        userId: parsedUser?._id,
       });
       message.success(`Cập nhật trạng thái đơn hàng thành công: ${newStatus}`);
     } catch (error) {
@@ -80,9 +84,9 @@ export const OrderShow = () => {
 
   const getPaymentStatusDisplayText = (status: number): string => {
     const statusMap: { [key: number]: string } = {
-      0: 'Chưa thanh toán',
-      1: 'Đã thanh toán',
-      2: 'Đã hoàn tiền'
+      0: "Chưa thanh toán",
+      1: "Đã thanh toán",
+      2: "Đã hoàn tiền",
     };
 
     return statusMap[status] || status;
@@ -95,52 +99,52 @@ export const OrderShow = () => {
 
   // Hàm format tiền tệ
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('vi-VN', {
-      style: 'currency',
-      currency: 'VND'
+    return new Intl.NumberFormat("vi-VN", {
+      style: "currency",
+      currency: "VND",
     }).format(amount);
   };
 
   // Hàm format ngày
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleString('vi-VN');
+    return new Date(dateString).toLocaleString("vi-VN");
   };
 
   // Hàm lấy màu cho trạng thái đơn hàng
   const getStatusColor = (status: number) => {
     const statusLower = status;
-    if (statusLower === 0) return 'orange';
-    if (statusLower === 1) return 'blue';
-    if (statusLower === 2) return 'purple';
-    if (statusLower === 3) return 'green';
-    if (statusLower === 4) return 'cyan';
-    if (statusLower === 5) return 'red';
-    return 'default';
+    if (statusLower === 0) return "orange";
+    if (statusLower === 1) return "blue";
+    if (statusLower === 2) return "purple";
+    if (statusLower === 3) return "green";
+    if (statusLower === 4) return "cyan";
+    if (statusLower === 5) return "red";
+    return "default";
   };
 
   // Hàm lấy màu cho trạng thái thanh toán
   const getPaymentStatusColor = (status: number) => {
     const statusLower = status;
-    if (statusLower === 0) return 'orange';
-    if (statusLower === 1) return 'green';
-    if (statusLower === 2) return 'purple';
-    return 'default';
+    if (statusLower === 0) return "orange";
+    if (statusLower === 1) return "green";
+    if (statusLower === 2) return "purple";
+    return "default";
   };
 
   // Hàm lấy text cho phương thức thanh toán
   const getPaymentMethodText = (method: string) => {
     const methodUpper = method.toUpperCase();
     switch (methodUpper) {
-      case 'COD':
-        return 'Thanh toán khi nhận hàng (COD)';
-      case 'VNPAY':
-        return 'VNPay';
-      case 'MOMO':
-        return 'MoMo';
-      case 'BANK_TRANSFER':
-        return 'Chuyển khoản ngân hàng';
-      case 'CREDIT_CARD':
-        return 'Thẻ tín dụng';
+      case "COD":
+        return "Thanh toán khi nhận hàng (COD)";
+      case "VNPAY":
+        return "VNPay";
+      case "MOMO":
+        return "MoMo";
+      case "BANK_TRANSFER":
+        return "Chuyển khoản ngân hàng";
+      case "CREDIT_CARD":
+        return "Thẻ tín dụng";
       default:
         return method;
     }
@@ -149,46 +153,53 @@ export const OrderShow = () => {
   // Cột cho bảng sản phẩm
   const productColumns = [
     {
-      title: 'Sản phẩm',
-      key: 'product',
-      render: (_: any, record: IOrderDetail['items'][0]) => (
+      title: "Sản phẩm",
+      key: "product",
+      render: (_: any, record: IOrderDetail["items"][0]) => (
         <div>
-          <div><strong>{record.productName}</strong></div>
+          <div>
+            <strong>{record.productName}</strong>
+          </div>
         </div>
-      )
+      ),
     },
     {
-      title: 'Phân loại',
-      key: 'variant',
-      render: (_: any, record: IOrderDetail['items'][0]) => (
+      title: "Phân loại",
+      key: "variant",
+      render: (_: any, record: IOrderDetail["items"][0]) => (
         <div>
           {record.variantAttributes?.length > 0 ? (
             <Space direction="vertical" size="small">
               {record.variantAttributes.map((attr: any, index: number) => (
-                <div key={index} style={{
-                  padding: '4px 8px',
-                  backgroundColor: 'Background', // Nền trong suốt
-                  borderRadius: '4px',
-                  fontSize: '12px'
-                }}>
-                  <Text strong style={{ color: '#000' }}> {/* Chữ màu đen */}
+                <div
+                  key={index}
+                  style={{
+                    padding: "4px 8px",
+                    backgroundColor: "Background", // Nền trong suốt
+                    borderRadius: "4px",
+                    fontSize: "12px",
+                  }}
+                >
+                  <Text strong style={{ color: "#000" }}>
+                    {" "}
+                    {/* Chữ màu đen */}
                     {attr.attributeName}:
-                  </Text>{' '}
-                  {attr.attributeName.toLowerCase().includes('màu') ? (
+                  </Text>{" "}
+                  {attr.attributeName.toLowerCase().includes("màu") ? (
                     // Hiển thị màu sắc với ô màu
                     <Space size="small">
                       {attr.values?.map((value: string, valueIndex: number) => (
                         <Space key={valueIndex} size="small">
                           <div
                             style={{
-                              width: '16px',
-                              height: '16px',
+                              width: "16px",
+                              height: "16px",
                               backgroundColor: value,
-                              border: '1px solid #d9d9d9',
-                              borderRadius: '2px',
-                              display: 'inline-block',
-                              marginBottom: '-4px',
-                              marginLeft: '6px',
+                              border: "1px solid #d9d9d9",
+                              borderRadius: "2px",
+                              display: "inline-block",
+                              marginBottom: "-4px",
+                              marginLeft: "6px",
                             }}
                           />
                         </Space>
@@ -196,11 +207,12 @@ export const OrderShow = () => {
                     </Space>
                   ) : (
                     // Hiển thị thông thường cho các thuộc tính khác
-                    <Text style={{ color: '#000' }}> {/* Chữ màu đen */}
+                    <Text style={{ color: "#000" }}>
+                      {" "}
+                      {/* Chữ màu đen */}
                       {attr.values && attr.values.length > 0
-                        ? attr.values.join(', ')
-                        : 'N/A'
-                      }
+                        ? attr.values.join(", ")
+                        : "N/A"}
                     </Text>
                   )}
                 </div>
@@ -210,33 +222,32 @@ export const OrderShow = () => {
             <Tag color="default">Không có phân loại</Tag>
           )}
         </div>
-      )
+      ),
     },
-    
-    
+
     {
-      title: 'Đơn giá',
-      key: 'price',
-      render: (_: any, record: IOrderDetail['items'][0]) => (
+      title: "Đơn giá",
+      key: "price",
+      render: (_: any, record: IOrderDetail["items"][0]) => (
         <Text strong>{formatCurrency(record.priceAtOrder)}</Text>
-      )
+      ),
     },
     {
-      title: 'Số lượng',
-      key: 'quantity',
-      render: (_: any, record: IOrderDetail['items'][0]) => (
+      title: "Số lượng",
+      key: "quantity",
+      render: (_: any, record: IOrderDetail["items"][0]) => (
         <Text strong>{record.quantity}</Text>
-      )
+      ),
     },
     {
-      title: 'Thành tiền',
-      key: 'totalPrice',
-      render: (_: any, record: IOrderDetail['items'][0]) => (
-        <Text strong style={{ color: '#f5222d' }}>
+      title: "Thành tiền",
+      key: "totalPrice",
+      render: (_: any, record: IOrderDetail["items"][0]) => (
+        <Text strong style={{ color: "#f5222d" }}>
           {formatCurrency(record.totalPrice)}
         </Text>
-      )
-    }
+      ),
+    },
   ];
 
   if (isLoading) {
@@ -253,10 +264,7 @@ export const OrderShow = () => {
       headerButtons={({ defaultButtons }) => (
         <Space>
           {defaultButtons}
-          <Button 
-            icon={<PrinterOutlined />} 
-            onClick={handlePrintOrder}
-          >
+          <Button icon={<PrinterOutlined />} onClick={handlePrintOrder}>
             In đơn hàng
           </Button>
         </Space>
@@ -270,7 +278,7 @@ export const OrderShow = () => {
               <Col span={12}>
                 <Descriptions column={1} size="small">
                   <Descriptions.Item label="Mã đơn hàng">
-                    <Text strong style={{ color: '#1890ff', fontSize: '16px' }}>
+                    <Text strong style={{ color: "#1890ff", fontSize: "16px" }}>
                       {orderData.orderCode}
                     </Text>
                   </Descriptions.Item>
@@ -281,19 +289,24 @@ export const OrderShow = () => {
                     </Space>
                   </Descriptions.Item>
                   <Descriptions.Item label="Ngày giao hàng">
-                    {orderData.expectedDeliveryDate ? formatDate(orderData.expectedDeliveryDate) : 'Chưa xác định'}
+                    {orderData.expectedDeliveryDate
+                      ? formatDate(orderData.expectedDeliveryDate)
+                      : "Chưa xác định"}
                   </Descriptions.Item>
                 </Descriptions>
               </Col>
               <Col span={12}>
                 <Descriptions column={1} size="small">
                   <Descriptions.Item label="Trạng thái đơn hàng">
-                    <Tag color={getStatusColor(orderData.status)} style={{ fontSize: '14px' }}>
+                    <Tag
+                      color={getStatusColor(orderData.status)}
+                      style={{ fontSize: "14px" }}
+                    >
                       {getStatusDisplayText(orderData.status)}
                     </Tag>
                   </Descriptions.Item>
                   <Descriptions.Item label="Tổng tiền">
-                    <Text strong style={{ color: '#f5222d', fontSize: '18px' }}>
+                    <Text strong style={{ color: "#f5222d", fontSize: "18px" }}>
                       {formatCurrency(orderData.totalAmount)}
                     </Text>
                   </Descriptions.Item>
@@ -309,12 +322,15 @@ export const OrderShow = () => {
         {/* Địa chỉ giao hàng */}
         <Col span={12}>
           <Card title="Địa chỉ giao hàng" size="small">
-            <Space direction="vertical" style={{ width: '100%' }}>
+            <Space direction="vertical" style={{ width: "100%" }}>
               <div>
                 <EnvironmentOutlined /> {orderData.shippingAddress.address}
               </div>
               <div>
-                <strong>{orderData.shippingAddress.city}, {orderData.shippingAddress.country}</strong>
+                <strong>
+                  {orderData.shippingAddress.city},{" "}
+                  {orderData.shippingAddress.country}
+                </strong>
               </div>
             </Space>
           </Card>
@@ -368,7 +384,7 @@ export const OrderShow = () => {
                         <Text>Giảm giá:</Text>
                       </Table.Summary.Cell>
                       <Table.Summary.Cell index={1}>
-                        <Text style={{ color: '#52c41a' }}>
+                        <Text style={{ color: "#52c41a" }}>
                           -{formatCurrency(orderData.discountAmount)}
                         </Text>
                       </Table.Summary.Cell>
@@ -376,10 +392,15 @@ export const OrderShow = () => {
                   )}
                   <Table.Summary.Row>
                     <Table.Summary.Cell index={0} colSpan={4}>
-                      <Text strong style={{ fontSize: '16px' }}>Tổng cộng:</Text>
+                      <Text strong style={{ fontSize: "16px" }}>
+                        Tổng cộng:
+                      </Text>
                     </Table.Summary.Cell>
                     <Table.Summary.Cell index={1}>
-                      <Text strong style={{ fontSize: '16px', color: '#f5222d' }}>
+                      <Text
+                        strong
+                        style={{ fontSize: "16px", color: "#f5222d" }}
+                      >
                         {formatCurrency(orderData.totalAmount)}
                       </Text>
                     </Table.Summary.Cell>
@@ -409,64 +430,61 @@ export const OrderShow = () => {
         <Col span={24}>
           <Card title="Hành động" size="small">
             <Space>
-              {orderData.status === 'Cho xac nhan' && (
+              {orderData.status === "Cho xac nhan" && (
                 <>
                   <Popconfirm
                     title="Xác nhận đơn hàng này?"
-                    onConfirm={() => handleUpdateStatus('Da xac nhan')}
+                    onConfirm={() => handleUpdateStatus("Da xac nhan")}
                     okText="Xác nhận"
                     cancelText="Huỷ"
                   >
-                    <Button 
-                      type="primary" 
-                      loading={loadingAction === 'Da xac nhan'}
+                    <Button
+                      type="primary"
+                      loading={loadingAction === "Da xac nhan"}
                     >
                       Xác nhận đơn hàng
                     </Button>
                   </Popconfirm>
-                  
+
                   <Popconfirm
                     title="Huỷ đơn hàng này?"
-                    onConfirm={() => handleUpdateStatus('Da huy')}
+                    onConfirm={() => handleUpdateStatus("Da huy")}
                     okText="Huỷ đơn"
                     cancelText="Không"
                   >
-                    <Button 
-                      danger 
-                      loading={loadingAction === 'Da huy'}
-                    >
+                    <Button danger loading={loadingAction === "Da huy"}>
                       Huỷ đơn hàng
                     </Button>
                   </Popconfirm>
                 </>
               )}
-              
-              {orderData.status === 'Da xac nhan' && (
+
+              {orderData.status === "Da xac nhan" && (
                 <Popconfirm
                   title="Chuyển đơn hàng sang trạng thái đang giao?"
-                  onConfirm={() => handleUpdateStatus('Dang giao hang')}
+                  onConfirm={() => handleUpdateStatus("Dang giao hang")}
                   okText="Giao hàng"
                   cancelText="Huỷ"
                 >
-                  <Button 
-                    type="primary" 
-                    loading={loadingAction === 'Dang giao hang'}
+                  <Button
+                    type="primary"
+                    loading={loadingAction === "Dang giao hang"}
                   >
                     Bắt đầu giao hàng
                   </Button>
                 </Popconfirm>
               )}
-              
-              {orderData.status === 'Dang giao hang' && (
+
+              {orderData.status === "Dang giao hang" && (
                 <Popconfirm
                   title="Xác nhận đã giao hàng thành công?"
-                  onConfirm={() => handleUpdateStatus('Da giao hang')}
+                  onConfirm={() => handleUpdateStatus("Da giao hang")}
                   okText="Đã giao"
                   cancelText="Huỷ"
                 >
-                  <Button 
-                    type="primary" 
-                    loading={loadingAction === 'Da giao hang'}
+                  <Button
+                    type="primary"
+                    loading={loadingAction === "Da giao hang"}
                   >
                     Xác nhận đã giao
                   </Button>
@@ -475,7 +493,6 @@ export const OrderShow = () => {
             </Space>
           </Card>
         </Col>
-
       </Row>
     </Show>
   );

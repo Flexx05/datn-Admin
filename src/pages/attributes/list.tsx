@@ -78,7 +78,6 @@ export const AttributeList = () => {
     (key: string) => {
       const isActiveFilter = key === "active";
       setFilterActive(isActiveFilter);
-
       // Cập nhật lại filter mới
       setFilters(
         [

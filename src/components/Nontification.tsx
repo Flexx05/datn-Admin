@@ -1,21 +1,122 @@
-import { BellFilled } from "@ant-design/icons";
-import { Badge, Button, Dropdown, Space, Tabs, Typography } from "antd";
-import { useContext } from "react";
+import { BellFilled, CheckOutlined, CloseOutlined } from "@ant-design/icons";
+import { useInvalidate, useList } from "@refinedev/core";
+import {
+  Badge,
+  Button,
+  Dropdown,
+  List,
+  Space,
+  Tabs,
+  Tag,
+  Tooltip,
+  Typography,
+} from "antd";
+import axios from "axios";
+import dayjs from "dayjs";
+import { useContext, useEffect, useState } from "react";
+import { API_URL } from "../config/dataProvider";
 import { ColorModeContext } from "../contexts/color-mode";
+import { INotification } from "../interface/notification";
+import { statusMap } from "../pages/dashboard/statusMap";
+import { socket } from "../socket";
+
+const ListNotification = ({ item }: { item: INotification }) => {
+  const handleChangReadingStatus = async () => {
+    await axios.patch(`${API_URL}/notification/${item._id}`);
+    await invalidate({
+      resource: "notification",
+      invalidates: ["list"],
+    });
+  };
+  const invalidate = useInvalidate();
+  return (
+    <List.Item
+      key={item._id}
+      actions={[
+        item.isRead || (
+          <Tooltip title="Đánh dấu là đã đọc">
+            <Button
+              loading={item.isRead}
+              type="default"
+              size="small"
+              shape="circle"
+              icon={<CheckOutlined />}
+              onClick={handleChangReadingStatus}
+            />
+          </Tooltip>
+        ),
+        <Tooltip title="Xóa thông báo">
+          <Button
+            type="default"
+            size="small"
+            shape="circle"
+            icon={<CloseOutlined />}
+            onClick={async () => {
+              await axios.delete(`${API_URL}/notification/${item._id}`);
+              await invalidate({
+                resource: "notification",
+                invalidates: ["list"],
+              });
+            }}
+          />
+        </Tooltip>,
+      ]}
+    >
+      <List.Item.Meta
+        title={
+          <a
+            href={`/orders/show/${item.orderId}`}
+            onClick={handleChangReadingStatus}
+          >
+            {item.type === "order" ? (
+              <>
+                Khách hàng: <strong>{item.userName}</strong> đã đặt đơn hàng{" "}
+                <Tag color="magenta">{item.orderCode}</Tag>
+              </>
+            ) : (
+              <>
+                Đơn hàng: <Tag color="magenta">{item.orderCode}</Tag>{" "}
+                {statusMap[item.orderStatus].text}
+                <br />
+                Người thực hiện: {item.userName}
+              </>
+            )}
+          </a>
+        }
+        description={dayjs(item.createdAt).format("HH:mm - DD/MM/YYYY")}
+      />
+    </List.Item>
+  );
+};
 
 const Nontification = () => {
+  const [tabKey, setTabKey] = useState("unread");
   const { mode } = useContext(ColorModeContext);
   const colorMode = mode === "dark" ? "#1a1a1a" : "white";
   const shadowMode =
     mode === "dark" ? "rgba(255, 255, 255, 0.21)" : "rgba(0, 0, 0, 0.1)";
-  const unread = [
-    { key: "1", label: "Bạn có 5 thông báo mới" },
-    { key: "2", label: "Thông báo chưa đọc 2" },
-  ];
-  const read = [
-    { key: "3", label: "Thông báo đã đọc 1" },
-    { key: "4", label: "Thông báo đã đọc 2" },
-  ];
+  const { data, isLoading } = useList<INotification>({
+    resource: "notification",
+  });
+  const invalidate = useInvalidate();
+  useEffect(() => {
+    const handleUpdate = () => {
+      invalidate({
+        resource: "notification",
+        invalidates: ["list"],
+      });
+    };
+    socket.on("order-list-updated", handleUpdate);
+    return () => {
+      socket.off("order-list-updated", handleUpdate);
+    };
+  }, [invalidate]);
+
+  const read = data?.data.filter((item: INotification) => item.isRead === true);
+  const unread = data?.data.filter(
+    (item: INotification) => item.isRead === false
+  );
+
   return (
     <>
       <Dropdown
@@ -24,7 +125,9 @@ const Nontification = () => {
         popupRender={() => (
           <div
             style={{
-              width: 300,
+              width: 400,
+              height: 555,
+              overflow: "auto",
               padding: 12,
               backgroundColor: colorMode,
               boxShadow: `${shadowMode} 0px 8px 24px`,
@@ -32,31 +135,28 @@ const Nontification = () => {
             }}
           >
             <Typography.Text strong>Thông báo</Typography.Text>
-            <Tabs defaultActiveKey="unread">
-              <Tabs.TabPane tab={`Chưa đọc (${unread.length})`} key="unread">
-                {unread.length > 0 ? (
-                  unread.map((item) => (
-                    <div key={item.key} style={{ padding: "6px 0" }}>
-                      {item.label}
-                    </div>
-                  ))
-                ) : (
-                  <div>Không có thông báo chưa đọc</div>
-                )}
+            <Tabs
+              activeKey={tabKey}
+              onChange={setTabKey}
+              defaultActiveKey="unread"
+            >
+              <Tabs.TabPane tab="Chưa đọc" key="unread">
+                <List
+                  loading={isLoading}
+                  dataSource={unread}
+                  renderItem={(item: INotification) => (
+                    <ListNotification item={item} />
+                  )}
+                ></List>
               </Tabs.TabPane>
-              <Tabs.TabPane tab={`Đã đọc`} key="read">
-                {read.length > 0 ? (
-                  read.map((item) => (
-                    <div
-                      key={item.key}
-                      style={{ padding: "6px 0", color: "#888" }}
-                    >
-                      {item.label}
-                    </div>
-                  ))
-                ) : (
-                  <div>Không có thông báo đã đọc</div>
-                )}
+              <Tabs.TabPane tab="Đã đọc" key="read">
+                <List
+                  loading={isLoading}
+                  dataSource={read}
+                  renderItem={(item: INotification) => (
+                    <ListNotification item={item} />
+                  )}
+                ></List>
               </Tabs.TabPane>
             </Tabs>
           </div>
@@ -64,7 +164,7 @@ const Nontification = () => {
       >
         <Space>
           <Badge
-            count={unread.length}
+            count={unread?.length || 0}
             color="red"
             size="default"
             offset={[-2, 2]}

@@ -21,11 +21,12 @@ import {
   message,
 } from "antd";
 import axios from "axios";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 // import { Link } from "react-router-dom";
 import { API_URL } from "../../config/dataProvider";
 import { Link } from "react-router";
 import { formatCurrency } from "./formatCurrency";
+import { socket } from "../../socket";
 // import { IOrder } from "../../interface/order";
 
 // Enum mapping
@@ -101,9 +102,24 @@ export const OrderList = () => {
     paymentStatusFilter,
   ]);
 
+  // Cập nhật danh sách đơn hàng realtime
+  useEffect(() => {
+    const handleChange = () => {
+      invalidate({ resource: "order", invalidates: ["list"] });
+    };
+    socket.on("order-status-changed", handleChange);
+    socket.on("new-nontification", handleChange);
+    return () => {
+      socket.off("order-status-changed", handleChange);
+      socket.off("new-nontification", handleChange);
+    };
+  });
+
   // Đổi trạng thái đơn hàng
   const handleChangeStatus = async (record: IOrder, newStatus: number) => {
     setLoadingId(record._id);
+    const user = localStorage.getItem("user");
+    const parsedUser = user ? JSON.parse(user) : null;
     try {
       let paymentStatus = record.paymentStatus;
       if (newStatus === 3) paymentStatus = 1; // Đã giao hàng thì thanh toán luôn
@@ -112,6 +128,7 @@ export const OrderList = () => {
         {
           status: newStatus,
           paymentStatus,
+          userId: parsedUser?._id,
         },
         {
           headers: {
