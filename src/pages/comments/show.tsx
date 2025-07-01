@@ -44,6 +44,12 @@ export const CommentShow = () => {
       });
     }
   }, [record, form]);
+
+  useEffect(() => {
+    if (record && !record.productId) {
+      message.warning("Sản phẩm của bình luận này đã bị xóa. Bạn chỉ có thể xem, không thể thao tác.");
+    }
+  }, [record]);
   
   // Hàm xử lý cập nhật trạng thái bình luận
   const handleToggleStatus = (checked: boolean) => {
@@ -109,7 +115,7 @@ export const CommentShow = () => {
 
   return (
     <Show isLoading={isLoading} canDelete={false}>
-      <Title level={4}>Chi tiết bình luận</Title>
+      <Title level={4}>Chi tiết đánh giá</Title>
       <Descriptions
         bordered
         column={1}
@@ -167,7 +173,7 @@ export const CommentShow = () => {
           <MailOutlined /> {record?.userId?.email}
         </Descriptions.Item>
 
-        <Descriptions.Item label="Nội dung bình luận">
+        <Descriptions.Item label="Nội dung đánh giá">
           <CommentOutlined /> {record?.content}
         </Descriptions.Item>
 
@@ -232,6 +238,7 @@ export const CommentShow = () => {
               checkedChildren="Hiện"
               unCheckedChildren="Ẩn"
               loading={status === String(record?._id)}
+              disabled={!record?.productId}
               onChange={(checked) => {
                 if (!checked && record?.status === "visible") {
                   // Nếu chuyển từ hiện sang ẩn thì show Popconfirm (không làm gì ở đây)
@@ -240,7 +247,9 @@ export const CommentShow = () => {
                   handleToggleStatus(checked);
                 }
               }}
+              
             />
+            
           </Popconfirm>
         </Descriptions.Item>
       </Descriptions>
@@ -273,7 +282,7 @@ export const CommentShow = () => {
             />
           </Form.Item>
           
-          {record?.status !== "visible" && (
+          {record?.status !== "visible" && record?.productId && (
             <div style={{ color: "red", marginBottom: 10 }}>
               Bình luận phải được duyệt trước khi trả lời.
             </div>
