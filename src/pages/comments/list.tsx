@@ -121,10 +121,14 @@ export const CommentList = () => {
         <Table.Column 
           dataIndex="content" 
           title="Nội dung"  
-          render={(text: string) =>
-            text && text.length > 50 ? text.slice(0, 50) + "..." : text
-          } 
+          render={(text: string | undefined | null) => {
+            if (!text || text.trim() === "") {
+              return <i style={{ color: "gray" }}>Không có nội dung đánh giá</i>;
+            }
+            return text.length > 50 ? text.slice(0, 50) + "..." : text;
+          }} 
         />
+
         <Table.Column
             dataIndex="rating"
             title="Đánh giá"
