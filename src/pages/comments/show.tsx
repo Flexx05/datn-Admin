@@ -161,20 +161,23 @@ export const CommentShow = () => {
               </div>
             ))
           ) : (
-            <span>Không có thông tin biến thể</span>
+            <i style={{ color: "gray" }}>Không có thông tin biến thể</i>
           )}
         </Descriptions.Item>
 
         <Descriptions.Item label="Người bình luận">
-          <UserOutlined /> {record?.userId?.fullName}
+          {record?.userId?.fullName}
         </Descriptions.Item>
 
         <Descriptions.Item label="Email người dùng">
-          <MailOutlined /> {record?.userId?.email}
+          {record?.userId?.email}
         </Descriptions.Item>
 
         <Descriptions.Item label="Nội dung đánh giá">
-          <CommentOutlined /> {record?.content}
+          {" "}
+          {record?.content && record.content.trim() !== ""
+            ? record.content
+            : <i style={{ color: "gray" }}>Không có nội dung đánh giá</i>}
         </Descriptions.Item>
 
         <Descriptions.Item label="Ảnh/Video đính kèm">
@@ -217,11 +220,9 @@ export const CommentShow = () => {
                 })}
             </Space>
           ) : (
-            "Không có ảnh hoặc video"
+            <i style={{ color: "gray" }}>Không có ảnh hoặc video</i>
           )}
         </Descriptions.Item>
-
-
 
         <Descriptions.Item label="Đánh giá">
           <Rate disabled value={record?.rating || 0} style={{fontSize: "20px"}} />
