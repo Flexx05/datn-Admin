@@ -29,7 +29,13 @@ const VoucherShow = () => {
         </Descriptions.Item>
 
         <Descriptions.Item label="Link áp dụng">
-          <a href={voucher?.link} target="_blank" rel="noopener noreferrer">{voucher?.link}</a>
+          {voucher?.link && voucher.link.trim() !== "" ? (
+            <a href={voucher.link} target="_blank" rel="noopener noreferrer">
+              {voucher.link}
+            </a>
+          ) : (
+            <i style={{ color: "gray" }}>Không có link áp dụng</i>
+          )}
         </Descriptions.Item>
 
         <Descriptions.Item label="Mô tả">
