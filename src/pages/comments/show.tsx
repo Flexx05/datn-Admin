@@ -14,9 +14,6 @@ import {
 } from "antd";
 import {
   CalendarOutlined,
-  MailOutlined,
-  UserOutlined,
-  CommentOutlined,
 } from "@ant-design/icons";
 import { Show } from "@refinedev/antd";
 import { useEffect, useState } from "react";
@@ -44,6 +41,12 @@ export const CommentShow = () => {
       });
     }
   }, [record, form]);
+
+  useEffect(() => {
+    if (record && !record.productId) {
+      message.warning("Sản phẩm của bình luận này đã bị xóa. Bạn chỉ có thể xem, không thể thao tác.");
+    }
+  }, [record]);
   
   // Hàm xử lý cập nhật trạng thái bình luận
   const handleToggleStatus = (checked: boolean) => {
@@ -109,7 +112,7 @@ export const CommentShow = () => {
 
   return (
     <Show isLoading={isLoading} canDelete={false}>
-      <Title level={4}>Chi tiết bình luận</Title>
+      <Title level={4}>Chi tiết đánh giá</Title>
       <Descriptions
         bordered
         column={1}
@@ -117,35 +120,61 @@ export const CommentShow = () => {
         labelStyle={{ fontWeight: 600, width: "180px" }}
         contentStyle={{ whiteSpace: "pre-wrap" }}
       >
+       
+       <Descriptions.Item label="Mã đơn hàng">
+          #{record?.orderId}
+        </Descriptions.Item>
 
         <Descriptions.Item label="Tên sản phẩm">
-          {record?.productId?.name}
+        {record?.productId
+          ? record.productId.name
+          : <span style={{ color: "red"}}>Sản phẩm không tồn tại</span>
+        }
         </Descriptions.Item>
 
         <Descriptions.Item label="Phân loại">
-        {record?.variationInfo?.attributes?.length > 0 ? (
-           (record?.variationInfo?.attributes || record?.attributes || []).map((attr:any, index:any) => (
-            <div key={index}>
-              {attr.name}: {attr.value}
-            </div>
-          ))
+          {record?.variationInfo?.attributes?.length > 0 ? (
+            (record?.variationInfo?.attributes || record?.attributes || []).map((attr: any, index: any) => (
+              <div key={index}>
+                {attr.name}:
+                {/* Nếu value là mã màu thì hiển thị ô màu, ngược lại hiển thị text */}
+                {/^#([0-9A-F]{3}){1,2}$/i.test(attr.value) ? (
+                  <span
+                    style={{
+                      display: "inline-block",
+                      width: 25,
+                      height: 25,
+                      borderRadius: "50%",
+                      border: "1px solid black",
+                      background: attr.value,
+                      marginLeft: 4,
+                      verticalAlign: "middle",
+                    }}
+                    title={attr.value}
+                  />
+                ) : (
+                  <span style={{ marginLeft: 4 }}>{attr.value}</span>
+                )}
+              </div>
+            ))
           ) : (
-            <span>
-            Không có thông tin biến thể
-            </span>
+            <i style={{ color: "gray" }}>Không có thông tin biến thể</i>
           )}
         </Descriptions.Item>
 
-        <Descriptions.Item label="Người bình luận">
-          <UserOutlined /> {record?.userId?.fullName}
+        <Descriptions.Item label="Người đánh giá">
+          {record?.userId?.fullName}
         </Descriptions.Item>
 
-        <Descriptions.Item label="Email người dùng">
-          <MailOutlined /> {record?.userId?.email}
+        <Descriptions.Item label="Email">
+          {record?.userId?.email}
         </Descriptions.Item>
 
-        <Descriptions.Item label="Nội dung bình luận">
-          <CommentOutlined /> {record?.content}
+        <Descriptions.Item label="Nội dung đánh giá">
+          {" "}
+          {record?.content && record.content.trim() !== ""
+            ? record.content
+            : <i style={{ color: "gray" }}>Không có nội dung đánh giá</i>}
         </Descriptions.Item>
 
         <Descriptions.Item label="Ảnh/Video đính kèm">
@@ -188,11 +217,9 @@ export const CommentShow = () => {
                 })}
             </Space>
           ) : (
-            "Không có ảnh hoặc video"
+            <i style={{ color: "gray" }}>Không có ảnh hoặc video</i>
           )}
         </Descriptions.Item>
-
-
 
         <Descriptions.Item label="Đánh giá">
           <Rate disabled value={record?.rating || 0} style={{fontSize: "20px"}} />
@@ -209,6 +236,7 @@ export const CommentShow = () => {
               checkedChildren="Hiện"
               unCheckedChildren="Ẩn"
               loading={status === String(record?._id)}
+              disabled={!record?.productId}
               onChange={(checked) => {
                 if (!checked && record?.status === "visible") {
                   // Nếu chuyển từ hiện sang ẩn thì show Popconfirm (không làm gì ở đây)
@@ -217,7 +245,9 @@ export const CommentShow = () => {
                   handleToggleStatus(checked);
                 }
               }}
+              
             />
+            
           </Popconfirm>
         </Descriptions.Item>
       </Descriptions>
@@ -231,7 +261,7 @@ export const CommentShow = () => {
         labelStyle={{ fontWeight: 600, width: "180px" }}
         contentStyle={{ whiteSpace: "pre-wrap" }}
       >
-      <Descriptions.Item label="Trả lời">
+      <Descriptions.Item label="Phản hồi">
         <Form
           form={form}
           layout="vertical"
@@ -240,7 +270,7 @@ export const CommentShow = () => {
         >
           <Form.Item
             name="adminReply"
-            label="Trả lời bình luận"
+            label="Nội dung phản hồi"
             rules={[{ required: true, message: "Vui lòng nhập phản hồi!" }]}
           >
             <Input.TextArea
@@ -250,7 +280,7 @@ export const CommentShow = () => {
             />
           </Form.Item>
           
-          {record?.status !== "visible" && (
+          {record?.status !== "visible" && record?.productId && (
             <div style={{ color: "red", marginBottom: 10 }}>
               Bình luận phải được duyệt trước khi trả lời.
             </div>
@@ -281,7 +311,7 @@ export const CommentShow = () => {
 
 
 
-        <Descriptions.Item label="Thời gian trả lời">
+        <Descriptions.Item label="Thời gian phản hồi">
           {record?.replyAt ? (
             <span>
               <CalendarOutlined /> {new Date(record.replyAt).toLocaleString()}

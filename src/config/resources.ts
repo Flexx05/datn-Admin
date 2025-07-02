@@ -68,5 +68,16 @@ export const resources = [
     meta: {
       label: "Quản lý đơn hàng",
     },
-  }
+  },
+  {
+    name: "vouchers",
+    list: "/vouchers",
+    create: "/vouchers/add",
+    edit: "/vouchers/edit/:id",
+    show: "/vouchers/id/:id",
+    meta: {
+      canDelete: true,
+      label: "Quản lý voucher",
+    },
+  },
 ];
