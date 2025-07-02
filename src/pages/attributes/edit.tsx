@@ -138,7 +138,7 @@ export const AttributeEdit = () => {
                         message: "Giá trị không được vượt quá 20 ký tự",
                       },
                       {
-                        pattern: /^[\p{L}0-9\s]+$/u,
+                        pattern: /^[\p{L}0-9\s#]+$/u,
                         message: "Giá trị không được chứa ký tự đặc biệt",
                       },
                     ]}

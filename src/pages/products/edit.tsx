@@ -46,8 +46,6 @@ export const ProductEdit = () => {
 
   const [fileList, setFileList] = useState<any[]>([]);
   const [uploadedImageUrls, setUploadedImageUrls] = useState<string[]>([]);
-  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
-  const [isGenerating, setIsGenerating] = useState<boolean>(false);
   const { mode } = useContext(ColorModeContext);
   const colorMode = mode === "light" ? "light" : "dark";
 
@@ -188,8 +186,13 @@ export const ProductEdit = () => {
   );
 
   const categoryOptions = useMemo(() => {
-    return allCategories
-      .filter((item) => item.parentId !== null && item.isActive)
+    // Lấy tất cả danh mục con từ subCategories
+    const subCategories = allCategories.flatMap(
+      (cat) => cat.subCategories || []
+    );
+    // Gộp tất cả danh mục con vào một mảng
+    return subCategories
+      .filter((item) => item.isActive)
       .map((item) => ({
         label: item.name,
         value: item._id,
@@ -206,7 +209,6 @@ export const ProductEdit = () => {
   }, [allBrands]);
 
   const handleFinish = async (values: any) => {
-    setIsSubmitting(true);
     try {
       if (uploadedImageUrls.length === 0) {
         message.error("Bạn chưa tải ảnh hoặc ảnh chưa upload xong.");
@@ -223,9 +225,32 @@ export const ProductEdit = () => {
         return;
       }
 
-      const selectedCategory = allCategories.find(
+      if (values.attributes && values.attributes.length <= 1) {
+        message.error("Vui lòng thêm ít nhất 2 thuộc tính cho sản phẩm.");
+        return;
+      }
+
+      if (values.name && typeof values.name === "string") {
+        values.name = values.name.trim();
+      }
+
+      const allSubCategories = allCategories.flatMap(
+        (cat) => cat.subCategories || []
+      );
+      let selectedCategory = allSubCategories.find(
         (cat) => cat._id === values.categoryId
       );
+
+      if (!selectedCategory) {
+        selectedCategory = {
+          _id: "684b9ab14a1d82d1e454b374",
+          name: "Danh mục không xác định",
+          isActive: true,
+          createdAt: "",
+          updatedAt: "",
+        };
+      }
+
       if (!selectedCategory || !selectedCategory.isActive) {
         message.error("Danh mục đã bị vô hiệu hóa. Vui lòng chọn lại.");
         return;
@@ -278,20 +303,10 @@ export const ProductEdit = () => {
     } catch (error) {
       message.error("Lỗi khi cập nhật sản phẩm!");
       console.error(error);
-    } finally {
-      setIsSubmitting(false);
     }
   };
 
   if (queryResult?.isLoading) {
-    return (
-      <div style={{ textAlign: "center", padding: "50px 0" }}>
-        <Spin size="large" />
-      </div>
-    );
-  }
-
-  if (isGenerating) {
     return (
       <div style={{ textAlign: "center", padding: "50px 0" }}>
         <Spin size="large" />
@@ -304,8 +319,8 @@ export const ProductEdit = () => {
       saveButtonProps={saveButtonProps}
       title="Chỉnh sửa sản phẩm"
       canDelete={false}
+      isLoading={queryResult?.isLoading}
     >
-      <Spin spinning={isSubmitting} tip="Đang xử lý..."></Spin>
       <Form {...formProps} layout="vertical" onFinish={handleFinish}>
         <Form.Item
           label="Tên sản phẩm"
@@ -410,10 +425,7 @@ export const ProductEdit = () => {
 
           <Form.Item label={null}>
             <Button
-              loading={isGenerating}
               onClick={async () => {
-                setIsGenerating(true);
-                setIsSubmitting(true);
                 try {
                   const response = await axios.post(
                     `${API_URL}/product/generate-variations`,
@@ -437,12 +449,8 @@ export const ProductEdit = () => {
                   message.success("Tạo biến thể thành công!");
                 } catch (error) {
                   message.error("Lỗi khi tạo biến thể!");
-                } finally {
-                  setIsGenerating(false);
-                  setIsSubmitting(false);
                 }
               }}
-              disabled={isSubmitting}
             >
               Tạo sản phẩm biến thể
             </Button>

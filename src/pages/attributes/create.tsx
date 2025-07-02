@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { Create, useForm } from "@refinedev/antd";
-import { Form, Input, Button, Space, Switch } from "antd";
 import { MinusCircleOutlined, PlusOutlined } from "@ant-design/icons";
+import { Create, useForm } from "@refinedev/antd";
+import { Button, Form, Input, Space, Switch, message } from "antd";
 import { useState } from "react";
 
 export const AttributeCreate = () => {
@@ -21,7 +21,20 @@ export const AttributeCreate = () => {
 
   return (
     <Create title="Tạo thuộc tính" saveButtonProps={saveButtonProps}>
-      <Form {...formProps} layout="vertical">
+      <Form
+        {...formProps}
+        layout="vertical"
+        onFinish={(values: any) => {
+          try {
+            if (values.name && typeof values.name === "string") {
+              values.name = values.name.trim();
+            }
+            values.values.map((v: any) => (v = v.trim()));
+          } catch (error) {
+            message.error("Có lỗi xảy ra trong quá trình xử lý.");
+          }
+        }}
+      >
         <Form.Item
           label="Tên thuộc tính"
           name={["name"]}
@@ -100,7 +113,7 @@ export const AttributeCreate = () => {
                         message: "Giá trị không được vượt quá 20 ký tự",
                       },
                       {
-                        pattern: /^[\p{L}0-9\s]+$/u,
+                        pattern: /^[\p{L}0-9\s#]+$/u,
                         message: "Giá trị không được chứa ký tự đặc biệt",
                       },
                     ]}

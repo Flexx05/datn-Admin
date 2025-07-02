@@ -19,11 +19,7 @@ export const UserShow = () => {
   const record = data?.data;
 
   return (
-    <Show
-      isLoading={isLoading}
-      title="Chi tiết người dùng"
-      canEdit={record?.isActive}
-    >
+    <Show isLoading={isLoading} title="Chi tiết người dùng" canEdit={false}>
       <Card bordered style={{ maxWidth: 600, margin: "0 auto" }}>
         <Row gutter={[16, 16]}>
           <Col span={24}>
@@ -60,18 +56,6 @@ export const UserShow = () => {
                     .tz("Asia/Ho_Chi_Minh")
                     .format("DD/MM/YYYY HH:mm")
                 : ""}
-            </Text>
-          </Col>
-          <Col span={24}>
-            <Title level={5}>Người thay đổi gần nhất</Title>
-            <Text>
-              {record?.userUpdated || "Không có"} (
-              {record?.updatedAt
-                ? dayjs(record.updatedAt)
-                    .tz("Asia/Ho_Chi_Minh")
-                    .format("DD/MM/YYYY HH:mm")
-                : ""}
-              )
             </Text>
           </Col>
         </Row>

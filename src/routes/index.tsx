@@ -25,7 +25,6 @@ import {
   ProductShow,
 } from "../pages/products";
 import { UserList, UserShow } from "../pages/user";
-import { UserEdit } from "../pages/user/edit";
 import { OrderList } from "../pages/order/list";
 import { OrderShow } from "../pages/order/show";
 import VoucherList from "../pages/voucher/list";
@@ -81,7 +80,6 @@ const AppRoutes = () => {
           <Route path="/users">
             <Route index element={<UserList />} />
             <Route path="show/:id" element={<UserShow />} />
-            <Route path="edit/:id" element={<UserEdit />} />
           </Route>
           <Route path="/comments">
             <Route index element={<CommentList />} />

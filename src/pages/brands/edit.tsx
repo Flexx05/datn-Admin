@@ -101,7 +101,12 @@ export const BrandEdit = () => {
   };
 
   return (
-    <Edit saveButtonProps={saveButtonProps} title="Chỉnh sửa thương hiệu">
+    <Edit
+      saveButtonProps={saveButtonProps}
+      title="Chỉnh sửa thương hiệu"
+      isLoading={queryResult?.isLoading}
+      canDelete={false}
+    >
       <Form
         {...formProps}
         layout="vertical"
@@ -110,6 +115,10 @@ export const BrandEdit = () => {
             if (!uploadedImageUrl) {
               message.error("Bạn chưa tải ảnh hoặc ảnh chưa upload xong.");
               return;
+            }
+
+            if (values.name && typeof values.name === "string") {
+              values.name = values.name.trim();
             }
 
             const payload = {
@@ -132,7 +141,7 @@ export const BrandEdit = () => {
             { max: 30, message: "Tên thương hiệu không được quá 30 ký tự" },
             { min: 2, message: "Tên thương hiệu phải có ít nhất 2 ký tự" },
             {
-              pattern: /^[\p{L}0-9\s]+$/u,
+              pattern: /^[\p{L}0-9\s-]+$/u,
               message: "Tên thương hiệu không được chứa ký tự đặc biệt",
             },
           ]}

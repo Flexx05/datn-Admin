@@ -39,7 +39,12 @@ export const CategoryCreate = () => {
   // Lọc ra các danh mục cha hợp lệ
   const filteredOptions = useMemo(() => {
     return allCategories
-      .filter((item: ICategory) => item.parentId === null && item.isActive)
+      .filter(
+        (item: ICategory) =>
+          item.parentId === null &&
+          item.isActive &&
+          item.slug !== "danh-muc-khong-xac-dinh"
+      )
       .map((item) => ({
         label: item.name,
         value: item._id,
@@ -48,16 +53,24 @@ export const CategoryCreate = () => {
 
   // Xử lý khi submit form
   const handleFinish = async (values: any) => {
-    const parentId = values.parentId;
-    if (parentId) {
-      const parent = allCategories.find((item) => item._id === parentId);
-      if (!parent || !parent.isActive || parent.parentId !== null) {
-        message.error("Danh mục cha không hợp lệ hoặc đã bị xoá.");
-        return;
+    try {
+      const parentId = values.parentId;
+      if (parentId) {
+        const parent = allCategories.find((item) => item._id === parentId);
+        if (!parent || !parent.isActive || parent.parentId !== null) {
+          message.error("Danh mục cha không hợp lệ hoặc đã bị xoá.");
+          return;
+        }
       }
-    }
 
-    formProps?.onFinish?.({ ...values, parentId });
+      if (values.name && typeof values.name === "string") {
+        values.name = values.name.trim();
+      }
+
+      formProps?.onFinish?.({ ...values, parentId });
+    } catch (error) {
+      message.error("Có lỗi xảy ra trong quá trình xử lý.");
+    }
   };
 
   return (
@@ -71,7 +84,7 @@ export const CategoryCreate = () => {
             { max: 30, message: "Tên danh mục không được quá 30 ký tự" },
             { min: 3, message: "Tên danh mục phải có ít nhất 3 ký tự" },
             {
-              pattern: /^[\p{L}0-9\s]+$/u,
+              pattern: /^[\p{L}0-9\s&]+$/u,
               message: "Tên danh mục không được chứa ký tự đặc biệt",
             },
           ]}

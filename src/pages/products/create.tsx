@@ -144,8 +144,13 @@ export const ProductCreate = () => {
   );
 
   const categoryOptions = useMemo(() => {
-    return allCategories
-      .filter((item: ICategory) => item.parentId !== null && item.isActive)
+    // Lấy tất cả danh mục con từ subCategories
+    const subCategories = allCategories.flatMap(
+      (cat) => cat.subCategories || []
+    );
+    // Gộp tất cả danh mục con vào một mảng
+    return subCategories
+      .filter((item) => item.isActive)
       .map((item) => ({
         label: item.name,
         value: item._id,
@@ -179,8 +184,20 @@ export const ProductCreate = () => {
         return;
       }
 
+      if (values.attributes && values.attributes.length <= 1) {
+        message.error("Vui lòng thêm ít nhất 2 thuộc tính cho sản phẩm.");
+        return;
+      }
+
+      if (values.name && typeof values.name === "string") {
+        values.name = values.name.trim();
+      }
+
       // Kiểm tra danh mục còn hoạt động
-      const selectedCategory = allCategories.find(
+      const allSubCategories = allCategories.flatMap(
+        (cat) => cat.subCategories || []
+      );
+      const selectedCategory = allSubCategories.find(
         (cat) => cat._id === values.categoryId
       );
       if (!selectedCategory || !selectedCategory.isActive) {

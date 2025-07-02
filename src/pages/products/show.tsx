@@ -15,6 +15,7 @@ import axios from "axios";
 import React, { useState } from "react";
 import { API_URL } from "../../config/dataProvider";
 import { IProductAttribute, IVariation } from "../../interface/product";
+import { ColorDots } from "./ColorDots";
 
 export const ProductShow: React.FC = () => {
   const { queryResult } = useShow({
@@ -96,24 +97,13 @@ export const ProductShow: React.FC = () => {
       <Descriptions title="Thuộc tính" bordered column={1}>
         {record?.attributes?.map((attr: IProductAttribute) => (
           <Descriptions.Item key={attr.attributeId} label={attr.attributeName}>
-            {attr.isColor
-              ? attr.values.map((color: string, idx: number) => (
-                  <span
-                    key={idx}
-                    style={{
-                      display: "inline-block",
-                      width: 20,
-                      height: 20,
-                      backgroundColor: color,
-                      borderRadius: "50%",
-                      border: "1px solid #ddd",
-                      marginRight: 8,
-                    }}
-                  />
-                ))
-              : attr.values.map((val: string, idx: number) => (
-                  <Tag key={idx}>{val}</Tag>
-                ))}
+            {attr.values.map((val: string, idx: number) =>
+              /^#([0-9A-Fa-f]{3}){1,2}$/.test(val) || /^rgb(a)?\(/.test(val) ? (
+                <ColorDots key={idx} colors={[val]} />
+              ) : (
+                <Tag key={idx}>{val}</Tag>
+              )
+            )}
           </Descriptions.Item>
         ))}
       </Descriptions>
@@ -128,42 +118,43 @@ export const ProductShow: React.FC = () => {
           render={(img: string) => <Image src={img} width={60} />}
         />
         <Table.Column
-          title="Màu sắc"
+          title="Thuộc tính"
           dataIndex="attributes"
-          key="color"
+          key="attributes"
           render={(attrs: IProductAttribute[]) => {
+            // Tìm thuộc tính có giá trị là mã màu
             const colorAttr = attrs.find(
-              (attr) => attr.attributeName === "Màu sắc"
+              (attr) =>
+                Array.isArray(attr.values) &&
+                attr.values.some(
+                  (val) =>
+                    typeof val === "string" &&
+                    (/^#([0-9A-Fa-f]{3}){1,2}$/.test(val) ||
+                      /^rgb(a)?\(/.test(val))
+                )
             );
-            return colorAttr?.values?.map((color: string, idx: number) => (
-              <span
-                key={idx}
-                style={{
-                  display: "inline-block",
-                  width: 20,
-                  height: 20,
-                  backgroundColor: color,
-                  borderRadius: "50%",
-                  border: "1px solid #ccc",
-                  marginRight: 5,
-                }}
-              />
-            ));
-          }}
-        />
-        <Table.Column
-          title="Kích thước"
-          dataIndex="attributes"
-          key="size"
-          render={(attrs: IProductAttribute[]) => {
-            const sizeAttr = attrs.find(
-              (attr) => attr.attributeName === "Kích thước"
+            // Tìm thuộc tính còn lại là kích thước hoặc các giá trị khác
+            const otherAttr = attrs.filter((attr) => attr !== colorAttr);
+            return (
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                {colorAttr ? <ColorDots colors={colorAttr.values} /> : null}
+                {otherAttr.length > 0 && (
+                  <span>
+                    {otherAttr.map((attr) => attr.values.join(", ")).join(", ")}
+                  </span>
+                )}
+              </div>
             );
-            return sizeAttr?.values?.join(", ");
           }}
         />
         <Table.Column title="Giá gốc" dataIndex="regularPrice" />
-        <Table.Column title="Giá khuyến mãi" dataIndex="salePrice" />
+        <Table.Column
+          title="Giá khuyến mãi"
+          dataIndex="salePrice"
+          render={(value: number) =>
+            value || <Tag color="yellow">Không có</Tag>
+          }
+        />
         <Table.Column title="Tồn kho" dataIndex="stock" />
         <Table.Column
           title="Trạng thái"

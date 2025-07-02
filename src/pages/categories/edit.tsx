@@ -50,7 +50,8 @@ export const CategoryEdit = () => {
         (item: ICategory) =>
           item._id !== editingRecord._id &&
           item.parentId === null &&
-          item.isActive === true
+          item.isActive === true &&
+          item.slug !== "danh-muc-khong-xac-dinh"
       )
       .map((item) => ({
         label: item.name,
@@ -59,17 +60,24 @@ export const CategoryEdit = () => {
   }, [allCategories, editingRecord]);
 
   const handleFinish = async (values: any) => {
-    const parentId = values.parentId ?? null;
-
-    if (parentId) {
-      const parent = allCategories.find((item) => item._id === parentId);
-      if (!parent || !parent.isActive || parent.parentId !== null) {
-        message.error("Danh mục cha không hợp lệ hoặc đã bị xoá.");
-        return;
+    try {
+      const parentId = values.parentId ?? null;
+      if (parentId) {
+        const parent = allCategories.find((item) => item._id === parentId);
+        if (!parent || !parent.isActive || parent.parentId !== null) {
+          message.error("Danh mục cha không hợp lệ hoặc đã bị xoá.");
+          return;
+        }
       }
-    }
 
-    formProps?.onFinish?.({ ...values, parentId });
+      if (values.name && typeof values.name === "string") {
+        values.name = values.name.trim();
+      }
+
+      formProps?.onFinish?.({ ...values, parentId });
+    } catch (error) {
+      message.error("Có lỗi xảy ra trong quá trình xử lý.");
+    }
   };
 
   return (
@@ -77,6 +85,8 @@ export const CategoryEdit = () => {
       saveButtonProps={saveButtonProps}
       title="Cập nhật danh mục"
       canDelete={false}
+      isLoading={editQueryResult?.isLoading}
+      // Note: Thêm loading cho các trang edit khác
     >
       <Form {...formProps} layout="vertical" onFinish={handleFinish}>
         <Form.Item
@@ -87,7 +97,7 @@ export const CategoryEdit = () => {
             { max: 30, message: "Tên danh mục không được quá 30 ký tự" },
             { min: 3, message: "Tên danh mục phải có ít nhất 3 ký tự" },
             {
-              pattern: /^[\p{L}0-9\s]+$/u,
+              pattern: /^[\p{L}0-9\s&]+$/u,
               message: "Tên danh mục không được chứa ký tự đặc biệt",
             },
           ]}
