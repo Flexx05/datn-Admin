@@ -14,9 +14,6 @@ import {
 } from "antd";
 import {
   CalendarOutlined,
-  MailOutlined,
-  UserOutlined,
-  CommentOutlined,
 } from "@ant-design/icons";
 import { Show } from "@refinedev/antd";
 import { useEffect, useState } from "react";
@@ -165,11 +162,11 @@ export const CommentShow = () => {
           )}
         </Descriptions.Item>
 
-        <Descriptions.Item label="Người bình luận">
+        <Descriptions.Item label="Người đánh giá">
           {record?.userId?.fullName}
         </Descriptions.Item>
 
-        <Descriptions.Item label="Email người dùng">
+        <Descriptions.Item label="Email">
           {record?.userId?.email}
         </Descriptions.Item>
 
@@ -264,7 +261,7 @@ export const CommentShow = () => {
         labelStyle={{ fontWeight: 600, width: "180px" }}
         contentStyle={{ whiteSpace: "pre-wrap" }}
       >
-      <Descriptions.Item label="Trả lời">
+      <Descriptions.Item label="Phản hồi">
         <Form
           form={form}
           layout="vertical"
@@ -273,7 +270,7 @@ export const CommentShow = () => {
         >
           <Form.Item
             name="adminReply"
-            label="Trả lời bình luận"
+            label="Nội dung phản hồi"
             rules={[{ required: true, message: "Vui lòng nhập phản hồi!" }]}
           >
             <Input.TextArea
@@ -314,7 +311,7 @@ export const CommentShow = () => {
 
 
 
-        <Descriptions.Item label="Thời gian trả lời">
+        <Descriptions.Item label="Thời gian phản hồi">
           {record?.replyAt ? (
             <span>
               <CalendarOutlined /> {new Date(record.replyAt).toLocaleString()}
