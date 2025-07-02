@@ -1,56 +1,53 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import {
   CheckOutlined,
   CloseOutlined,
   EyeOutlined,
-  ShoppingOutlined,
   TruckOutlined,
-  StarOutlined,
   UndoOutlined,
 } from "@ant-design/icons";
 import { List, useTable } from "@refinedev/antd";
 import { useInvalidate } from "@refinedev/core";
+import axios from "axios";
+import { useEffect, useMemo, useState } from "react";
+import { Link } from "react-router";
+import { API_URL } from "../../config/dataProvider";
+import { socket } from "../../socket";
+import { formatCurrency } from "./formatCurrency";
+
 import {
+  Input as AntInput,
+  Select as AntSelect,
   Button,
+  Form,
   Input,
+  message,
+  Modal,
   Popconfirm,
-  Select,
   Space,
   Table,
   Tag,
   Tooltip,
-  message,
 } from "antd";
-import axios from "axios";
-import { useState, useMemo, useEffect } from "react";
-// import { Link } from "react-router-dom";
-import { API_URL } from "../../config/dataProvider";
-import { Link } from "react-router";
-import { formatCurrency } from "./formatCurrency";
-import { socket } from "../../socket";
-// import { IOrder } from "../../interface/order";
-
-// Enum mapping
-const statusMap: Record<
-  number,
-  { text: string; color: string; icon: React.ReactNode }
-> = {
-  0: { text: "Chờ xác nhận", color: "orange", icon: <ShoppingOutlined /> },
-  1: { text: "Đã xác nhận", color: "blue", icon: <CheckOutlined /> },
-  2: { text: "Đang giao hàng", color: "purple", icon: <TruckOutlined /> },
-  3: { text: "Đã giao hàng", color: "green", icon: <CheckOutlined /> },
-  4: { text: "Hoàn thành", color: "red", icon: <CheckOutlined /> },
-  5: { text: "Đã huỷ", color: "red", icon: <CloseOutlined /> },
-  6: { text: "Hoàn hàng", color: "cyan", icon: <UndoOutlined /> },
-};
+import { Order } from "../../interface/order";
+import { statusMap } from "../dashboard/statusMap";
 
 const paymentStatusMap: Record<number, { text: string; color: string }> = {
   0: { text: "Chưa thanh toán", color: "orange" },
   1: { text: "Đã thanh toán", color: "green" },
   2: { text: "Hoàn tiền", color: "blue" },
+  3: { text: "Đã hủy", color: "red" },
 };
 
+const cancelReasons = [
+  "Bão lũ giao hàng không được",
+  "Shipper ốm",
+  "Hết hàng",
+  "Khác",
+];
+
 export const OrderList = () => {
-  const { tableProps } = useTable<IOrder>({
+  const { tableProps } = useTable<Order>({
     syncWithLocation: true,
     resource: "order",
     errorNotification: (error: any) => ({
@@ -76,14 +73,22 @@ export const OrderList = () => {
   const [paymentStatusFilter, setPaymentStatusFilter] = useState<
     number | undefined
   >(undefined);
+  const [isModalVisible, setIsModalVisible] = useState(false);
+  const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
+  const [form] = Form.useForm();
 
   // Filter logic
   const filteredData = useMemo(() => {
     if (!tableProps.dataSource) return [];
-    let filtered = [...tableProps.dataSource];
+    let filtered: Order[] = [...tableProps.dataSource];
     if (searchText) {
-      filtered = filtered.filter((order) =>
-        order.orderCode?.toLowerCase().includes(searchText.toLowerCase())
+      const lower = searchText.toLowerCase();
+      filtered = filtered.filter(
+        (order) =>
+          order.recipientInfo?.name?.toLowerCase().includes(lower) ||
+          order.recipientInfo?.phone?.toLowerCase().includes(lower) ||
+          order.recipientInfo?.email?.toLowerCase().includes(lower) ||
+          order.orderCode?.toLowerCase().includes(lower)
       );
     }
     if (orderStatusFilter !== undefined) {
@@ -94,6 +99,10 @@ export const OrderList = () => {
         (order) => order.paymentStatus === paymentStatusFilter
       );
     }
+    filtered.sort(
+      (a, b) =>
+        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    );
     return filtered;
   }, [
     tableProps.dataSource,
@@ -116,18 +125,25 @@ export const OrderList = () => {
   });
 
   // Đổi trạng thái đơn hàng
-  const handleChangeStatus = async (record: IOrder, newStatus: number) => {
+  const handleChangeStatus = async (
+    record: Order,
+    newStatus: number,
+    reason?: string,
+    paymentStatus?: number
+  ) => {
     setLoadingId(record._id);
     const user = localStorage.getItem("user");
     const parsedUser = user ? JSON.parse(user) : null;
     try {
-      let paymentStatus = record.paymentStatus;
-      if (newStatus === 3) paymentStatus = 1; // Đã giao hàng thì thanh toán luôn
+      let currentPaymentStatus =
+        paymentStatus !== undefined ? paymentStatus : record.paymentStatus;
+      if (newStatus === 3) currentPaymentStatus = 1; // Đã giao hàng thì thanh toán luôn
       await axios.patch(
         `${API_URL}/order/status/${record._id}`,
         {
           status: newStatus,
-          paymentStatus,
+          paymentStatus: currentPaymentStatus,
+          ...(reason && { cancelReason: reason }), // Include reason if provided
           userId: parsedUser?._id,
         },
         {
@@ -144,6 +160,33 @@ export const OrderList = () => {
     } finally {
       setLoadingId(null);
     }
+  };
+
+  const showCancelModal = (id: string) => {
+    setSelectedOrderId(id);
+    setIsModalVisible(true);
+  };
+
+  const handleCancelOrder = async (values: {
+    reason: string;
+    customReason?: string;
+  }) => {
+    if (!selectedOrderId) return;
+    const finalReason =
+      values.reason === "Khác" && values.customReason
+        ? values.customReason
+        : values.reason;
+    const record = filteredData.find((order) => order._id === selectedOrderId);
+    if (record) {
+      await handleChangeStatus(record, 5, finalReason, 3);
+    }
+    setIsModalVisible(false);
+    form.resetFields();
+  };
+
+  const handleModalCancel = () => {
+    setIsModalVisible(false);
+    form.resetFields();
   };
 
   const handleClearAllFilters = () => {
@@ -171,13 +214,13 @@ export const OrderList = () => {
     <List title="Quản lý đơn hàng">
       <Space style={{ marginBottom: 16 }} wrap>
         <Input.Search
-          placeholder="Tìm kiếm theo mã đơn hàng"
+          placeholder="Tìm kiếm theo tên, SĐT, email khách hàng"
           allowClear
           value={searchText}
           onChange={(e) => setSearchText(e.target.value)}
           style={{ width: 300 }}
         />
-        <Select
+        <AntSelect
           placeholder="Lọc trạng thái đơn hàng"
           allowClear
           value={orderStatusFilter}
@@ -185,12 +228,12 @@ export const OrderList = () => {
           onChange={setOrderStatusFilter}
         >
           {Object.entries(statusMap).map(([key, val]) => (
-            <Select.Option key={key} value={Number(key)}>
+            <AntSelect.Option key={key} value={Number(key)}>
               {val.text}
-            </Select.Option>
+            </AntSelect.Option>
           ))}
-        </Select>
-        <Select
+        </AntSelect>
+        <AntSelect
           placeholder="Lọc trạng thái thanh toán"
           allowClear
           value={paymentStatusFilter}
@@ -198,11 +241,11 @@ export const OrderList = () => {
           onChange={setPaymentStatusFilter}
         >
           {Object.entries(paymentStatusMap).map(([key, val]) => (
-            <Select.Option key={key} value={Number(key)}>
+            <AntSelect.Option key={key} value={Number(key)}>
               {val.text}
-            </Select.Option>
+            </AntSelect.Option>
           ))}
-        </Select>
+        </AntSelect>
         {(searchText ||
           orderStatusFilter !== undefined ||
           paymentStatusFilter !== undefined) && (
@@ -213,7 +256,6 @@ export const OrderList = () => {
           đơn hàng
         </div>
       </Space>
-
       <Table
         {...tableProps}
         dataSource={filteredData}
@@ -234,7 +276,7 @@ export const OrderList = () => {
         <Table.Column
           title="Khách hàng"
           width={180}
-          render={(_, record: IOrder) => (
+          render={(_, record: Order) => (
             <div>
               <div style={{ fontWeight: 500 }}>
                 {record.recipientInfo?.name || "N/A"}
@@ -251,7 +293,7 @@ export const OrderList = () => {
         <Table.Column
           title="Địa chỉ"
           width={200}
-          render={(_, record: IOrder) => (
+          render={(_, record: Order) => (
             <div style={{ fontSize: "13px", color: "#555" }}>
               {record.shippingAddress || "N/A"}
             </div>
@@ -261,6 +303,9 @@ export const OrderList = () => {
           title="Ngày đặt"
           dataIndex="createdAt"
           width={150}
+          sorter={(a, b) =>
+            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+          }
           render={(createdAt: string) => (
             <div style={{ fontSize: "13px", color: "#555" }}>
               {createdAt ? formatDate(createdAt) : "N/A"}
@@ -271,16 +316,23 @@ export const OrderList = () => {
           title="Trạng thái"
           dataIndex="status"
           width={150}
+          filters={Object.entries(statusMap).map(([key, val]) => ({
+            text: val.text,
+            value: Number(key),
+          }))}
+          onFilter={(value, record) => record.status === value}
           render={(status: number) => {
             const s = statusMap[status];
             return (
-              <Tag
-                color={s?.color}
-                icon={s?.icon}
-                style={{ fontWeight: "bold" }}
-              >
-                {s?.text || status}
-              </Tag>
+              <div>
+                <Tag
+                  color={s?.color}
+                  icon={s?.icon}
+                  style={{ fontWeight: "bold" }}
+                >
+                  {s?.text || status}
+                </Tag>
+              </div>
             );
           }}
         />
@@ -288,6 +340,11 @@ export const OrderList = () => {
           title="Thanh toán"
           dataIndex="paymentStatus"
           width={130}
+          filters={Object.entries(paymentStatusMap).map(([key, val]) => ({
+            text: val.text,
+            value: Number(key),
+          }))}
+          onFilter={(value, record) => record.paymentStatus === value}
           render={(paymentStatus: number) => {
             const p = paymentStatusMap[paymentStatus];
             return (
@@ -311,7 +368,7 @@ export const OrderList = () => {
           title="Hành động"
           width={220}
           fixed="right"
-          render={(_, record: IOrder) => (
+          render={(_, record: Order) => (
             <Space>
               <Tooltip title="Xem chi tiết">
                 <Link to={`/orders/show/${record._id}`}>
@@ -338,7 +395,7 @@ export const OrderList = () => {
                   </Popconfirm>
                   <Popconfirm
                     title="Huỷ đơn hàng này?"
-                    onConfirm={() => handleChangeStatus(record, 5)}
+                    onConfirm={() => showCancelModal(record._id)}
                     okText="Huỷ đơn"
                     cancelText="Không"
                     okButtonProps={{ danger: true }}
@@ -360,7 +417,7 @@ export const OrderList = () => {
                   </Button>
                   <Popconfirm
                     title="Huỷ đơn hàng này?"
-                    onConfirm={() => handleChangeStatus(record, 5)}
+                    onConfirm={() => showCancelModal(record._id)}
                     okText="Huỷ đơn"
                     cancelText="Không"
                     okButtonProps={{ danger: true }}
@@ -381,11 +438,6 @@ export const OrderList = () => {
                   Đã giao
                 </Button>
               )}
-              {record.status === 3 && (
-                <Button size="small" icon={<StarOutlined />} disabled>
-                  Hoàn thành
-                </Button>
-              )}
               {record.status === 6 && (
                 <Tag color="cyan" icon={<UndoOutlined />}>
                   Hoàn hàng
@@ -395,6 +447,65 @@ export const OrderList = () => {
           )}
         />
       </Table>
+      <Modal
+        title="Hủy đơn hàng"
+        visible={isModalVisible}
+        onCancel={handleModalCancel}
+        footer={null}
+        className="rounded-lg"
+      >
+        <Form form={form} onFinish={handleCancelOrder} layout="vertical">
+          <Form.Item
+            name="reason"
+            label="Lý do hủy"
+            rules={[{ required: true, message: "Vui lòng chọn lý do hủy" }]}
+          >
+            <AntSelect placeholder="Chọn lý do">
+              {cancelReasons.map((reason) => (
+                <AntSelect.Option key={reason} value={reason}>
+                  {reason}
+                </AntSelect.Option>
+              ))}
+            </AntSelect>
+          </Form.Item>
+          <Form.Item
+            noStyle
+            shouldUpdate={(prevValues, currentValues) =>
+              prevValues.reason !== currentValues.reason
+            }
+          >
+            {({ getFieldValue }) =>
+              getFieldValue("reason") === "Khác" ? (
+                <Form.Item
+                  name="customReason"
+                  label="Lý do cụ thể"
+                  rules={[
+                    { required: true, message: "Vui lòng nhập lý do cụ thể" },
+                  ]}
+                >
+                  <AntInput.TextArea
+                    rows={3}
+                    placeholder="Nhập lý do hủy đơn hàng"
+                  />
+                </Form.Item>
+              ) : null
+            }
+          </Form.Item>
+          <Form.Item>
+            <div className="flex gap-2 justify-end">
+              <Button
+                onClick={handleModalCancel}
+                style={{ marginRight: "16px" }}
+              >
+                Hủy bỏ
+              </Button>
+              <Button type="primary" htmlType="submit" danger>
+                Xác nhận hủy
+              </Button>
+            </div>
+          </Form.Item>
+        </Form>
+      </Modal>
     </List>
   );
 };
