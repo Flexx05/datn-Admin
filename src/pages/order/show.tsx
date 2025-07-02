@@ -17,7 +17,11 @@ import {
   Steps,
   Table,
   Tag,
-  Typography
+  Typography,
+  Modal,
+  Form,
+  Select as AntSelect,
+  Input as AntInput
 } from "antd";
 import axios from "axios";
 import { useState } from "react";
@@ -25,8 +29,14 @@ import { useParams } from "react-router";
 import { API_URL } from "../../config/dataProvider";
 import { IOrderDetail, Order } from "../../interface/order";
 
-
 const { Title, Text } = Typography;
+
+const cancelReasons = [
+  'Bão lũ giao hàng không được',
+  'Shipper ốm',
+  'Hết hàng',
+  'Khác'
+];
 
 export const OrderShow = () => {
   const { id } = useParams();
@@ -49,13 +59,23 @@ export const OrderShow = () => {
   console.log("Order Data:", orderData);
 
   const [loadingAction, setLoadingAction] = useState<number | null>(null);
+  const [isModalVisible, setIsModalVisible] = useState(false);
+  const [form] = Form.useForm();
 
   // Hàm cập nhật trạng thái đơn hàng
-  const handleUpdateStatus = async (newStatus: number) => {
+  const handleUpdateStatus = async (newStatus: number, cancelReason?: string) => {
     setLoadingAction(newStatus);
     try {
-      await axios.patch(`${API_URL}/order/status/${orderData?._id}`, {
-        status: newStatus,
+      const payload: any = { status: newStatus };
+      if (newStatus === 5) {
+        payload.paymentStatus = 3; // Update paymentStatus to 3 when canceling
+        if (cancelReason) payload.cancelReason = cancelReason; // Include cancel reason if provided
+      }
+      await axios.patch(`${API_URL}/order/status/${orderData?._id}`, payload, {
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem("token")}`
+        }
       });
       message.success(`Cập nhật trạng thái đơn hàng thành công`);
       await refetch();
@@ -64,6 +84,22 @@ export const OrderShow = () => {
     } finally {
       setLoadingAction(null);
     }
+  };
+
+  const showCancelModal = () => {
+    setIsModalVisible(true);
+  };
+
+  const handleCancelOrder = async (values: { reason: string, customReason?: string }) => {
+    const finalReason = values.reason === 'Khác' && values.customReason ? values.customReason : values.reason;
+    await handleUpdateStatus(5, finalReason);
+    setIsModalVisible(false);
+    form.resetFields();
+  };
+
+  const handleModalCancel = () => {
+    setIsModalVisible(false);
+    form.resetFields();
   };
 
   const getStatusDisplayText = (status: number): string => {
@@ -83,6 +119,7 @@ export const OrderShow = () => {
       0: "Chưa thanh toán",
       1: "Đã thanh toán",
       2: "Đã hoàn tiền",
+      3: "Đã hủy",
     };
     return statusMap[status] || status.toString();
   };
@@ -117,6 +154,7 @@ export const OrderShow = () => {
     if (status === 0) return "orange";
     if (status === 1) return "green";
     if (status === 2) return "purple";
+    if (status === 3) return "red";
     return "default";
   };
 
@@ -275,7 +313,12 @@ export const OrderShow = () => {
         <Col span={24}>
           <Card title="Quy trình giao hàng" size="small">
             {orderData.status === 5 ? (
-              <Tag color="red">Đơn hàng đã bị hủy</Tag>
+              <>
+                <Tag color="red">Đơn hàng đã bị hủy</Tag>
+                <p style={{ marginTop: 8, color: '#ff4d4f', fontStyle: 'italic' }}>
+                  Lý do hủy: {orderData.cancelReason || 'Không có lý do cụ thể'}
+                </p>
+              </>
             ) : (
               <Steps
                 current={getCurrentStep(orderData.status)}
@@ -307,9 +350,7 @@ export const OrderShow = () => {
                     <Text>
                       {orderData.status === 4 && orderData.updatedAt
                         ? formatDate(orderData.updatedAt)
-                        // : orderData.expectedDeliveryDate
-                        //   ? formatDate(orderData.expectedDeliveryDate)
-                          : "Chưa xác định"}
+                        : "Chưa xác định"}
                     </Text>
                   </Descriptions.Item>
                 </Descriptions>
@@ -461,7 +502,7 @@ export const OrderShow = () => {
                   </Popconfirm>
                   <Popconfirm
                     title="Huỷ đơn hàng này?"
-                    onConfirm={() => handleUpdateStatus(5)}
+                    onConfirm={showCancelModal}
                     okText="Huỷ đơn"
                     cancelText="Không"
                   >
@@ -472,6 +513,7 @@ export const OrderShow = () => {
                 </>
               )}
               {orderData.status === 1 && (
+                <>
                 <Popconfirm
                   title="Chuyển đơn hàng sang trạng thái đang giao?"
                   onConfirm={() => handleUpdateStatus(2)}
@@ -482,6 +524,17 @@ export const OrderShow = () => {
                     Bắt đầu giao hàng
                   </Button>
                 </Popconfirm>
+                <Popconfirm
+                title="Huỷ đơn hàng này?"
+                onConfirm={showCancelModal}
+                okText="Huỷ đơn"
+                cancelText="Không"
+              >
+                <Button danger loading={loadingAction === 5}>
+                  Huỷ đơn hàng
+                </Button>
+              </Popconfirm>
+                </>
               )}
               {orderData.status === 2 && (
                 <Popconfirm
@@ -499,6 +552,55 @@ export const OrderShow = () => {
           </Card>
         </Col>
 
+        <Modal
+          title="Hủy đơn hàng"
+          visible={isModalVisible}
+          onCancel={handleModalCancel}
+          footer={null}
+          className="rounded-lg"
+        >
+          <Form
+            form={form}
+            onFinish={handleCancelOrder}
+            layout="vertical"
+          >
+            <Form.Item
+              name="reason"
+              label="Lý do hủy"
+              rules={[{ required: true, message: 'Vui lòng chọn lý do hủy' }]}
+            >
+              <AntSelect placeholder="Chọn lý do">
+                {cancelReasons.map((reason) => (
+                  <AntSelect.Option key={reason} value={reason}>{reason}</AntSelect.Option>
+                ))}
+              </AntSelect>
+            </Form.Item>
+            <Form.Item
+              noStyle
+              shouldUpdate={(prevValues, currentValues) => prevValues.reason !== currentValues.reason}
+            >
+              {({ getFieldValue }) =>
+                getFieldValue('reason') === 'Khác' ? (
+                  <Form.Item
+                    name="customReason"
+                    label="Lý do cụ thể"
+                    rules={[{ required: true, message: 'Vui lòng nhập lý do cụ thể' }]}
+                  >
+                    <AntInput.TextArea rows={3} placeholder="Nhập lý do hủy đơn hàng" />
+                  </Form.Item>
+                ) : null
+              }
+            </Form.Item>
+            <Form.Item>
+              <div className="flex gap-2 justify-end">
+                <Button onClick={handleModalCancel} style={{ marginRight: '16px' }}>Hủy bỏ</Button>
+                <Button type="primary" htmlType="submit" danger>
+                  Xác nhận hủy
+                </Button>
+              </div>
+            </Form.Item>
+          </Form>
+        </Modal>
       </Row>
     </Show>
   );

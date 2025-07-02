@@ -1,7 +1,7 @@
 import { CheckOutlined, CloseOutlined, EyeOutlined, ShoppingOutlined, TruckOutlined, UndoOutlined } from "@ant-design/icons";
 import { List, useTable } from "@refinedev/antd";
 import { useInvalidate } from "@refinedev/core";
-import { Button, Input, Popconfirm, Space, Table, Tag, Tooltip, message } from "antd";
+import { Button, Input, Popconfirm, Space, Table, Tag, Tooltip, message, Modal, Form, Select as AntSelect, Input as AntInput } from "antd";
 import axios from "axios";
 import { useMemo, useState } from "react";
 import { Link } from "react-router";
@@ -23,7 +23,15 @@ const paymentStatusMap: Record<number, { text: string; color: string }> = {
   0: { text: "Chưa thanh toán", color: "orange" },
   1: { text: "Đã thanh toán", color: "green" },
   2: { text: "Hoàn tiền", color: "blue" },
+  3: { text: "Đã hủy", color: "red" },
 };
+
+const cancelReasons = [
+  'Bão lũ giao hàng không được',
+  'Shipper ốm',
+  'Hết hàng',
+  'Khác'
+];
 
 export const OrderList = () => {
   const { tableProps } = useTable<Order>({
@@ -40,8 +48,6 @@ export const OrderList = () => {
         total: response.data?.pagination?.totalOrders || 0,
       }),
     },
-    // Sắp xếp mặc định theo ngày đặt mới nhất
-    // sorters: [{ field: "createdAt", order: "desc" }],
   });
 
   const invalidate = useInvalidate();
@@ -49,12 +55,14 @@ export const OrderList = () => {
   const [searchText, setSearchText] = useState<string>("");
   const [orderStatusFilter, setOrderStatusFilter] = useState<number | undefined>(undefined);
   const [paymentStatusFilter, setPaymentStatusFilter] = useState<number | undefined>(undefined);
+  const [isModalVisible, setIsModalVisible] = useState(false);
+  const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
+  const [form] = Form.useForm();
 
   // Filter logic
   const filteredData = useMemo(() => {
     if (!tableProps.dataSource) return [];
     let filtered: Order[] = [...tableProps.dataSource];
-    // Tìm kiếm theo tên, sđt, email người nhận
     if (searchText) {
       const lower = searchText.toLowerCase();
       filtered = filtered.filter(order =>
@@ -70,20 +78,20 @@ export const OrderList = () => {
     if (paymentStatusFilter !== undefined) {
       filtered = filtered.filter(order => order.paymentStatus === paymentStatusFilter);
     }
-    // Sắp xếp lại cho chắc chắn (nếu backend không sort)
     filtered.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
     return filtered;
   }, [tableProps.dataSource, searchText, orderStatusFilter, paymentStatusFilter]);
 
   // Đổi trạng thái đơn hàng
-  const handleChangeStatus = async (record: Order, newStatus: number) => {
+  const handleChangeStatus = async (record: Order, newStatus: number, reason?: string, paymentStatus?: number) => {
     setLoadingId(record._id);
     try {
-      let paymentStatus = record.paymentStatus;
-      if (newStatus === 3) paymentStatus = 1; // Đã giao hàng thì thanh toán luôn
+      let currentPaymentStatus = paymentStatus !== undefined ? paymentStatus : record.paymentStatus;
+      if (newStatus === 3) currentPaymentStatus = 1; // Đã giao hàng thì thanh toán luôn
       await axios.patch(`${API_URL}/order/status/${record._id}`, {
         status: newStatus,
-        paymentStatus,
+        paymentStatus: currentPaymentStatus,
+        ...(reason && { cancelReason: reason }), // Include reason if provided
       }, {
         headers: {
           'Content-Type': 'application/json',
@@ -97,6 +105,27 @@ export const OrderList = () => {
     } finally {
       setLoadingId(null);
     }
+  };
+
+  const showCancelModal = (id: string) => {
+    setSelectedOrderId(id);
+    setIsModalVisible(true);
+  };
+
+  const handleCancelOrder = async (values: { reason: string, customReason?: string }) => {
+    if (!selectedOrderId) return;
+    const finalReason = values.reason === 'Khác' && values.customReason ? values.customReason : values.reason;
+    const record = filteredData.find(order => order._id === selectedOrderId);
+    if (record) {
+      await handleChangeStatus(record, 5, finalReason, 3);
+    }
+    setIsModalVisible(false);
+    form.resetFields();
+  };
+
+  const handleModalCancel = () => {
+    setIsModalVisible(false);
+    form.resetFields();
   };
 
   const handleClearAllFilters = () => {
@@ -181,7 +210,6 @@ export const OrderList = () => {
           dataIndex="createdAt"
           width={150}
           sorter={(a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()}
-          // defaultSortOrder="ascend"
           render={(createdAt: string) => (
             <div style={{ fontSize: '13px', color: '#555' }}>
               {createdAt ? formatDate(createdAt) : 'N/A'}
@@ -204,11 +232,6 @@ export const OrderList = () => {
                 <Tag color={s?.color} icon={s?.icon} style={{ fontWeight: 'bold' }}>
                   {s?.text || status}
                 </Tag>
-                {/* {status === 3 && (
-                  <div style={{ fontSize: '12px', color: '#888', marginTop: '4px' }}>
-                    Đơn hàng tự động hoàn thành sau 3 ngày
-                  </div>
-                )} */}
               </div>
             );
           }}
@@ -267,7 +290,7 @@ export const OrderList = () => {
                   </Popconfirm>
                   <Popconfirm
                     title="Huỷ đơn hàng này?"
-                    onConfirm={() => handleChangeStatus(record, 5)}
+                    onConfirm={() => showCancelModal(record._id)}
                     okText="Huỷ đơn"
                     cancelText="Không"
                     okButtonProps={{ danger: true }}
@@ -285,7 +308,7 @@ export const OrderList = () => {
                   </Button>
                   <Popconfirm
                     title="Huỷ đơn hàng này?"
-                    onConfirm={() => handleChangeStatus(record, 5)}
+                    onConfirm={() => showCancelModal(record._id)}
                     okText="Huỷ đơn"
                     cancelText="Không"
                     okButtonProps={{ danger: true }}
@@ -301,11 +324,6 @@ export const OrderList = () => {
                   Đã giao
                 </Button>
               )}
-              {/* {record.status === 3 && (
-                <Button size="small" icon={<StarOutlined />} disabled>
-                  Hoàn thành
-                </Button>
-              )} */}
               {record.status === 6 && (
                 <Tag color="cyan" icon={<UndoOutlined />}>Hoàn hàng</Tag>
               )}
@@ -313,6 +331,57 @@ export const OrderList = () => {
           )}
         />
       </Table>
+      <Modal
+        title="Hủy đơn hàng"
+        visible={isModalVisible}
+        onCancel={handleModalCancel}
+        footer={null}
+        className="rounded-lg"
+      >
+        <Form
+          form={form}
+          onFinish={handleCancelOrder}
+          layout="vertical"
+        >
+          <Form.Item
+            name="reason"
+            label="Lý do hủy"
+            rules={[{ required: true, message: 'Vui lòng chọn lý do hủy' }]}
+          >
+            <AntSelect placeholder="Chọn lý do">
+              {cancelReasons.map((reason) => (
+                <AntSelect.Option key={reason} value={reason}>{reason}</AntSelect.Option>
+              ))}
+            </AntSelect>
+          </Form.Item>
+          <Form.Item
+            noStyle
+            shouldUpdate={(prevValues, currentValues) => prevValues.reason !== currentValues.reason}
+          >
+            {({ getFieldValue }) =>
+              getFieldValue('reason') === 'Khác' ? (
+                <Form.Item
+                  name="customReason"
+                  label="Lý do cụ thể"
+                  rules={[{ required: true, message: 'Vui lòng nhập lý do cụ thể' }]}
+                >
+                  <AntInput.TextArea rows={3} placeholder="Nhập lý do hủy đơn hàng" />
+                </Form.Item>
+              ) : null
+            }
+          </Form.Item>
+          <Form.Item>
+            <div className="flex gap-2 justify-end">
+              <Button onClick={handleModalCancel} style={{ marginRight: '16px' }}>
+                Hủy bỏ
+              </Button>
+              <Button type="primary" htmlType="submit" danger>
+                Xác nhận hủy
+              </Button>
+            </div>
+          </Form.Item>
+        </Form>
+      </Modal>
     </List>
   );
 };
