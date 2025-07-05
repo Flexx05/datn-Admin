@@ -21,7 +21,7 @@ export const axiosInstance = axios.create({
 });
 
 axiosInstance.interceptors.request.use((config) => {
-  const token = localStorage.getItem("accessToken");
+  const token = localStorage.getItem("token");
   if (token && config.headers) {
     config.headers["Authorization"] = `Bearer ${token}`;
   }
@@ -52,7 +52,7 @@ axiosInstance.interceptors.response.use(
       try {
         const response = await axiosInstance.post("/refresh-token");
         const newAccessToken = response.data.accessToken;
-        localStorage.setItem("accessToken", newAccessToken);
+        localStorage.setItem("token", newAccessToken);
 
         axiosInstance.defaults.headers.common[
           "Authorization"
@@ -62,7 +62,7 @@ axiosInstance.interceptors.response.use(
         return axiosInstance(originalRequest);
       } catch (refreshError) {
         processQueue(refreshError, null);
-        localStorage.removeItem("accessToken");
+        localStorage.removeItem("token");
         return Promise.reject(refreshError);
       } finally {
         isRefreshing = false;
