@@ -6,11 +6,12 @@ import routerBindings, {
   UnsavedChangesNotifier,
 } from "@refinedev/react-router";
 import AppRoutes from "../routes";
-import { authProvider } from "./authProvider";
-import { resources } from "./resources";
+import { useAuthProvider } from "./authProvider";
 import dataProvider from "./dataProvider";
+import { resources } from "./resources";
 
 const RefineConfig = () => {
+  const authProvider = useAuthProvider();
   return (
     <div>
       <Refine

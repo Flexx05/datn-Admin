@@ -15,15 +15,15 @@ import {
 } from "antd";
 import axios from "axios";
 import { useContext, useMemo, useState } from "react";
+import { CSSTransition, TransitionGroup } from "react-transition-group";
 import { API_URL } from "../../config/dataProvider";
+import { ColorModeContext } from "../../contexts/color-mode";
 import { IAttribute } from "../../interface/attribute";
 import { IBrand } from "../../interface/brand";
 import { ICategory } from "../../interface/category";
 import { AttributeItem } from "./AttributeItem";
 import { VariationItem } from "./VariationItem";
 import "./variation-animations.css";
-import { CSSTransition, TransitionGroup } from "react-transition-group";
-import { ColorModeContext } from "../../contexts/color-mode";
 
 export const ProductCreate = () => {
   const { formProps, saveButtonProps } = useForm({
@@ -109,6 +109,9 @@ export const ProductCreate = () => {
     optionLabel: "name",
     optionValue: "_id",
     pagination: { mode: "off" },
+    meta: {
+      _limit: "off",
+    },
   });
 
   const { queryResult: brand } = useSelect({
@@ -116,6 +119,9 @@ export const ProductCreate = () => {
     optionLabel: "name",
     optionValue: "_id",
     pagination: { mode: "off" },
+    meta: {
+      _limit: "off",
+    },
   });
 
   const { queryResult: attribute } = useSelect({
@@ -125,6 +131,7 @@ export const ProductCreate = () => {
     pagination: { mode: "off" },
     meta: {
       fields: ["isColor", "values", "name", "isActive"],
+      _limit: "off",
     },
   });
 

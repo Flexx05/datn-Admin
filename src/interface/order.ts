@@ -1,80 +1,76 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+export interface IOrderDetail {
+    orderCode: string;
+    createdAt: string;
+    expectedDeliveryDate: string | null;
+    items: Array<{
+        productName: string;
+        variantAttributes: Array<{
+            attributeName: string;
+            values: Array<string>;
+        }>;
+        priceAtOrder: number;
+        quantity: number;
+        totalPrice: number;
+    }>;
+}
+export interface IOrder{
+    orderData: IOrderDetail;
+}
 
-export type OrderStatus =
-  | "Cho xac nhan"
-  | "Da xac nhan"
-  | "Dang giao hang"
-  | "Da giao hang"
-  | "Da huy";
 
-type PaymentMethod = "COD" | "VNPAY";
-
-export interface IOrder {
+export interface Order {
   _id: string;
-  orderCode: string; // Đổi từ orderNumber
-  userId: string;
-  voucherId: string[];
-  items: {
-    variationId: string;
-    productName: string;
-    quantity: number;
-    priceAtOrder: number;
-    totalPrice: number;
-    variantAttributes: any[];
-  }[];
-  shippingAddress: {
-    country: string;
-    city: string;
-    address: string;
-  };
-  shippingFee: number;
-  discountAmount: number;
-  status: OrderStatus;
-  paymentStatus:
-    | "Chua thanh toan"
-    | "Da thanh toan"
-    | "That bai"
-    | "Da hoan tien"; // Cập nhật theo API
-  paymentMethod: PaymentMethod;
+  completedBy: string | null;
   createdAt: string;
-  updatedAt: string;
+  deliveryDate: string | null;
+  discountAmount: number;
+  expectedDeliveryDate: string;
+  items: OrderItem[];
+  note: string | null;
+  orderCode: string;
+  paymentMethod: string;
+  paymentStatus: number;
+  recipientInfo: RecipientInfo;
+  returnRequest: ReturnRequest;
+  shippingAddress: string;
+  shippingFee: number;
+  status: number;
   subtotal: number;
   totalAmount: number;
+  updatedAt: string;
+  userId: string;
+  voucherId: string[];
 }
 
-// Interface cho địa chỉ giao hàng
-interface IShippingAddress {
-  country: string;
-  city: string;
-  address: string;
-}
-
-// Interface cho sản phẩm trong đơn hàng
-interface IOrderItem {
+export interface OrderItem {
   _id: string;
-  variationId: string;
+  priceAtOrder: number;
+  productId: string;
   productName: string;
   quantity: number;
-  priceAtOrder: number;
   totalPrice: number;
-  variantAttributes: any[];
+  variationId: string;
+  variantId: string;
+  name: string;
+  image: string;
+  size: string;
+  color: string;
+  regularPrice: number;
+  salePrice: number;
+  cartItemId?: string;
 }
-// Interface chính cho đơn hàng
-export interface IOrderDetail {
-  _id: string;
-  userId: string;
-  orderCode: string;
-  voucherId: string[];
-  items: IOrderItem[];
-  subtotal: number;
-  shippingFee: number;
-  discountAmount: number;
-  totalAmount: number;
-  status: string;
-  paymentStatus: string;
-  paymentMethod: PaymentMethod;
-  expectedDeliveryDate: string;
-  createdAt: string;
-  updatedAt: string;
-  shippingAddress: IShippingAddress;
+
+interface RecipientInfo {
+  email: string;
+  name: string;
+  phone: string;
 }
+
+interface ReturnRequest {
+  adminNote: string | null;
+  clientReason: string | null;
+  refundMethod: string | null;
+  returnStatus: string;
+}
+  
+

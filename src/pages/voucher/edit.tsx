@@ -339,6 +339,20 @@ const VoucherEdit = () => {
               min: 1,
               message: "Số lượng voucher phải lớn hơn hoặc bằng 1",
             },
+            {
+              validator: (_, value) => {
+                if (record?.voucherStatus === "active") {
+                  if (typeof value === "number" && value < record.quantity) {
+                    return Promise.reject(
+                      new Error(
+                        `Không thể giảm số lượng khi voucher đang hoạt động (hiện tại là ${record.quantity})`
+                      )
+                    );
+                  }
+                }
+                return Promise.resolve();
+              },
+            },
           ]}
         >
           <InputNumber
@@ -346,6 +360,7 @@ const VoucherEdit = () => {
             placeholder="Nhập số lượng voucher"
           />
         </Form.Item>
+
 
                 
 

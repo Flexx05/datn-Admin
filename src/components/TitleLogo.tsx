@@ -1,5 +1,6 @@
 import { useContext, CSSProperties } from "react";
 import { ColorModeContext } from "../contexts/color-mode";
+import { Link } from "react-router";
 
 interface TitleLogoProps {
   collapsed: boolean;
@@ -25,7 +26,8 @@ export const TitleLogo = ({ collapsed, style }: TitleLogoProps) => {
     );
   }
   return (
-    <div
+    <Link
+      to="/"
       style={{
         display: "flex",
         alignItems: "center",
@@ -48,6 +50,6 @@ export const TitleLogo = ({ collapsed, style }: TitleLogoProps) => {
       >
         .
       </span>
-    </div>
+    </Link>
   );
 };

@@ -36,7 +36,11 @@ const dataProvider: DataProvider = {
 
     if (pagination && pagination.pageSize) {
       params._page = pagination.current || 1;
-      params._limit = 10000;
+      params._limit = pagination.pageSize;
+    }
+
+    if (meta) {
+      Object.assign(params, meta);
     }
 
     const { data } = await axiosInstance.get(`${resource}`, {

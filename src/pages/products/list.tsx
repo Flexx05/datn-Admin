@@ -16,6 +16,7 @@ import {
   Space,
   Table,
   Tabs,
+  Tooltip,
 } from "antd";
 import axios from "axios";
 import dayjs from "dayjs";
@@ -228,18 +229,22 @@ export const ProductList = () => {
           dataIndex="actions"
           render={(_, record: IProduct) => (
             <Space>
-              <EditButton
-                hideText
-                size="small"
-                recordItemId={record._id}
-                hidden={!record.isActive}
-              />
-              <ShowButton
-                hideText
-                size="small"
-                recordItemId={record._id}
-                hidden={!record.isActive}
-              />
+              <Tooltip title="Chỉnh sửa sản phẩm">
+                <EditButton
+                  hideText
+                  size="small"
+                  recordItemId={record._id}
+                  hidden={!record.isActive}
+                />
+              </Tooltip>
+              <Tooltip title="Xem chi tiết">
+                <ShowButton
+                  hideText
+                  size="small"
+                  recordItemId={record._id}
+                  hidden={!record.isActive}
+                />
+              </Tooltip>
               <DeleteButton
                 hideText
                 size="small"

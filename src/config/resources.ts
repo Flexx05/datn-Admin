@@ -1,5 +1,12 @@
 export const resources = [
   {
+    name: "dashboard",
+    list: "/dashboard",
+    meta: {
+      label: "Trang chủ",
+    },
+  },
+  {
     name: "product",
     list: "/product",
     create: "/product/add",

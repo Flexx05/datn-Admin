@@ -14,6 +14,7 @@ import {
   Space,
   Table,
   Tabs,
+  Tooltip,
   Typography,
   message,
 } from "antd";
@@ -77,7 +78,6 @@ export const AttributeList = () => {
     (key: string) => {
       const isActiveFilter = key === "active";
       setFilterActive(isActiveFilter);
-
       // Cập nhật lại filter mới
       setFilters(
         [
@@ -180,18 +180,22 @@ export const AttributeList = () => {
           dataIndex="actions"
           render={(_, record: IAttribute) => (
             <Space>
-              <EditButton
-                hideText
-                size="small"
-                recordItemId={record._id}
-                hidden={!record.isActive}
-              />
-              <ShowButton
-                hideText
-                size="small"
-                recordItemId={record._id}
-                hidden={!record.isActive}
-              />
+              <Tooltip title="Chỉnh sửa thuộc tính">
+                <EditButton
+                  hideText
+                  size="small"
+                  recordItemId={record._id}
+                  hidden={!record.isActive}
+                />
+              </Tooltip>
+              <Tooltip title="Xem chi tiết">
+                <ShowButton
+                  hideText
+                  size="small"
+                  recordItemId={record._id}
+                  hidden={!record.isActive}
+                />
+              </Tooltip>
               <DeleteButton
                 hideText
                 size="small"
