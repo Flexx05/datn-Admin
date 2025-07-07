@@ -11,7 +11,6 @@ type Props = {
 
 const OrderNearly = ({ orderData, isLoading }: Props) => {
   const top10Order = orderData?.slice(0, 10);
-  console.log("top10Order", top10Order);
 
   return (
     <List

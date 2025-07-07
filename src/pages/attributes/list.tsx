@@ -52,6 +52,7 @@ export const AttributeList = () => {
   });
   const invalidate = useInvalidate();
   const [loadingId, setLoadingId] = useState<string | number | null>(null);
+  const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
 
   const handleChangeStatus = async (record: IAttribute) => {
     setLoadingId(record._id);
@@ -138,7 +139,48 @@ export const AttributeList = () => {
         onSearch={handleSearch}
         style={{ marginBottom: 16, maxWidth: 300 }}
       />
-      <Table {...tableProps} rowKey="_id">
+      <Popconfirm
+        title="Bạn chắc chắn xóa hàng loạt không ?"
+        onConfirm={async () => {
+          if (selectedRowKeys.length === 0) return;
+          try {
+            await Promise.all(
+              selectedRowKeys.map((id) =>
+                axios.delete(`${API_URL}/attribute/delete/${id}`)
+              )
+            );
+            message.success("Xóa hàng loạt thành công");
+            setSelectedRowKeys([]);
+            await invalidate({
+              resource: "attribute",
+              invalidates: ["list"],
+            });
+          } catch (error: any) {
+            const errorMessage =
+              error.response?.data?.message ||
+              error.message ||
+              "Lỗi không xác định";
+            message.error("Xóa thất bại: " + errorMessage);
+          }
+        }}
+      >
+        <Button
+          danger
+          disabled={selectedRowKeys.length === 0}
+          style={{ marginBottom: 16 }}
+        >
+          Xóa hàng loạt
+        </Button>
+      </Popconfirm>
+      <Table
+        {...tableProps}
+        rowKey="_id"
+        rowSelection={{
+          type: "checkbox",
+          selectedRowKeys,
+          onChange: (keys: React.Key[]) => setSelectedRowKeys(keys),
+        }}
+      >
         <Table.Column
           dataIndex="stt"
           title={"STT"}
