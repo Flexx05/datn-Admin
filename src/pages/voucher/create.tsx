@@ -31,10 +31,14 @@ const VoucherCreate = () => {
 
   const handleFinish = (values: any) => {
     const [startDate, endDate] = values.dateRange || [];
-    const now = new Date();
-    // Kiểm tra logic ngày
+    const now = dayjs();
+  
     if (startDate && endDate) {
-      if (startDate > endDate) {
+      const start = dayjs(startDate);
+      const end = dayjs(endDate);
+  
+      // ✅ Điều kiện 1: Ngày bắt đầu phải nhỏ hơn ngày kết thúc
+      if (start.isAfter(end)) {
         form?.setFields([
           {
             name: "dateRange",
@@ -44,7 +48,19 @@ const VoucherCreate = () => {
         return;
       }
   
-      if (startDate < now) {
+      // ✅ Điều kiện 2: Phải cách nhau ít nhất 1 phút
+      if (end.diff(start, "minute") < 1) {
+        form?.setFields([
+          {
+            name: "dateRange",
+            errors: ["Thời gian kết thúc phải sau thời gian bắt đầu ít nhất 1 phút"],
+          },
+        ]);
+        return;
+      }
+  
+      // ✅ Điều kiện 3: Ngày bắt đầu không được ở quá khứ
+      if (start.isBefore(now)) {
         form?.setFields([
           {
             name: "dateRange",
@@ -53,13 +69,13 @@ const VoucherCreate = () => {
         ]);
         return;
       }
+  
+      values.startDate = start.toISOString();
+      values.endDate = end.toISOString();
+      delete values.dateRange;
+  
+      formProps.onFinish?.(values);
     }
-
-    values.startDate = startDate?.toISOString();
-    values.endDate = endDate?.toISOString();
-    delete values.dateRange;
-
-    formProps.onFinish?.(values);
   };
 
   return (
@@ -96,26 +112,34 @@ const VoucherCreate = () => {
                 if (!value || value.trim().length === 0) {
                   return Promise.resolve();
                 }
-          
+            
                 try {
-                  const response = await axiosInstance(`/vouchers?code=${value.trim()}`);
+                  const response = await axiosInstance(`/vouchers?code=${value.trim()}&isDeleted=all`);
                   const data = response?.data?.docs || [];
-                  
-                  const isDuplicate = data.some(
+            
+                  const duplicateVoucher  = data.find(
                     (v: any) =>
                       v.code.trim().toLowerCase() === value.trim().toLowerCase()
                   );
-        
-                  if (isDuplicate) {
+         
+            
+                  if (duplicateVoucher ) {
+                    if (duplicateVoucher.isDeleted) {
+                      return Promise.reject(
+                        "Mã giảm giá này đã từng tồn tại (hiện đang bị xóa). Vui lòng dùng mã khác hoặc khôi phục mã cũ."
+                      );
+                    }
                     return Promise.reject("Mã giảm giá đã tồn tại");
                   }
                 } catch (error) {
                   console.error("Lỗi kiểm tra mã:", error);
+                  return Promise.reject("Không thể kiểm tra mã giảm giá. Vui lòng thử lại.");
                 }
-          
+            
                 return Promise.resolve();
               },
-            },
+            }
+            
           ]}
           
         >

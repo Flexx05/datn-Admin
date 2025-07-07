@@ -57,7 +57,12 @@ const VoucherEdit = () => {
     const now = new Date();
 
     if (startDate && endDate) {
-      if (startDate > endDate) {
+      const start = dayjs(startDate);
+      const end = dayjs(endDate);
+      const now = dayjs();
+    
+      // 1. Ngày bắt đầu > ngày kết thúc
+      if (start.isAfter(end)) {
         formProps.form?.setFields([
           {
             name: "dateRange",
@@ -66,7 +71,35 @@ const VoucherEdit = () => {
         ]);
         return;
       }
+    
+      // 2. Thời gian kết thúc không sau ít nhất 1 phút
+      if (end.diff(start, "minute") < 1) {
+        formProps.form?.setFields([
+          {
+            name: "dateRange",
+            errors: ["Thời gian kết thúc phải sau thời gian bắt đầu ít nhất 1 phút"],
+          },
+        ]);
+        return;
+      }
+    
+      // 3. Nếu được chỉnh ngày bắt đầu, không cho phép chỉnh về quá khứ
+      const isStartDateEditable =
+        !(
+          record?.voucherStatus === "active" ||
+          dayjs(record?.startDate).isBefore(now, "minute")
+        );
+      if (isStartDateEditable && start.isBefore(now)) {
+        formProps.form?.setFields([
+          {
+            name: "dateRange",
+            errors: ["Ngày bắt đầu không được ở quá khứ"],
+          },
+        ]);
+        return;
+      }
     }
+    
 
     const payload = {
       ...values,
@@ -108,30 +141,39 @@ const VoucherEdit = () => {
                         if (!value || value.trim().length === 0) {
                           return Promise.resolve();
                         }
-
+                    
+                        // Cho phép giữ nguyên nếu không thay đổi mã
                         if (value.trim().toLowerCase() === record?.code?.trim().toLowerCase()) {
                           return Promise.resolve();
                         }
-                  
+                    
                         try {
-                          const response = await axiosInstance(`/vouchers?code=${value.trim()}`);
+                          const response = await axiosInstance(`/vouchers?code=${value.trim()}&isDeleted=all`);
                           const data = response?.data?.docs || [];
-                  
-                          const isDuplicate = data.some(
+                    
+                          const duplicate = data.find(
                             (v: any) =>
-                              v.code.trim().toLowerCase() === value.trim().toLowerCase()
+                              v.code.trim().toLowerCase() === value.trim().toLowerCase() &&
+                              v._id !== record?._id // Không phải chính voucher đang sửa
                           );
-                
-                          if (isDuplicate) {
+                    
+                          if (duplicate) {
+                            if (duplicate.isDeleted) {
+                              return Promise.reject(
+                                "Mã giảm giá này đã từng tồn tại (hiện đang bị xóa). Vui lòng dùng mã khác hoặc khôi phục mã cũ."
+                              );
+                            }
                             return Promise.reject("Mã giảm giá đã tồn tại");
                           }
                         } catch (error) {
                           console.error("Lỗi kiểm tra mã:", error);
+                          return Promise.reject("Không thể kiểm tra mã giảm giá. Vui lòng thử lại.");
                         }
-                  
+                    
                         return Promise.resolve();
                       },
-                    },
+                    }
+                    
                   ]}
                   
                 >
