@@ -32,6 +32,8 @@ import VoucherList from "../pages/voucher/list";
 import VoucherCreate from "../pages/voucher/create";
 import VoucherEdit from "../pages/voucher/edit";
 import VoucherShow from "../pages/voucher/show";
+import ChatList from "../pages/chat/list";
+import ChatShow from "../pages/chat/show";
 
 const AppRoutes = () => {
   return (
@@ -89,17 +91,21 @@ const AppRoutes = () => {
             <Route index element={<CommentList />} />
             <Route path="id/:id" element={<CommentShow />} />
           </Route>
+          <Route path="/chat-message">
+            <Route index element={<ChatList />} />
+            <Route path="id/:id" element={<ChatShow />} />
+          </Route>
           <Route path="/orders">
             <Route index element={<OrderList />} />
             <Route path="show/:id" element={<OrderShow />} />
           </Route>
-          <Route path="*" element={<ErrorComponent />} />
           <Route path="/vouchers">
             <Route index element={<VoucherList />} />
             <Route path="add" element={<VoucherCreate />} />
             <Route path="edit/:id" element={<VoucherEdit />} />
             <Route path="id/:id" element={<VoucherShow />} />
           </Route>
+          <Route path="*" element={<ErrorComponent />} />
         </Route>
         <Route
           element={
