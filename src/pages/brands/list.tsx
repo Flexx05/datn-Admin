@@ -58,6 +58,8 @@ export const BrandList = () => {
     setLoadingId(record._id);
     try {
       await axiosInstance.patch(`/brand/edit/${record._id}`, {
+        name: record.name,
+
         isActive: !record.isActive,
       });
 

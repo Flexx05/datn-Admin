@@ -87,4 +87,12 @@ export const resources = [
       label: "Quản lý voucher",
     },
   },
+  {
+    name: "chat-message",
+    list: "/chat-message",
+    show: "/chat-message/id/:id",
+    meta: {
+      label: "Chăm sóc khách hàng",
+    },
+  },
 ];
