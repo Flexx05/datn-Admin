@@ -32,6 +32,7 @@ import VoucherList from "../pages/voucher/list";
 import VoucherCreate from "../pages/voucher/create";
 import VoucherEdit from "../pages/voucher/edit";
 import VoucherShow from "../pages/voucher/show";
+import TopProductsStatistics from "../pages/statistics/top-products";
 
 const AppRoutes = () => {
   return (
@@ -99,6 +100,9 @@ const AppRoutes = () => {
             <Route path="add" element={<VoucherCreate />} />
             <Route path="edit/:id" element={<VoucherEdit />} />
             <Route path="id/:id" element={<VoucherShow />} />
+          </Route>
+          <Route path="/statistics/top-products">
+            <Route index element={<TopProductsStatistics />} />
           </Route>
         </Route>
         <Route

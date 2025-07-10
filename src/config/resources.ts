@@ -87,4 +87,11 @@ export const resources = [
       label: "Quản lý voucher",
     },
   },
+  {
+    name: "statistics",
+    list: "/statistics/top-products",
+    meta: {
+      label: "Thống kê sản phẩm bán chạy",
+    },
+  },
 ];
