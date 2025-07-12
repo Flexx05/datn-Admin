@@ -18,6 +18,7 @@ export interface IStatisticsData {
   totalDocs: number;
   totalRevenue: number;
   totalQuantity: number;
+  totalOrderCount: number;
   limit: number;
   page: number;
   totalPages: number;
