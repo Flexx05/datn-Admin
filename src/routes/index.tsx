@@ -9,7 +9,6 @@ import {
   AttributeList,
   AttributeShow,
 } from "../pages/attributes";
-import { CommentList, CommentShow } from "../pages/comments";
 import { BrandCreate, BrandEdit, BrandList, BrandShow } from "../pages/brands";
 import {
   CategoryCreate,
@@ -17,7 +16,12 @@ import {
   CategoryList,
   CategoryShow,
 } from "../pages/categories";
+import ChatList from "../pages/chat/list";
+import { CommentList, CommentShow } from "../pages/comments";
+import { Dashboard } from "../pages/dashboard";
 import { Login } from "../pages/login";
+import { OrderList } from "../pages/order/list";
+import { OrderShow } from "../pages/order/show";
 import {
   ProductCreate,
   ProductEdit,
@@ -25,15 +29,10 @@ import {
   ProductShow,
 } from "../pages/products";
 import { UserList, UserShow } from "../pages/user";
-import { OrderList } from "../pages/order/list";
-import { OrderShow } from "../pages/order/show";
-import { Dashboard } from "../pages/dashboard";
-import VoucherList from "../pages/voucher/list";
 import VoucherCreate from "../pages/voucher/create";
 import VoucherEdit from "../pages/voucher/edit";
+import VoucherList from "../pages/voucher/list";
 import VoucherShow from "../pages/voucher/show";
-import ChatList from "../pages/chat/list";
-import ChatShow from "../pages/chat/show";
 
 const AppRoutes = () => {
   return (
@@ -91,9 +90,8 @@ const AppRoutes = () => {
             <Route index element={<CommentList />} />
             <Route path="id/:id" element={<CommentShow />} />
           </Route>
-          <Route path="/chat-message">
+          <Route path="/conversation">
             <Route index element={<ChatList />} />
-            <Route path="id/:id" element={<ChatShow />} />
           </Route>
           <Route path="/orders">
             <Route index element={<OrderList />} />

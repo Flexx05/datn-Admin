@@ -88,9 +88,9 @@ export const resources = [
     },
   },
   {
-    name: "chat-message",
-    list: "/chat-message",
-    show: "/chat-message/id/:id",
+    name: "conversation",
+    list: "/conversation",
+    show: "/conversation/id/:id",
     meta: {
       label: "Chăm sóc khách hàng",
     },
