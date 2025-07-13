@@ -18,18 +18,16 @@ import {
   Tabs,
   Tooltip,
 } from "antd";
-import axios from "axios";
 import dayjs from "dayjs";
 import React, { useCallback, useState } from "react";
-import { API_URL } from "../../config/dataProvider";
 import {
   IProduct,
   IProductAttribute,
   IVariation,
 } from "../../interface/product";
+import { axiosInstance } from "../../utils/axiosInstance";
 import { ColorDots } from "./ColorDots";
 import { VariationTable } from "./VariationTable";
-import { axiosInstance } from "../../utils/axiosInstance";
 
 export const ProductList = () => {
   const [filterActive, setFilterActive] = useState<boolean>(true);
@@ -65,7 +63,7 @@ export const ProductList = () => {
     async (record: IProduct | IVariation | any) => {
       setLoadingId(record._id);
       try {
-        await axios.patch(`${API_URL}/product/edit/status/${record._id}`, {
+        await axiosInstance.patch(`/product/edit/status/${record._id}`, {
           isActive: !record.isActive,
         });
 
@@ -197,7 +195,7 @@ export const ProductList = () => {
         }}
         expandable={{
           expandedRowRender: (record: IProduct | IVariation | any) => (
-            <VariationTable variations={record.variation} />
+            <VariationTable product={record} />
           ),
           rowExpandable: (record) => !!record.variation?.length,
         }}
@@ -254,10 +252,15 @@ export const ProductList = () => {
         />
         <Table.Column
           title="Tồn kho"
-          dataIndex="stock"
+          dataIndex="inStock"
           render={(_, record: IProduct) =>
             record.variation?.reduce((prev, curr) => prev + curr.stock, 0) || 0
           }
+          filters={[
+            { text: "Còn hàng", value: true },
+            { text: "Hết hàng", value: false },
+          ]}
+          onFilter={(value, record) => record.inStock === value}
         />
         <Table.Column
           title="Ngày tạo"

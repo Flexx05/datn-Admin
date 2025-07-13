@@ -52,7 +52,6 @@ export const BrandList = () => {
 
   const invalidate = useInvalidate();
   const [loadingId, setLoadingId] = useState<string | number | null>(null);
-  const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
 
   const handleChangeStatus = async (record: IBrand) => {
     setLoadingId(record._id);
@@ -140,51 +139,7 @@ export const BrandList = () => {
         onSearch={handleSearch}
         style={{ marginBottom: 16, maxWidth: 300 }}
       />
-      <Popconfirm
-        title="Bạn chắc chắn xóa các thương hiệu đã chọn không ?"
-        onConfirm={async () => {
-          if (selectedRowKeys.length === 0) return;
-          try {
-            await Promise.all(
-              selectedRowKeys.map((id) =>
-                axiosInstance.delete(`/brand/delete/${id}`)
-              )
-            );
-            message.success("Xóa thương hiệu thành công");
-            await invalidate({
-              resource: "brand",
-              invalidates: ["list"],
-            });
-            setSelectedRowKeys([]);
-          } catch (error: any) {
-            const errorMessage =
-              error.response?.data?.message ||
-              error.message ||
-              "Lỗi không xác định";
-            message.error("Xóa thất bại: " + errorMessage);
-          }
-        }}
-        okText="Xóa"
-        cancelText="Hủy"
-      >
-        <Button
-          type="primary"
-          danger
-          disabled={!selectedRowKeys.length}
-          style={{ marginBottom: 16 }}
-        >
-          Xóa hàng loạt
-        </Button>
-      </Popconfirm>
-      <Table
-        {...tableProps}
-        rowKey="_id"
-        rowSelection={{
-          selectedRowKeys,
-          onChange: (keys: React.Key[]) => setSelectedRowKeys(keys),
-          type: "checkbox",
-        }}
-      >
+      <Table {...tableProps} rowKey="_id">
         <Table.Column
           dataIndex="stt"
           title={"STT"}
