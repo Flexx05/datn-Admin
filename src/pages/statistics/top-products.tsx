@@ -7,7 +7,7 @@ import {
   Card,
   DatePicker,
   message,
-  Statistic,
+  Statistic, Button
 } from "antd";
 import { List } from "@refinedev/antd";
 import { axiosInstance } from "../../utils/axiosInstance";
@@ -26,7 +26,7 @@ import {
   Pie,
   Cell,
 } from "recharts";
-
+import { utils as XLSXUtils, writeFile } from "xlsx";
 import dayjs from "dayjs";
 
 const { RangePicker } = DatePicker;
@@ -115,10 +115,10 @@ const TopProductsStatistics = () => {
 
   useEffect(() => {
     axiosInstance
-      .get("/category?isActive=true&limit=off")
+      .get("/category?isActive=true&_limit=off")
       .then((res) => setCategories(res.data.docs || []));
     axiosInstance
-      .get("/brand?isActive=true&limit=off")
+      .get("/brand?isActive=true&_limit=off")
       .then((res) => setBrands(res.data.docs || []));
   }, []);
 
@@ -182,6 +182,86 @@ const TopProductsStatistics = () => {
     } else {
       setFilters({ ...filters, startDate: "", endDate: "" });
     }
+  };
+
+  const handleExportExcel = () => {
+    if (!data?.docs || data.docs.length === 0) {
+      return message.warning("Không có dữ liệu để xuất");
+    }
+
+    // Xác định ngày xuất dữ liệu
+    let exportStartDate = filters.startDate;
+    let exportEndDate = filters.endDate;
+    
+    // Nếu không có ngày được chọn, lấy 7 ngày trước đến ngày hiện tại
+    if (!exportStartDate || !exportEndDate) {
+      exportEndDate = dayjs().format("YYYY-MM-DD");
+      exportStartDate = dayjs().subtract(7, "day").format("YYYY-MM-DD");
+    }
+
+    const exportData = data.docs.map((item, index) => ({
+      STT: index + 1,
+      "Tên sản phẩm": item.name,
+      "Danh mục": item.category || "Không xác định",
+      "Thương hiệu": item.brand || "Không xác định",
+      "Số lượng bán": item.quantity,
+      "Doanh thu": item.revenue,
+      "Đơn giá": item.unitPrice,
+      "Số đơn hàng": item.orderCount,
+      "Tỷ lệ bán (%)": item.soldPercentage,
+    }));
+
+    const worksheet = XLSXUtils.json_to_sheet([]);
+
+    // Add filter info
+    const infoRows = [];
+    infoRows.push(["Từ ngày", exportStartDate]);
+    infoRows.push(["Đến ngày", exportEndDate]);
+
+    const selectedCategory = categories
+      .flatMap((cat) => cat.subCategories || [])
+      .find((sub) => sub._id === filters.categoryId);
+    if (selectedCategory) {
+      infoRows.push(["Danh mục", selectedCategory.name]);
+    }
+
+    const selectedBrand = brands.find((b) => b._id === filters.brandId);
+    if (selectedBrand) {
+      infoRows.push(["Thương hiệu", selectedBrand.name]);
+    }
+
+    // Add summary statistics
+    infoRows.push(["Tổng doanh thu", data.totalRevenue]);
+    infoRows.push(["Tổng số lượng", data.totalQuantity]);
+    infoRows.push(["Tổng sản phẩm", data.totalDocs]);
+    infoRows.push(["Tổng số đơn hàng", data.totalOrderCount]);
+
+    XLSXUtils.sheet_add_aoa(worksheet, infoRows, { origin: "A1" });
+    XLSXUtils.sheet_add_json(worksheet, exportData, {
+      origin: `A${infoRows.length + 2}`,
+      skipHeader: false,
+    });
+
+    const workbook = XLSXUtils.book_new();
+    XLSXUtils.book_append_sheet(workbook, worksheet, "Top Sản Phẩm");
+
+    // Tạo tên file dựa trên loại filter
+    let fileName = "Thong_ke_san_pham";
+    
+    if (selectedMonth && selectedYear) {
+      fileName += `_thang${selectedMonth}_nam${selectedYear}`;
+    } else if (selectedYear && !selectedMonth) {
+      fileName += `_nam${selectedYear}`;
+    } else if (selectedMonth && !selectedYear) {
+      const currentYear = dayjs().year();
+      fileName += `_thang${selectedMonth}_nam${currentYear}`;
+    } else {
+      // Nếu không có tháng/năm, sử dụng ngày xuất
+      fileName += `_${exportStartDate}_den_${exportEndDate}`;
+    }
+    
+    fileName += `.xlsx`;
+    writeFile(workbook, fileName);
   };
 
   const tableColumns = [
@@ -415,6 +495,13 @@ const TopProductsStatistics = () => {
               </Select>
             </Col>
           </Row>
+          <Row justify="end" style={{ marginBottom: 16 }}>
+            <Col>
+              <Button type="primary" onClick={handleExportExcel}>
+                Xuất Excel
+              </Button>
+            </Col>
+          </Row>
         </Card>
 
         {data?.docs && data.docs.length > 0 && (
@@ -452,9 +539,7 @@ const TopProductsStatistics = () => {
               <Card>
                 <Statistic
                   title="Tổng số đơn hàng"
-                  value={
-                     data?.totalOrderCount || 0
-                  }
+                  value={data?.totalOrderCount || 0}
                   valueStyle={{ color: "#faad14" }}
                 />
               </Card>
