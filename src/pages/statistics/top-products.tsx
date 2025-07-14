@@ -7,7 +7,8 @@ import {
   Card,
   DatePicker,
   message,
-  Statistic, Button
+  Statistic,
+  Button,
 } from "antd";
 import { List } from "@refinedev/antd";
 import { axiosInstance } from "../../utils/axiosInstance";
@@ -113,6 +114,7 @@ const TopProductsStatistics = () => {
     }
   };
 
+  // Lấy danh mục và thương hiệu khi để hiển thị select
   useEffect(() => {
     axiosInstance
       .get("/category?isActive=true&_limit=off")
@@ -125,7 +127,8 @@ const TopProductsStatistics = () => {
   useEffect(() => {
     fetchData();
   }, [filters]);
-
+  
+  // Hàm xử lý thay đổi tháng và năm
   const handleMonthYearChange = (month: number | null, year: number | null) => {
     setSelectedMonth(month);
     setSelectedYear(year);
@@ -169,7 +172,8 @@ const TopProductsStatistics = () => {
 
     setFilters((prev) => ({ ...prev, startDate, endDate }));
   };
-
+ 
+  // Hàm xử lý thay đổi ngày
   const handleDateChange = (dates: any) => {
     setSelectedMonth(null);
     setSelectedYear(null);
@@ -183,7 +187,8 @@ const TopProductsStatistics = () => {
       setFilters({ ...filters, startDate: "", endDate: "" });
     }
   };
-
+  
+  // Hàm xuất dữ liệu ra file Excel
   const handleExportExcel = () => {
     if (!data?.docs || data.docs.length === 0) {
       return message.warning("Không có dữ liệu để xuất");
@@ -192,7 +197,14 @@ const TopProductsStatistics = () => {
     // Xác định ngày xuất dữ liệu
     let exportStartDate = filters.startDate;
     let exportEndDate = filters.endDate;
-    
+
+    const title =
+      selectedMonth && selectedYear
+        ? `THỐNG KÊ SẢN PHẨM THÁNG ${selectedMonth} NĂM ${selectedYear}`
+        : selectedYear
+        ? `THỐNG KÊ SẢN PHẨM NĂM ${selectedYear}`
+        : `THỐNG KÊ SẢN PHẨM TỪ ${exportStartDate} ĐẾN ${exportEndDate}`;
+
     // Nếu không có ngày được chọn, lấy 7 ngày trước đến ngày hiện tại
     if (!exportStartDate || !exportEndDate) {
       exportEndDate = dayjs().format("YYYY-MM-DD");
@@ -213,7 +225,7 @@ const TopProductsStatistics = () => {
 
     const worksheet = XLSXUtils.json_to_sheet([]);
 
-    // Add filter info
+    // Thêm bộ lọc dữ liệu
     const infoRows = [];
     infoRows.push(["Từ ngày", exportStartDate]);
     infoRows.push(["Đến ngày", exportEndDate]);
@@ -230,15 +242,16 @@ const TopProductsStatistics = () => {
       infoRows.push(["Thương hiệu", selectedBrand.name]);
     }
 
-    // Add summary statistics
+    // Thêm thông tin tổng quan
     infoRows.push(["Tổng doanh thu", data.totalRevenue]);
     infoRows.push(["Tổng số lượng", data.totalQuantity]);
     infoRows.push(["Tổng sản phẩm", data.totalDocs]);
     infoRows.push(["Tổng số đơn hàng", data.totalOrderCount]);
 
-    XLSXUtils.sheet_add_aoa(worksheet, infoRows, { origin: "A1" });
+    XLSXUtils.sheet_add_aoa(worksheet, [[title]], { origin: "A1" }); 
+    XLSXUtils.sheet_add_aoa(worksheet, infoRows, { origin: "A2" }); 
     XLSXUtils.sheet_add_json(worksheet, exportData, {
-      origin: `A${infoRows.length + 2}`,
+      origin: `A${infoRows.length + 3}`,
       skipHeader: false,
     });
 
@@ -247,7 +260,7 @@ const TopProductsStatistics = () => {
 
     // Tạo tên file dựa trên loại filter
     let fileName = "Thong_ke_san_pham";
-    
+
     if (selectedMonth && selectedYear) {
       fileName += `_thang${selectedMonth}_nam${selectedYear}`;
     } else if (selectedYear && !selectedMonth) {
@@ -259,11 +272,12 @@ const TopProductsStatistics = () => {
       // Nếu không có tháng/năm, sử dụng ngày xuất
       fileName += `_${exportStartDate}_den_${exportEndDate}`;
     }
-    
+
     fileName += `.xlsx`;
     writeFile(workbook, fileName);
   };
-
+  
+  // Cấu hình các cột của bảng
   const tableColumns = [
     {
       title: "STT",
@@ -313,6 +327,47 @@ const TopProductsStatistics = () => {
       render: (value: number) => value.toLocaleString(),
     },
     {
+      title: "Tồn kho",
+      dataIndex: "totalStock",
+      key: "totalStock",
+      render: (value: number) => (
+        <div>
+          {value}
+          {value === 0 && (
+            <div
+              style={{
+                backgroundColor: "#f5222d",
+                color: "#fff",
+                padding: "2px 6px",
+                borderRadius: 4,
+                fontSize: 12,
+                marginTop: 4,
+                display: "inline-block",
+              }}
+            >
+              Hết hàng
+            </div>
+          )}
+          {value > 0 && value <= 5 && (
+            <div
+              style={{
+                backgroundColor: "#faad14",
+                color: "#000",
+                padding: "2px 6px",
+                borderRadius: 4,
+                fontSize: 12,
+                marginTop: 4,
+                display: "inline-block",
+              }}
+            >
+              Sắp hết hàng
+            </div>
+          )}
+        </div>
+      ),
+    },
+
+    {
       title: "Doanh thu",
       dataIndex: "revenue",
       key: "revenue",
@@ -336,7 +391,8 @@ const TopProductsStatistics = () => {
       render: (value: number) => `${value}%`,
     },
   ];
-
+  
+  // Tooltip tùy chỉnh cho biểu đồ
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
       return (
@@ -358,11 +414,17 @@ const TopProductsStatistics = () => {
                 margin: "4px 0",
               }}
             >
-              {`${entry.name}: ${
-                entry.name === "revenue" || entry.name === "Doanh thu"
-                  ? formatCurrency(entry.value)
-                  : entry.value.toLocaleString()
-              }`}
+              {entry.name === "Tồn kho"
+                ? `${entry.value} ${
+                    entry.value === 0
+                      ? "(Hết hàng)"
+                      : entry.value <= 5
+                      ? "(Sắp hết hàng)"
+                      : ""
+                  }`
+                : entry.name === "Doanh thu"
+                ? formatCurrency(entry.value)
+                : entry.value.toLocaleString()}
             </p>
           ))}
         </div>
@@ -370,7 +432,8 @@ const TopProductsStatistics = () => {
     }
     return null;
   };
-
+  
+  // Dữ liệu biểu đồ tỷ lệ sản phẩm theo danh mục
   const categoryPieData =
     data?.docs?.reduce((acc: any[], cur) => {
       const found = acc.find((i) => i.name === cur.category);
@@ -519,7 +582,7 @@ const TopProductsStatistics = () => {
             <Col span={6}>
               <Card>
                 <Statistic
-                  title="Tổng số lượng"
+                  title="Tổng số lượng bán"
                   value={data?.totalQuantity || 0}
                   formatter={(value) => value.toLocaleString()}
                   valueStyle={{ color: "#1890ff" }}
@@ -529,7 +592,7 @@ const TopProductsStatistics = () => {
             <Col span={6}>
               <Card>
                 <Statistic
-                  title="Số sản phẩm"
+                  title="Tổng số sản phẩm"
                   value={data?.totalDocs || 0}
                   valueStyle={{ color: "#722ed1" }}
                 />
@@ -587,7 +650,44 @@ const TopProductsStatistics = () => {
           </Col>
 
           <Col span={12}>
-            <Card title="Tỷ lệ sản phẩm theo danh mục">
+            <Card title="Sản phẩm tồn kho">
+              {data?.docs && data.docs.length > 0 ? (
+                <ResponsiveContainer width="100%" height={400}>
+                  <BarChart data={data?.docs?.slice(0, 10) || []}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis
+                      dataKey="name"
+                      angle={-45}
+                      textAnchor="end"
+                      height={100}
+                      interval={0}
+                      tick={{ fontSize: 12 }}
+                    />
+                    <YAxis />
+                    <Tooltip content={<CustomTooltip />} />
+                    <Legend />
+                    <Bar dataKey="totalStock" fill="#fa541c" name="Tồn kho" />
+                  </BarChart>
+                </ResponsiveContainer>
+              ) : (
+                <div
+                  style={{
+                    textAlign: "center",
+                    padding: "50px",
+                    color: "#999",
+                  }}
+                >
+                  Không có dữ liệu để hiển thị biểu đồ
+                </div>
+              )}
+            </Card>
+          </Col>
+
+          <Col span={12}>
+            <Card
+              title="Tỷ lệ sản phẩm theo danh mục"
+              style={{ marginTop: 16 }}
+            >
               {categoryPieData.length > 0 ? (
                 <ResponsiveContainer width="100%" height={400}>
                   <PieChart>

@@ -10,7 +10,7 @@ export interface IProductStats {
   orderCount: number;
   soldPercentage: number;
   price: number;
-  
+  totalStock: number;
 }
 
 export interface IStatisticsData {
