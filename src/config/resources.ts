@@ -88,10 +88,17 @@ export const resources = [
     },
   },
   {
-    name: "statistics",
+    name: "top-products-statistics",
     list: "/statistics/top-products",
     meta: {
       label: "Thống kê sản phẩm bán chạy",
+    },
+  },
+  {
+    name: "order-revenue-statistics",
+    list: "/statistics/order-revenue",
+    meta: {
+      label: "Thống kê doanh thu đơn hàng",
     },
   },
 ];

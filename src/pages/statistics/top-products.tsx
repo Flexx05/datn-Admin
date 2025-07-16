@@ -218,8 +218,8 @@ const TopProductsStatistics = () => {
       "Thương hiệu": item.brand || "Không xác định",
       "Số lượng bán": item.quantity,
       "Doanh thu": item.revenue,
-      "Đơn giá": item.unitPrice,
-      "Số đơn hàng": item.orderCount,
+      "Đơn giá trung bình": item.unitPrice,
+      "Số đơn hàng chứa sản phẩm": item.orderCount,
       "Tỷ lệ bán (%)": item.soldPercentage,
     }));
 
@@ -243,10 +243,9 @@ const TopProductsStatistics = () => {
     }
 
     // Thêm thông tin tổng quan
-    infoRows.push(["Tổng doanh thu", data.totalRevenue]);
-    infoRows.push(["Tổng số lượng", data.totalQuantity]);
-    infoRows.push(["Tổng sản phẩm", data.totalDocs]);
-    infoRows.push(["Tổng số đơn hàng", data.totalOrderCount]);
+    infoRows.push(["Tổng doanh thu theo sản phẩm", data.totalRevenue]);
+    infoRows.push(["Tổng số lượng đã bán", data.totalQuantity]);
+    infoRows.push(["Tổng số loại sản phẩm đã bán", data.totalDocs]);
 
     XLSXUtils.sheet_add_aoa(worksheet, [[title]], { origin: "A1" }); 
     XLSXUtils.sheet_add_aoa(worksheet, infoRows, { origin: "A2" }); 
@@ -374,13 +373,13 @@ const TopProductsStatistics = () => {
       render: (value: number) => formatCurrency(value),
     },
     {
-      title: "Đơn giá",
+      title: "Đơn giá trung bình",
       dataIndex: "unitPrice",
       key: "unitPrice",
       render: (value: number) => formatCurrency(value),
     },
     {
-      title: "Số đơn hàng",
+      title: "Số đơn hàng chứa sản phẩm",
       dataIndex: "orderCount",
       key: "orderCount",
     },
@@ -569,41 +568,32 @@ const TopProductsStatistics = () => {
 
         {data?.docs && data.docs.length > 0 && (
           <Row gutter={16} style={{ marginBottom: 24 }}>
-            <Col span={6}>
+            <Col span={8}>
               <Card>
                 <Statistic
-                  title="Tổng doanh thu"
+                  title="Tổng doanh thu theo sản phẩm"
                   value={data?.totalRevenue || 0}
                   formatter={(value) => formatCurrency(value as number)}
                   valueStyle={{ color: "#3f8600" }}
                 />
               </Card>
             </Col>
-            <Col span={6}>
+            <Col span={8}>
               <Card>
                 <Statistic
-                  title="Tổng số lượng bán"
+                  title="Tổng số lượng đã bán"
                   value={data?.totalQuantity || 0}
                   formatter={(value) => value.toLocaleString()}
                   valueStyle={{ color: "#1890ff" }}
                 />
               </Card>
             </Col>
-            <Col span={6}>
+            <Col span={8}>
               <Card>
                 <Statistic
-                  title="Tổng số sản phẩm"
+                  title="Tổng số loại sản phẩm đã bán"
                   value={data?.totalDocs || 0}
                   valueStyle={{ color: "#722ed1" }}
-                />
-              </Card>
-            </Col>
-            <Col span={6}>
-              <Card>
-                <Statistic
-                  title="Tổng số đơn hàng"
-                  value={data?.totalOrderCount || 0}
-                  valueStyle={{ color: "#faad14" }}
                 />
               </Card>
             </Col>
