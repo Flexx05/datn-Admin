@@ -16,7 +16,9 @@ const VoucherCreate = () => {
     }),
     errorNotification: (error?: HttpError) => ({
       message: "Tạo voucher thất bại!",
-      description: error?.response?.data?.message ?? "Có lỗi xảy ra trong quá trình xử lý.",
+      description:
+        error?.response?.data?.message ??
+        "Có lỗi xảy ra trong quá trình xử lý.",
       type: "error",
     }),
     redirect: "list",
@@ -24,19 +26,21 @@ const VoucherCreate = () => {
 
   const [discountType, setDiscountType] = useState("fixed");
   const [fixedValue, setFixedValue] = useState<number | undefined>(undefined);
-  const [percentValue, setPercentValue] = useState<number | undefined>(undefined);
+  const [percentValue, setPercentValue] = useState<number | undefined>(
+    undefined
+  );
   const [maxDiscount, setMaxDiscount] = useState<number | undefined>(undefined);
-  
+
   const { form } = formProps;
 
   const handleFinish = (values: any) => {
     const [startDate, endDate] = values.dateRange || [];
     const now = dayjs();
-  
+
     if (startDate && endDate) {
       const start = dayjs(startDate);
       const end = dayjs(endDate);
-  
+
       // ✅ Điều kiện 1: Ngày bắt đầu phải nhỏ hơn ngày kết thúc
       if (start.isAfter(end)) {
         form?.setFields([
@@ -47,18 +51,20 @@ const VoucherCreate = () => {
         ]);
         return;
       }
-  
+
       // ✅ Điều kiện 2: Phải cách nhau ít nhất 1 phút
       if (end.diff(start, "minute") < 1) {
         form?.setFields([
           {
             name: "dateRange",
-            errors: ["Thời gian kết thúc phải sau thời gian bắt đầu ít nhất 1 phút"],
+            errors: [
+              "Thời gian kết thúc phải sau thời gian bắt đầu ít nhất 1 phút",
+            ],
           },
         ]);
         return;
       }
-  
+
       // ✅ Điều kiện 3: Ngày bắt đầu không được ở quá khứ
       if (start.isBefore(now)) {
         form?.setFields([
@@ -69,22 +75,18 @@ const VoucherCreate = () => {
         ]);
         return;
       }
-  
+
       values.startDate = start.toISOString();
       values.endDate = end.toISOString();
       delete values.dateRange;
-  
+
       formProps.onFinish?.(values);
     }
   };
 
   return (
     <Create saveButtonProps={saveButtonProps} title="Thêm mới Voucher">
-      <Form
-        {...formProps}
-        layout="vertical"
-        onFinish={handleFinish}
-      >
+      <Form {...formProps} layout="vertical" onFinish={handleFinish}>
         <Form.Item
           label="Loại voucher"
           name="voucherType"
@@ -92,7 +94,9 @@ const VoucherCreate = () => {
         >
           <Select placeholder="Chọn loại voucher">
             <Select.Option value="product">Dành cho sản phẩm</Select.Option>
-            <Select.Option value="shipping">Dành cho phí vận chuyển</Select.Option>
+            <Select.Option value="shipping">
+              Dành cho phí vận chuyển
+            </Select.Option>
           </Select>
         </Form.Item>
 
@@ -104,26 +108,28 @@ const VoucherCreate = () => {
             { min: 3, message: "Mã giảm giá phải có ít nhất 3 ký tự" },
             {
               pattern: /^[A-Z0-9]+$/,
-              message: "Mã giảm giá chỉ chứa chữ in hoa và số (Không bao gồm khoảng trắng)",
+              message:
+                "Mã giảm giá chỉ chứa chữ in hoa và số (Không bao gồm khoảng trắng)",
             },
-          
+
             {
               validator: async (_, value) => {
                 if (!value || value.trim().length === 0) {
                   return Promise.resolve();
                 }
-            
+
                 try {
-                  const response = await axiosInstance(`/vouchers?code=${value.trim()}&isDeleted=all`);
+                  const response = await axiosInstance(
+                    `/vouchers?code=${value.trim()}&isDeleted=all`
+                  );
                   const data = response?.data?.docs || [];
-            
-                  const duplicateVoucher  = data.find(
+
+                  const duplicateVoucher = data.find(
                     (v: any) =>
                       v.code.trim().toLowerCase() === value.trim().toLowerCase()
                   );
-         
-            
-                  if (duplicateVoucher ) {
+
+                  if (duplicateVoucher) {
                     if (duplicateVoucher.isDeleted) {
                       return Promise.reject(
                         "Mã giảm giá này đã từng tồn tại (hiện đang bị xóa). Vui lòng dùng mã khác hoặc khôi phục mã cũ."
@@ -133,15 +139,15 @@ const VoucherCreate = () => {
                   }
                 } catch (error) {
                   console.error("Lỗi kiểm tra mã:", error);
-                  return Promise.reject("Không thể kiểm tra mã giảm giá. Vui lòng thử lại.");
+                  return Promise.reject(
+                    "Không thể kiểm tra mã giảm giá. Vui lòng thử lại."
+                  );
                 }
-            
+
                 return Promise.resolve();
               },
-            }
-            
+            },
           ]}
-          
         >
           <Input placeholder="Nhập mã giảm giá" />
         </Form.Item>
@@ -159,7 +165,9 @@ const VoucherCreate = () => {
             {
               validator: (_, value) => {
                 if (value && value.trim().length === 0) {
-                  return Promise.reject("Mô tả không được chỉ chứa khoảng trắng");
+                  return Promise.reject(
+                    "Mô tả không được chỉ chứa khoảng trắng"
+                  );
                 }
                 return Promise.resolve();
               },
@@ -175,35 +183,38 @@ const VoucherCreate = () => {
           rules={[{ required: true, message: "Vui lòng chọn kiểu giảm giá" }]}
         >
           <Select
-          onChange={(value) => {
-            // Lưu giá trị hiện tại trước khi chuyển
-            const currentDiscountValue = form?.getFieldValue("discountValue");
-            const currentMaxDiscount = form?.getFieldValue("maxDiscount");
+            onChange={(value) => {
+              // Lưu giá trị hiện tại trước khi chuyển
+              const currentDiscountValue = form?.getFieldValue("discountValue");
+              const currentMaxDiscount = form?.getFieldValue("maxDiscount");
 
-            if (discountType === "fixed") {
-              setFixedValue(currentDiscountValue);
-            } else {
-              setPercentValue(currentDiscountValue);
-              setMaxDiscount(currentMaxDiscount);
-            }
+              if (discountType === "fixed") {
+                setFixedValue(currentDiscountValue);
+              } else {
+                setPercentValue(currentDiscountValue);
+                setMaxDiscount(currentMaxDiscount);
+              }
 
-            // Chuyển loại và set lại form
-            setDiscountType(value);
-            form?.setFieldsValue({
-              discountValue: value === "fixed" ? fixedValue : percentValue,
-              maxDiscount: value === "percent" ? maxDiscount : undefined,
-            });
-          }}
-          placeholder="Chọn kiểu giảm giá"
-        >
-          <Select.Option value="fixed">Giảm cố định</Select.Option>
-          <Select.Option value="percent">Giảm phần trăm</Select.Option>
-        </Select>
-
+              // Chuyển loại và set lại form
+              setDiscountType(value);
+              form?.setFieldsValue({
+                discountValue: value === "fixed" ? fixedValue : percentValue,
+                maxDiscount: value === "percent" ? maxDiscount : undefined,
+              });
+            }}
+            placeholder="Chọn kiểu giảm giá"
+          >
+            <Select.Option value="fixed">Giảm cố định</Select.Option>
+            <Select.Option value="percent">Giảm phần trăm</Select.Option>
+          </Select>
         </Form.Item>
 
         <Form.Item
-          label={discountType === "fixed" ? "Số tiền giảm (VNĐ)" : "Phần trăm giảm (%)"}
+          label={
+            discountType === "fixed"
+              ? "Số tiền giảm (VNĐ)"
+              : "Phần trăm giảm (%)"
+          }
           name="discountValue"
           rules={[
             { required: true, message: "Vui lòng nhập giá trị giảm" },
@@ -238,12 +249,13 @@ const VoucherCreate = () => {
           <Form.Item
             label="Giảm tối đa (VNĐ)"
             name="maxDiscount"
-            rules={[{ required: true, message: "Vui lòng nhập giảm tối đa" },
-            {
-              type: "number",
-              min: 1,
-              message: "Giảm tối đa phải lớn hơn hoặc bằng 1",
-            }
+            rules={[
+              { required: true, message: "Vui lòng nhập giảm tối đa" },
+              {
+                type: "number",
+                min: 1,
+                message: "Giảm tối đa phải lớn hơn hoặc bằng 1",
+              },
             ]}
           >
             <InputNumber
@@ -267,11 +279,16 @@ const VoucherCreate = () => {
               validator: (_, value) => {
                 const discountType = form?.getFieldValue("discountType");
                 const discountValue = form?.getFieldValue("discountValue");
-          
+
                 if (discountType === "fixed") {
-                  if (typeof value === "number" && typeof discountValue === "number") {
+                  if (
+                    typeof value === "number" &&
+                    typeof discountValue === "number"
+                  ) {
                     if (value <= discountValue) {
-                      return Promise.reject("Giá trị đơn tối thiểu phải lớn hơn số tiền giảm");
+                      return Promise.reject(
+                        "Giá trị đơn tối thiểu phải lớn hơn số tiền giảm"
+                      );
                     }
                   }
                 }
@@ -307,7 +324,9 @@ const VoucherCreate = () => {
         <Form.Item
           label="Thời gian áp dụng"
           name="dateRange"
-          rules={[{ required: true, message: "Vui lòng chọn thời gian áp dụng" }]}
+          rules={[
+            { required: true, message: "Vui lòng chọn thời gian áp dụng" },
+          ]}
         >
           <RangePicker
             showTime
@@ -328,17 +347,20 @@ const VoucherCreate = () => {
 
                 return {
                   disabledHours: () =>
-                    Array.from({ length: 24 }, (_, i) => i).filter((h) => h < currentHour),
+                    Array.from({ length: 24 }, (_, i) => i).filter(
+                      (h) => h < currentHour
+                    ),
                   disabledMinutes: (selectedHour) =>
                     selectedHour === currentHour
-                      ? Array.from({ length: 60 }, (_, i) => i).filter((m) => m <= currentMinute)
+                      ? Array.from({ length: 60 }, (_, i) => i).filter(
+                          (m) => m <= currentMinute
+                        )
                       : [],
                 };
               }
               return {};
             }}
           />
-
         </Form.Item>
       </Form>
     </Create>
