@@ -1,16 +1,27 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { useList } from "@refinedev/core";
-import { Avatar, Badge, Col, Grid, Menu, Row, Spin, Typography } from "antd";
+import { useInvalidate, useList } from "@refinedev/core";
+import {
+  Avatar,
+  Badge,
+  Col,
+  Grid,
+  Menu,
+  message,
+  Row,
+  Spin,
+  Typography,
+} from "antd";
 import dayjs from "dayjs";
-import { useContext, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import { useAuth } from "../../contexts/auth/AuthContext";
 import { ColorModeContext } from "../../contexts/color-mode";
-import ChatShow from "./show";
 import {
   IConversation,
   IMessage,
   IParticipant,
 } from "../../interface/conversation";
+import { socket } from "../../socket";
+import Messages from "./messages";
 
 const { Text, Title } = Typography;
 const { useBreakpoint } = Grid;
@@ -22,8 +33,7 @@ const ChatList = () => {
   const { user } = useAuth();
   const userId = user?._id;
 
-  // TODO: Hiển thị dữ liệu thực
-  const { data, isLoading } = useList<IConversation>({
+  const { data, isLoading, refetch } = useList<IConversation>({
     resource: "conversation",
     errorNotification: {
       type: "error",
@@ -31,7 +41,19 @@ const ChatList = () => {
       description: "Vui lòng thử lại sau.",
     },
   });
-  const chatData = data?.data || [];
+  const chatData = data?.data || ([] as IConversation[]);
+  const invalidate = useInvalidate();
+
+  useEffect(() => {
+    const handleChange = () => {
+      invalidate({ resource: "conversation", invalidates: ["list"] });
+      refetch();
+    };
+    socket.on("new-message", handleChange);
+    return () => {
+      socket.off("new-message", handleChange);
+    };
+  }, [invalidate, refetch]);
 
   if (isLoading) {
     return <Spin size="large" />;
@@ -105,10 +127,25 @@ const ChatList = () => {
                 lastMessage.readBy.some(
                   (id) => id?.toString() === userId?.toString()
                 );
+              const user =
+                participants.find((p) => p.role === "user") ||
+                ({} as IParticipant);
               return (
                 <Menu.Item
                   key={conversation._id}
-                  onClick={() => setSelectedConversation(conversation)}
+                  onClick={async () => {
+                    try {
+                      setSelectedConversation(conversation);
+                      socket.emit("join-conversation", conversation._id);
+                      invalidate({
+                        resource: "conversation",
+                        invalidates: ["list"],
+                      });
+                      refetch();
+                    } catch (error) {
+                      message.error("Lỗi khi tải tin nhắn");
+                    }
+                  }}
                   style={{
                     minHeight: 70,
                     display: "flex",
@@ -120,8 +157,8 @@ const ChatList = () => {
                   <Row wrap={false} style={{ width: "100%" }}>
                     <Col flex="48px">
                       <Avatar
-                        src={participants[0].avatar || "/avtDefault.png"}
-                        alt={participants[0].fullName || "Khách hàng"}
+                        src={user.avatar || "/avtDefault.png"}
+                        alt={user.fullName || "Khách hàng"}
                         style={{
                           width: 48,
                           height: 48,
@@ -143,7 +180,7 @@ const ChatList = () => {
                               fontSize: screens.xs ? 14 : 16,
                             }}
                           >
-                            {participants[0].fullName || "Khách hàng"}
+                            {user.fullName || "Khách hàng"}
                           </Text>
                         </Col>
                       </Row>
@@ -160,7 +197,9 @@ const ChatList = () => {
                               display: "block",
                             }}
                           >
-                            {(lastMessage.senderRole === "user" ? "" : `Bạn:`) +
+                            {(lastMessage.senderRole === "user"
+                              ? ""
+                              : `Bạn: `) +
                               lastMessage.content.slice(0, 20) +
                               "..." || ""}
                           </Text>
@@ -202,7 +241,7 @@ const ChatList = () => {
         }}
       >
         {selectedConversation ? (
-          <ChatShow id={selectedConversation._id} />
+          <Messages id={selectedConversation._id} />
         ) : (
           <div
             style={{

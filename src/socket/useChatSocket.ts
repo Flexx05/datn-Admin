@@ -1,17 +1,18 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useEffect } from "react";
-import { useAuth } from "../contexts/auth/AuthContext";
 import { socket } from "./socket";
 
-export const useChatSocket = (onNewMessage: (msg: any) => void) => {
-  const { user } = useAuth();
+export const useChatSocket = (
+  conversationId: string,
+  onNewMessage: (msg: any) => void
+) => {
   useEffect(() => {
-    if (!user?._id) return;
+    if (!conversationId) return;
     socket.connect();
-    socket.emit("join-room", user._id);
-    socket.on("newChatMessage", onNewMessage);
+    socket.emit("join-conversation", conversationId);
+    socket.on("new-message", onNewMessage);
     return () => {
-      socket.off("newChatMessage", onNewMessage);
+      socket.off("new-message", onNewMessage);
     };
-  }, [user?._id, onNewMessage]);
+  }, [onNewMessage, conversationId]);
 };

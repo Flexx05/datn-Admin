@@ -122,7 +122,7 @@ export const OrderList = () => {
       socket.off("order-status-changed", handleChange);
       socket.off("new-nontification", handleChange);
     };
-  });
+  }, [invalidate]);
 
   // Đổi trạng thái đơn hàng
   const handleChangeStatus = async (
