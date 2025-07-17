@@ -16,10 +16,11 @@ export interface IProductStats {
 export interface IStatisticsData {
   docs: IProductStats[];
   totalDocs: number;
-  totalRevenue: number;
   totalQuantity: number;
+  totalRevenue: number;
   totalOrderCount: number;
-  limit: number;
   page: number;
+  limit: number;
   totalPages: number;
+  allDocs?: IProductStats[];
 }

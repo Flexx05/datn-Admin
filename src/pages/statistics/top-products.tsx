@@ -53,11 +53,12 @@ const TopProductsStatistics = () => {
     categoryId: "",
     brandId: "",
     limit: 10,
+    page: 1,
   });
 
   const fetchData = async () => {
     try {
-      const { startDate, endDate, categoryId, brandId, limit } = filters;
+      const { startDate, endDate, categoryId, brandId, limit, page } = filters;
 
       // Kiểm tra tính hợp lệ của ngày
       if (startDate && endDate) {
@@ -81,6 +82,7 @@ const TopProductsStatistics = () => {
       if (categoryId) params.append("categoryId", categoryId);
       if (brandId) params.append("brandId", brandId);
       params.append("limit", limit.toString());
+      params.append("page", page.toString());
 
       const response = await axiosInstance.get(
         `/statistics/top-products?${params}`
@@ -127,7 +129,7 @@ const TopProductsStatistics = () => {
   useEffect(() => {
     fetchData();
   }, [filters]);
-  
+
   // Hàm xử lý thay đổi tháng và năm
   const handleMonthYearChange = (month: number | null, year: number | null) => {
     setSelectedMonth(month);
@@ -138,7 +140,7 @@ const TopProductsStatistics = () => {
 
     // Nếu cả tháng và năm đều null, xóa filter
     if (month === null && year === null) {
-      setFilters((prev) => ({ ...prev, startDate: "", endDate: "" }));
+      setFilters((prev) => ({ ...prev, startDate: "", endDate: "", page: 1 }));
       return;
     }
 
@@ -170,9 +172,9 @@ const TopProductsStatistics = () => {
         .format("YYYY-MM-DD");
     }
 
-    setFilters((prev) => ({ ...prev, startDate, endDate }));
+    setFilters((prev) => ({ ...prev, startDate, endDate, page: 1 }));
   };
- 
+
   // Hàm xử lý thay đổi ngày
   const handleDateChange = (dates: any) => {
     setSelectedMonth(null);
@@ -182,12 +184,13 @@ const TopProductsStatistics = () => {
         ...filters,
         startDate: dayjs(dates[0]).format("YYYY-MM-DD"),
         endDate: dayjs(dates[1]).format("YYYY-MM-DD"),
+        page: 1,
       });
     } else {
-      setFilters({ ...filters, startDate: "", endDate: "" });
+      setFilters({ ...filters, startDate: "", endDate: "", page: 1 });
     }
   };
-  
+
   // Hàm xuất dữ liệu ra file Excel
   const handleExportExcel = () => {
     if (!data?.docs || data.docs.length === 0) {
@@ -247,8 +250,8 @@ const TopProductsStatistics = () => {
     infoRows.push(["Tổng số lượng đã bán", data.totalQuantity]);
     infoRows.push(["Tổng số loại sản phẩm đã bán", data.totalDocs]);
 
-    XLSXUtils.sheet_add_aoa(worksheet, [[title]], { origin: "A1" }); 
-    XLSXUtils.sheet_add_aoa(worksheet, infoRows, { origin: "A2" }); 
+    XLSXUtils.sheet_add_aoa(worksheet, [[title]], { origin: "A1" });
+    XLSXUtils.sheet_add_aoa(worksheet, infoRows, { origin: "A2" });
     XLSXUtils.sheet_add_json(worksheet, exportData, {
       origin: `A${infoRows.length + 3}`,
       skipHeader: false,
@@ -275,7 +278,7 @@ const TopProductsStatistics = () => {
     fileName += `.xlsx`;
     writeFile(workbook, fileName);
   };
-  
+
   // Cấu hình các cột của bảng
   const tableColumns = [
     {
@@ -390,7 +393,7 @@ const TopProductsStatistics = () => {
       render: (value: number) => `${value}%`,
     },
   ];
-  
+
   // Tooltip tùy chỉnh cho biểu đồ
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
@@ -431,10 +434,10 @@ const TopProductsStatistics = () => {
     }
     return null;
   };
-  
+
   // Dữ liệu biểu đồ tỷ lệ sản phẩm theo danh mục
   const categoryPieData =
-    data?.docs?.reduce((acc: any[], cur) => {
+    data?.allDocs?.reduce((acc: any[], cur: IProductStats) => {
       const found = acc.find((i) => i.name === cur.category);
       if (found) found.value += cur.quantity;
       else
@@ -443,7 +446,7 @@ const TopProductsStatistics = () => {
           value: cur.quantity,
         });
       return acc;
-    }, []) || [];
+    }, [] as { name: string; value: number }[]) || [];
 
   return (
     <div>
@@ -454,7 +457,9 @@ const TopProductsStatistics = () => {
         <Card style={{ marginBottom: 16 }} title="Bộ lọc">
           <Row gutter={16}>
             <Col span={8}>
-              <div style={{ marginBottom: 8 }}>Thời gian</div>
+              <div style={{ marginBottom: 8 }}>
+                Thời gian (Mặc định lấy 7 ngày gần nhất)
+              </div>
               <RangePicker
                 onChange={handleDateChange}
                 style={{ width: "100%", marginBottom: 8 }}
@@ -510,7 +515,7 @@ const TopProductsStatistics = () => {
                 style={{ width: "100%" }}
                 value={filters.categoryId || undefined}
                 onChange={(value) =>
-                  setFilters((prev) => ({ ...prev, categoryId: value }))
+                  setFilters((prev) => ({ ...prev, categoryId: value, page: 1 }))
                 }
               >
                 {categories.flatMap((cat) =>
@@ -530,7 +535,7 @@ const TopProductsStatistics = () => {
                 style={{ width: "100%" }}
                 value={filters.brandId || undefined}
                 onChange={(value) =>
-                  setFilters((prev) => ({ ...prev, brandId: value }))
+                  setFilters((prev) => ({ ...prev, brandId: value, page: 1 }))
                 }
               >
                 {brands.map((b) => (
@@ -545,11 +550,11 @@ const TopProductsStatistics = () => {
               <Select
                 value={filters.limit}
                 onChange={(value) =>
-                  setFilters((prev) => ({ ...prev, limit: value }))
+                  setFilters((prev) => ({ ...prev, limit: value, page: 1 }))
                 }
                 style={{ width: "100%" }}
               >
-                {[5, 10, 20, 50].map((val) => (
+                {[10, 20, 50, 100].map((val) => (
                   <Select.Option key={val} value={val}>
                     {val} sản phẩm
                   </Select.Option>
@@ -603,9 +608,9 @@ const TopProductsStatistics = () => {
         <Row gutter={16} style={{ marginBottom: 16 }}>
           <Col span={12}>
             <Card title="Top sản phẩm theo số lượng bán">
-              {data?.docs && data.docs.length > 0 ? (
+              {data?.allDocs?.length ? (
                 <ResponsiveContainer width="100%" height={400}>
-                  <BarChart data={data.docs.slice(0, 10)}>
+                  <BarChart data={data.allDocs?.slice(0, 10) || []}>
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis
                       dataKey="name"
@@ -641,9 +646,9 @@ const TopProductsStatistics = () => {
 
           <Col span={12}>
             <Card title="Sản phẩm tồn kho">
-              {data?.docs && data.docs.length > 0 ? (
+              {data?.allDocs?.length ? (
                 <ResponsiveContainer width="100%" height={400}>
-                  <BarChart data={data?.docs?.slice(0, 10) || []}>
+                  <BarChart data={data?.allDocs?.slice(0, 10) || []}>
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis
                       dataKey="name"
@@ -690,7 +695,7 @@ const TopProductsStatistics = () => {
                       outerRadius={120}
                       label
                     >
-                      {categoryPieData.map((entry, index) => (
+                      {categoryPieData.map((entry: { name: string; value: number }, index: number) => (
                         <Cell
                           key={`cell-${index}`}
                           fill={COLORS[index % COLORS.length]}
@@ -715,13 +720,23 @@ const TopProductsStatistics = () => {
             </Card>
           </Col>
         </Row>
-
+      
+       <Card title="Danh sách sản phẩm bán chạy">
         <Table
           columns={tableColumns}
-          dataSource={data?.docs.slice(0, filters.limit) || []}
+          dataSource={data?.docs || []}
           rowKey="id"
           scroll={{ x: 1200 }}
+          pagination={{
+            pageSize: filters.limit,
+            total: data?.totalDocs || 0,
+            current: filters.page,
+            onChange: (page) => setFilters((prev) => ({ ...prev, page })),
+            showTotal: (total, range) => `${range[0]}-${range[1]} của ${total} sản phẩm`,
+            showSizeChanger: false,
+          }}
         />
+        </Card>
       </List>
     </div>
   );
