@@ -759,7 +759,7 @@ const TopProductsStatistics = () => {
             }}
           />
 
-          <div style={{ textAlign: "right"}}>
+          <div style={{ textAlign: "right" }}>
             <Select
               value={filters.limit}
               onChange={(value) =>

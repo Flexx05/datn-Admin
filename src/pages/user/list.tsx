@@ -12,6 +12,8 @@ import {
   Tag,
   Tooltip,
   message,
+  Modal,
+  Form,
 } from "antd";
 import axios from "axios";
 import dayjs from "dayjs";
@@ -50,6 +52,10 @@ export const UserList = () => {
 
   const invalidate = useInvalidate();
   const [loadingId, setLoadingId] = useState<string | number | null>(null);
+  const [modalVisible, setModalVisible] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<IUser | null>(null);
+  const [lockReason, setLockReason] = useState("");
+  const [loadingLock, setLoadingLock] = useState(false);
 
   const setFiltersTyped = setFilters as (
     filters: CrudFilters,
@@ -68,6 +74,36 @@ export const UserList = () => {
       message.error("Cập nhật trạng thái thất bại");
     } finally {
       setLoadingId(null);
+    }
+  };
+
+  const handleOpenLockModal = (user: IUser) => {
+    setSelectedUser(user);
+    setLockReason("");
+    setModalVisible(true);
+  };
+
+  const handleLockUser = async () => {
+    if (!selectedUser) return;
+    if (!lockReason.trim()) {
+      message.warning("Vui lòng nhập lý do khóa tài khoản!");
+      return;
+    }
+    setLoadingLock(true);
+    try {
+      await axios.patch(`${API_URL}/admin/users/${selectedUser._id}/status`, {
+        isActive: false,
+        reason: lockReason,
+      });
+      message.success("Khóa tài khoản thành công");
+      setModalVisible(false);
+      setSelectedUser(null);
+      setLockReason("");
+      await invalidate({ resource: "admin/users", invalidates: ["list"] });
+    } catch (error) {
+      message.error("Khóa tài khoản thất bại");
+    } finally {
+      setLoadingLock(false);
     }
   };
 
@@ -93,6 +129,32 @@ export const UserList = () => {
 
   return (
     <List title="Quản lý khách hàng">
+      {/* Modal nhập lý do khóa tài khoản */}
+      <Modal
+        title="Nhập lý do khóa tài khoản"
+        open={modalVisible}
+        onOk={handleLockUser}
+        onCancel={() => setModalVisible(false)}
+        okText="Xác nhận khóa"
+        cancelText="Hủy"
+        confirmLoading={loadingLock}
+      >
+        <Form layout="vertical">
+          <Form.Item
+            label="Lý do khóa"
+            required
+            validateStatus={!lockReason.trim() ? "error" : ""}
+            help={!lockReason.trim() ? "Vui lòng nhập lý do" : ""}
+          >
+            <Input.TextArea
+              rows={4}
+              value={lockReason}
+              onChange={e => setLockReason(e.target.value)}
+              placeholder="Nhập lý do khóa tài khoản..."
+            />
+          </Form.Item>
+        </Form>
+      </Modal>
       <Tabs
         activeKey={filterActive ? "active" : "trash"}
         onChange={handleTabChange}
@@ -191,27 +253,29 @@ export const UserList = () => {
               <Tooltip title="Xem chi tiết" key="show">
                 <ShowButton hideText size="small" recordItemId={record._id} />
               </Tooltip>
-
-              <Popconfirm
-                title={
-                  record.isActive
-                    ? "Bạn chắc chắn muốn khoá tài khoản này?"
-                    : "Bạn chắc chắn muốn mở khoá tài khoản này?"
-                }
-                onConfirm={() => handleChangeStatus(record)}
-                okText={record.isActive ? "Khoá" : "Mở khoá"}
-                cancelText="Huỷ"
-                okButtonProps={{ loading: loadingId === record._id }}
-              >
+              {record.isActive ? (
                 <Button
-                  danger={record.isActive}
+                  danger
                   size="small"
-                  type={record.isActive ? "default" : "primary"}
+                  type="default"
                   disabled={record.countOrderNotSuccess > 0}
+                  onClick={() => handleOpenLockModal(record)}
                 >
-                  {record.isActive ? "Khoá" : "Mở khoá"}
+                  Khóa
                 </Button>
-              </Popconfirm>
+              ) : (
+                <Popconfirm
+                  title="Bạn chắc chắn muốn mở khoá tài khoản này?"
+                  onConfirm={() => handleChangeStatus(record)}
+                  okText="Mở khoá"
+                  cancelText="Huỷ"
+                  okButtonProps={{ loading: loadingId === record._id }}
+                >
+                  <Button size="small" type="primary">
+                    Mở khoá
+                  </Button>
+                </Popconfirm>
+              )}
             </Space>
           )}
         />
