@@ -1,11 +1,9 @@
 export interface INotification {
   _id: string;
-  type: string;
-  orderCode: string;
-  userName: string;
-  orderStatus: number;
+  type: number;
+  title: string;
+  message: string;
   isRead: boolean;
-  orderId: string;
+  link: string;
   createdAt: string;
-  updatedAt: string;
 }

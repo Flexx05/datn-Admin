@@ -7,7 +7,6 @@ import {
   List,
   Space,
   Tabs,
-  Tag,
   Tooltip,
   Typography,
 } from "antd";
@@ -17,8 +16,9 @@ import { useContext, useEffect, useState } from "react";
 import { API_URL } from "../config/dataProvider";
 import { ColorModeContext } from "../contexts/color-mode";
 import { INotification } from "../interface/notification";
-import { statusMap } from "../pages/dashboard/statusMap";
 import { socket } from "../socket";
+
+// ! Thêm chức năng xóa hàng loạt và đánh dấu tất cả đã đọc
 
 const ListNotification = ({ item }: { item: INotification }) => {
   const handleChangReadingStatus = async () => {
@@ -65,22 +65,16 @@ const ListNotification = ({ item }: { item: INotification }) => {
       <List.Item.Meta
         title={
           <a
-            href={`/orders/show/${item.orderId}`}
+            href={
+              item.type === 0 || item.type === 1
+                ? `/orders/show/${item.link}`
+                : item.type === 3
+                ? `/conversation/message/${item.link}`
+                : ""
+            }
             onClick={handleChangReadingStatus}
           >
-            {item.type === "order" ? (
-              <>
-                Khách hàng: <strong>{item.userName}</strong> đã đặt đơn hàng{" "}
-                <Tag color="magenta">{item.orderCode}</Tag>
-              </>
-            ) : (
-              <>
-                Đơn hàng: <Tag color="magenta">{item.orderCode}</Tag>{" "}
-                {statusMap[item.orderStatus].text}
-                <br />
-                Người thực hiện: {item.userName}
-              </>
-            )}
+            {item.message}
           </a>
         }
         description={dayjs(item.createdAt).format("HH:mm - DD/MM/YYYY")}
@@ -106,9 +100,9 @@ const Nontification = () => {
         invalidates: ["list"],
       });
     };
-    socket.on("order-list-updated", handleUpdate);
+    socket.on("notification-updated", handleUpdate);
     return () => {
-      socket.off("order-list-updated", handleUpdate);
+      socket.off("notification-updated", handleUpdate);
     };
   }, [invalidate]);
 
