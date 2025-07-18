@@ -332,41 +332,53 @@ const TopProductsStatistics = () => {
       title: "Tồn kho",
       dataIndex: "totalStock",
       key: "totalStock",
-      render: (value: number) => (
-        <div>
-          {value}
-          {value === 0 && (
-            <div
-              style={{
-                backgroundColor: "#f5222d",
-                color: "#fff",
-                padding: "2px 6px",
-                borderRadius: 4,
-                fontSize: 12,
-                marginTop: 4,
-                display: "inline-block",
-              }}
-            >
-              Hết hàng
-            </div>
-          )}
-          {value > 0 && value <= 5 && (
-            <div
-              style={{
-                backgroundColor: "#faad14",
-                color: "#000",
-                padding: "2px 6px",
-                borderRadius: 4,
-                fontSize: 12,
-                marginTop: 4,
-                display: "inline-block",
-              }}
-            >
-              Sắp hết hàng
-            </div>
-          )}
-        </div>
-      ),
+      render: (value: number) => {
+        const getTag = () => {
+          if (value === 0) {
+            return (
+              <div
+                style={{
+                  position: "absolute",
+                  top: 0,
+                  right: 0,
+                  backgroundColor: "#f5222d",
+                  color: "#fff",
+                  padding: "2px 6px",
+                  borderRadius: "0 4px 0 4px",
+                  fontSize: 12,
+                }}
+              >
+                Hết hàng
+              </div>
+            );
+          } else if (value > 0 && value <= 5) {
+            return (
+              <div
+                style={{
+                  position: "absolute",
+                  top: 0,
+                  right: 0,
+                  backgroundColor: "#faad14",
+                  color: "#000",
+                  padding: "2px 6px",
+                  borderRadius: "0 4px 0 4px",
+                  fontSize: 12,
+                }}
+              >
+                Sắp hết
+              </div>
+            );
+          }
+          return null;
+        };
+
+        return (
+          <div style={{ position: "relative", paddingRight: 50 }}>
+            {getTag()}
+            <span>{value}</span>
+          </div>
+        );
+      },
     },
 
     {
@@ -515,7 +527,11 @@ const TopProductsStatistics = () => {
                 style={{ width: "100%" }}
                 value={filters.categoryId || undefined}
                 onChange={(value) =>
-                  setFilters((prev) => ({ ...prev, categoryId: value, page: 1 }))
+                  setFilters((prev) => ({
+                    ...prev,
+                    categoryId: value,
+                    page: 1,
+                  }))
                 }
               >
                 {categories.flatMap((cat) =>
@@ -695,12 +711,17 @@ const TopProductsStatistics = () => {
                       outerRadius={120}
                       label
                     >
-                      {categoryPieData.map((entry: { name: string; value: number }, index: number) => (
-                        <Cell
-                          key={`cell-${index}`}
-                          fill={COLORS[index % COLORS.length]}
-                        />
-                      ))}
+                      {categoryPieData.map(
+                        (
+                          entry: { name: string; value: number },
+                          index: number
+                        ) => (
+                          <Cell
+                            key={`cell-${index}`}
+                            fill={COLORS[index % COLORS.length]}
+                          />
+                        )
+                      )}
                     </Pie>
                     <Tooltip />
                     <Legend />
@@ -720,22 +741,39 @@ const TopProductsStatistics = () => {
             </Card>
           </Col>
         </Row>
-      
-       <Card title="Danh sách sản phẩm bán chạy">
-        <Table
-          columns={tableColumns}
-          dataSource={data?.docs || []}
-          rowKey="id"
-          scroll={{ x: 1200 }}
-          pagination={{
-            pageSize: filters.limit,
-            total: data?.totalDocs || 0,
-            current: filters.page,
-            onChange: (page) => setFilters((prev) => ({ ...prev, page })),
-            showTotal: (total, range) => `${range[0]}-${range[1]} của ${total} sản phẩm`,
-            showSizeChanger: false,
-          }}
-        />
+
+        <Card title="Danh sách sản phẩm bán chạy">
+          <Table
+            columns={tableColumns}
+            dataSource={data?.docs || []}
+            rowKey="id"
+            scroll={{ x: 1200 }}
+            pagination={{
+              pageSize: filters.limit,
+              total: data?.totalDocs || 0,
+              current: filters.page,
+              onChange: (page) => setFilters((prev) => ({ ...prev, page })),
+              showTotal: (total, range) =>
+                `${range[0]}-${range[1]} của ${total} sản phẩm`,
+              showSizeChanger: false,
+            }}
+          />
+
+          <div style={{ textAlign: "right"}}>
+            <Select
+              value={filters.limit}
+              onChange={(value) =>
+                setFilters((prev) => ({ ...prev, limit: value, page: 1 }))
+              }
+              style={{ width: 120 }}
+            >
+              {[10, 20, 50, 100].map((val) => (
+                <Select.Option key={val} value={val}>
+                  {val} / trang
+                </Select.Option>
+              ))}
+            </Select>
+          </div>
         </Card>
       </List>
     </div>

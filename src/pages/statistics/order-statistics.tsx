@@ -26,9 +26,9 @@ import {
   Cell,
 } from "recharts";
 import { formatCurrency } from "../order/formatCurrency";
+import { useNavigate } from "react-router-dom";
 
 const { RangePicker } = DatePicker;
-
 const PAYMENT_COLORS = ["#1890ff", "#fa541c"];
 
 const OrderStatistics = () => {
@@ -43,6 +43,7 @@ const OrderStatistics = () => {
   const [selectedYear, setSelectedYear] = useState<number | null>(null);
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
 
   // Hàm xử lý thay đổi tháng và năm (copy từ top-products)
   const handleMonthYearChange = (month: number | null, year: number | null) => {
@@ -225,14 +226,12 @@ const OrderStatistics = () => {
       fixed: "right" as const,
       width: 120,
       render: (_: any, record: any) => (
-        <a
-          href={`/orders/show/${record._id}`}
-          target="_blank"
-          rel="noopener noreferrer"
-          style={{ color: "#1890ff" }}
+        <span
+          onClick={() => navigate(`/orders/show/${record._id}`)}
+          style={{ color: "#1890ff", cursor: "pointer" }}
         >
           Xem chi tiết
-        </a>
+        </span>
       ),
     },
   ];
@@ -245,17 +244,26 @@ const OrderStatistics = () => {
           style={{
             background: "white",
             border: "1px solid #ccc",
-            padding: 8,
+            padding: 10,
             borderRadius: 4,
+            boxShadow: "0 0 8px rgba(0,0,0,0.1)",
           }}
         >
           <strong>{label}</strong>
-          <div>
-            Doanh thu:{" "}
-            <span style={{ color: "#1890ff" }}>
-              {formatCurrency(payload[0].value)}
-            </span>
-          </div>
+          {payload.map((entry: any, index: number) => {
+            const isRevenue = entry.dataKey === "revenue";
+            const formattedValue = isRevenue
+              ? formatCurrency(entry.value)
+              : entry.value;
+            return (
+              <div
+                key={`tooltip-${index}`}
+                style={{ color: entry.color, marginTop: 4 }}
+              >
+                ● {entry.name}: {formattedValue}
+              </div>
+            );
+          })}
         </div>
       );
     }
@@ -380,7 +388,7 @@ const OrderStatistics = () => {
           <Col span={6}>
             <Card>
               <Statistic
-                title="Tổng số đơn hàng hoàn tất"
+                title="Tổng số đơn hàng hoàn thành"
                 value={data?.totalOrders || 0}
                 valueStyle={{ color: "#1890ff" }}
               />
@@ -399,7 +407,7 @@ const OrderStatistics = () => {
           <Col span={6}>
             <Card>
               <Statistic
-                title="Số đơn hàng đã hoàn tất hôm nay"
+                title="Số đơn hàng hôm nay"
                 value={data?.todayOrdersCount || 0}
                 valueStyle={{ color: "#722ed1" }}
               />
@@ -417,7 +425,7 @@ const OrderStatistics = () => {
                     <XAxis dataKey="date" />
                     <YAxis yAxisId="left" />
                     <YAxis yAxisId="right" orientation="right" />
-                    <Tooltip />
+                    <Tooltip content={CustomTooltip} />
                     <Legend />
                     <Line
                       yAxisId="left"
@@ -488,7 +496,7 @@ const OrderStatistics = () => {
           </Col>
         </Row>
 
-        <Card title="Danh sách đơn hàng đã hoàn tất">
+        <Card title="Danh sách đơn hàng đã hoàn thành">
           <Table
             columns={columns}
             dataSource={data?.orders || []}
@@ -505,6 +513,23 @@ const OrderStatistics = () => {
             }}
             scroll={{ x: 900 }}
           />
+
+          {/* Chọn số lượng dòng/trang ở dưới bảng */}
+          <div style={{ textAlign: "right"}}>
+            <Select
+              value={filters.limit}
+              onChange={(value) =>
+                setFilters((prev) => ({ ...prev, limit: value, page: 1 }))
+              }
+              style={{ width: 120 }}
+            >
+              {[10, 20, 50, 100].map((val) => (
+                <Select.Option key={val} value={val}>
+                  {val} / trang
+                </Select.Option>
+              ))}
+            </Select>
+          </div>
         </Card>
       </List>
     </div>
