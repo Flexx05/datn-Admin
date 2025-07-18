@@ -1,18 +1,19 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { useInvalidate, useList } from "@refinedev/core";
 import {
+  Layout,
   Avatar,
   Badge,
+  Button,
   Col,
   Grid,
-  Menu,
-  message,
   Row,
   Spin,
   Typography,
 } from "antd";
+import { EyeFilled } from "@ant-design/icons";
 import dayjs from "dayjs";
 import { useContext, useEffect, useState } from "react";
+import { Outlet, useNavigate, useParams } from "react-router";
 import { useAuth } from "../../contexts/auth/AuthContext";
 import { ColorModeContext } from "../../contexts/color-mode";
 import {
@@ -20,18 +21,25 @@ import {
   IMessage,
   IParticipant,
 } from "../../interface/conversation";
+import { useInvalidate, useList } from "@refinedev/core";
 import { socket } from "../../socket";
-import Messages from "./messages";
 
 const { Text, Title } = Typography;
 const { useBreakpoint } = Grid;
+const { Sider, Content } = Layout;
 
 const ChatList = () => {
-  const { mode } = useContext(ColorModeContext);
   const [selectedConversation, setSelectedConversation] = useState<any>(null);
+  const [hoveredConversation, setHoveredConversation] = useState<string | null>(
+    null
+  );
   const screens = useBreakpoint();
+  const { id } = useParams();
+  const nav = useNavigate();
   const { user } = useAuth();
   const userId = user?._id;
+  const { mode } = useContext(ColorModeContext);
+  const selectedMode = mode === "dark" ? "#2e2e2eff" : "#e8e8e858";
 
   const { data, isLoading, refetch } = useList<IConversation>({
     resource: "conversation",
@@ -41,198 +49,170 @@ const ChatList = () => {
       description: "Vui lòng thử lại sau.",
     },
   });
-  const chatData = data?.data || ([] as IConversation[]);
+
   const invalidate = useInvalidate();
+
+  useEffect(() => {
+    if (id) socket.emit("join-conversation", id);
+  }, [id]);
 
   useEffect(() => {
     const handleChange = () => {
       invalidate({ resource: "conversation", invalidates: ["list"] });
       refetch();
     };
-    socket.on("new-message", handleChange);
+    socket.on("conversation-updated", handleChange);
     return () => {
-      socket.off("new-message", handleChange);
+      socket.off("conversation-updated", handleChange);
     };
   }, [invalidate, refetch]);
 
-  if (isLoading) {
-    return <Spin size="large" />;
-  }
+  const chatData = data?.data.filter((item) => item.messages.length > 0) || [];
+
+  if (isLoading) return <Spin size="large" />;
 
   return (
-    <Row
-      gutter={0}
-      style={{
-        minHeight: "90vh",
-        height: "90vh",
-        flexWrap: "nowrap",
-      }}
-    >
-      <Col
-        xs={24}
-        sm={8}
-        md={7}
-        lg={6}
-        xl={5}
+    <Layout style={{ minHeight: "90vh", height: "90vh" }}>
+      <Sider
+        width={screens.xs ? "100%" : 300}
+        breakpoint="sm"
+        collapsedWidth="0"
+        theme="light"
         style={{
-          background: "#fff",
           borderRight: `1px solid ${mode === "dark" ? "#1a1a1a" : "#f0f0f0"}`,
-          padding: 0,
-          height: "90vh",
-          minHeight: 300,
+          padding: "0 0 16px 0",
           overflowY: "auto",
         }}
       >
-        <Menu
-          mode="inline"
-          selectedKeys={[
-            selectedConversation ? selectedConversation._id : "empty",
-          ]}
+        <div
           style={{
-            height: "100%",
-            borderRight: 0,
-            overflowY: "auto",
-            minWidth: screens.xs ? "100vw" : 0,
+            height: 70,
+            display: "flex",
+            alignItems: "center",
+            padding: "0 16px",
+            // background: "#fafafa",
           }}
         >
-          <Menu.Item
-            key="empty"
-            disabled
-            style={{
-              height: 70,
-              display: "flex",
-              alignItems: "center",
-              background: "#fafafa",
-              cursor: "default",
-            }}
-          >
-            <Title
-              level={4}
-              style={{
-                margin: 0,
-                paddingLeft: 8,
-                fontSize: screens.xs ? 18 : 22,
-              }}
-            >
-              Đoạn chat
-            </Title>
-          </Menu.Item>
-          {chatData && chatData.length > 0 ? (
-            chatData.map((conversation) => {
-              const participants = conversation.participants as IParticipant[];
-              const messages = conversation.messages as IMessage[];
-              const lastMessage = messages[messages.length - 1];
-              const hasBeenRead =
-                Array.isArray(lastMessage?.readBy) &&
-                lastMessage.readBy.some(
-                  (id) => id?.toString() === userId?.toString()
-                );
-              const user =
-                participants.find((p) => p.role === "user") ||
-                ({} as IParticipant);
-              return (
-                <Menu.Item
-                  key={conversation._id}
-                  onClick={async () => {
-                    try {
-                      setSelectedConversation(conversation);
-                      socket.emit("join-conversation", conversation._id);
-                      invalidate({
-                        resource: "conversation",
-                        invalidates: ["list"],
-                      });
-                      refetch();
-                    } catch (error) {
-                      message.error("Lỗi khi tải tin nhắn");
-                    }
-                  }}
-                  style={{
-                    minHeight: 70,
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 8,
-                    padding: screens.xs ? "8px 4px" : "8px 16px",
-                  }}
-                >
-                  <Row wrap={false} style={{ width: "100%" }}>
-                    <Col flex="48px">
-                      <Avatar
-                        src={user.avatar || "/avtDefault.png"}
-                        alt={user.fullName || "Khách hàng"}
-                        style={{
-                          width: 48,
-                          height: 48,
-                          minWidth: 48,
-                          minHeight: 48,
-                          flexGrow: 1,
-                        }}
-                      />
-                    </Col>
-                    <Col flex="auto" style={{ minWidth: 0 }}>
-                      <Row>
-                        <Col span={24} style={{ maxHeight: 24, minWidth: 0 }}>
-                          <Text
-                            ellipsis
-                            style={{
-                              marginBottom: 10,
-                              fontWeight: 700,
-                              paddingLeft: 8,
-                              fontSize: screens.xs ? 14 : 16,
-                            }}
-                          >
-                            {user.fullName || "Khách hàng"}
-                          </Text>
-                        </Col>
-                      </Row>
-                      <Row>
-                        <Col span={19} style={{ paddingLeft: 8, minWidth: 0 }}>
-                          <Text
-                            ellipsis
-                            type={hasBeenRead ? "secondary" : undefined}
-                            style={{
-                              marginTop: 5,
-                              fontWeight: hasBeenRead ? "normal" : "bold",
-                              fontSize: screens.xs ? 12 : 14,
-                              width: "100%",
-                              display: "block",
-                            }}
-                          >
-                            {(lastMessage.senderRole === "user"
-                              ? ""
-                              : `Bạn: `) +
-                              lastMessage.content.slice(0, 20) +
-                              "..." || ""}
-                          </Text>
-                        </Col>
-                        <Col span={5} style={{ textAlign: "right" }}>
-                          <Text type="secondary" style={{ fontSize: 12 }}>
-                            {dayjs(conversation.lastUpdated).format("HH:mm")}
-                          </Text>
-                        </Col>
-                      </Row>
-                    </Col>
-                    <Col flex="20px" style={{ textAlign: "right" }}>
-                      {!hasBeenRead && <Badge dot color="blue" />}
-                    </Col>
-                  </Row>
-                </Menu.Item>
+          <Title level={4} style={{ margin: 0 }}>
+            Đoạn chat
+          </Title>
+        </div>
+
+        {chatData.length > 0 ? (
+          chatData.map((conversation) => {
+            const participants = conversation.participants as IParticipant[];
+            const messages = conversation.messages as IMessage[];
+            const lastMessage = messages[messages.length - 1];
+
+            const hasBeenRead =
+              Array.isArray(lastMessage?.readBy) &&
+              lastMessage.readBy.some(
+                (id) => id?.toString() === userId?.toString()
               );
-            })
-          ) : (
-            <Menu.Item key="no-customer" disabled>
-              <Text type="secondary">Chưa có khách hàng nào cần hỗ trợ</Text>
-            </Menu.Item>
-          )}
-        </Menu>
-      </Col>
-      <Col
-        xs={24}
-        sm={16}
-        md={17}
-        lg={18}
-        xl={19}
+
+            const customer =
+              participants.find((p) => p.role === "user") ||
+              ({} as IParticipant);
+
+            const isSelected = selectedConversation === conversation._id;
+
+            return (
+              <div
+                key={conversation._id}
+                onClick={() => {
+                  nav(`/conversation/message/${conversation._id}`);
+                  setSelectedConversation(conversation._id);
+                }}
+                onMouseEnter={() => setHoveredConversation(conversation._id)}
+                onMouseLeave={() => setHoveredConversation(null)}
+                style={{
+                  cursor: "pointer",
+                  background: isSelected ? selectedMode : "transparent",
+                  padding: "10px 16px",
+                  position: "relative",
+                }}
+              >
+                <Row wrap={false} align="middle">
+                  <Col flex="48px">
+                    <Avatar
+                      src={customer.avatar || "/avtDefault.png"}
+                      alt={customer.fullName || "Khách hàng"}
+                      size={48}
+                    />
+                  </Col>
+                  <Col flex="auto" style={{ paddingLeft: 8 }}>
+                    <Row>
+                      <Col span={24}>
+                        <Text
+                          strong
+                          ellipsis
+                          style={{
+                            display: "block",
+                            fontSize: screens.xs ? 14 : 16,
+                          }}
+                        >
+                          {customer.fullName || "Khách hàng"}
+                        </Text>
+                      </Col>
+                      <Col span={19}>
+                        <Text
+                          ellipsis
+                          type={hasBeenRead ? "secondary" : undefined}
+                          style={{
+                            fontWeight: hasBeenRead ? "normal" : "bold",
+                            fontSize: 14,
+                          }}
+                        >
+                          {(lastMessage.senderRole === "user" ? "" : "Bạn: ") +
+                            (lastMessage?.content?.slice(0, 20) || "") +
+                            "..."}
+                        </Text>
+                      </Col>
+                      <Col span={5} style={{ textAlign: "right" }}>
+                        <Text type="secondary" style={{ fontSize: 12 }}>
+                          {dayjs(conversation.lastUpdated).format("HH:mm")}
+                        </Text>
+                      </Col>
+                    </Row>
+                  </Col>
+                  <Col flex="20px">
+                    {!hasBeenRead && <Badge dot color="blue" />}
+                  </Col>
+                </Row>
+
+                {hoveredConversation === conversation._id && (
+                  <div
+                    style={{
+                      position: "absolute",
+                      right: 16,
+                      top: "50%",
+                      transform: "translateY(-50%)",
+                      zIndex: 10,
+                    }}
+                  >
+                    <Button
+                      icon={<EyeFilled />}
+                      size="small"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        nav(`/conversation/id/${conversation._id}`);
+                        setSelectedConversation(conversation._id);
+                      }}
+                    />
+                  </div>
+                )}
+              </div>
+            );
+          })
+        ) : (
+          <div style={{ padding: 16 }}>
+            <Text type="secondary">Chưa có khách hàng nào cần hỗ trợ</Text>
+          </div>
+        )}
+      </Sider>
+
+      <Content
         style={{
-          minHeight: 300,
           height: "90vh",
           overflowY: "auto",
           padding: screens.xs ? 8 : 24,
@@ -241,7 +221,7 @@ const ChatList = () => {
         }}
       >
         {selectedConversation ? (
-          <Messages id={selectedConversation._id} />
+          <Outlet />
         ) : (
           <div
             style={{
@@ -271,8 +251,8 @@ const ChatList = () => {
             </i>
           </div>
         )}
-      </Col>
-    </Row>
+      </Content>
+    </Layout>
   );
 };
 

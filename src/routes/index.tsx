@@ -16,7 +16,6 @@ import {
   CategoryList,
   CategoryShow,
 } from "../pages/categories";
-import ChatList from "../pages/chat/list";
 import { CommentList, CommentShow } from "../pages/comments";
 import { Dashboard } from "../pages/dashboard";
 import { Login } from "../pages/login";
@@ -33,6 +32,9 @@ import VoucherCreate from "../pages/voucher/create";
 import VoucherEdit from "../pages/voucher/edit";
 import VoucherList from "../pages/voucher/list";
 import VoucherShow from "../pages/voucher/show";
+import Messages from "../pages/chat/messages";
+import ChatShow from "../pages/chat/show";
+import ChatList from "../pages/chat/list";
 
 const AppRoutes = () => {
   return (
@@ -90,8 +92,9 @@ const AppRoutes = () => {
             <Route index element={<CommentList />} />
             <Route path="id/:id" element={<CommentShow />} />
           </Route>
-          <Route path="/conversation">
-            <Route index element={<ChatList />} />
+          <Route path="/conversation" element={<ChatList />}>
+            <Route path="id/:id" element={<ChatShow />} />
+            <Route path="message/:id" element={<Messages />} />
           </Route>
           <Route path="/orders">
             <Route index element={<OrderList />} />

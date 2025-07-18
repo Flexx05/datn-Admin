@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { useInvalidate, useShow } from "@refinedev/core";
+import { useInvalidate, useList, useOne } from "@refinedev/core";
 import {
   Avatar,
   Button,
@@ -13,32 +13,27 @@ import {
 } from "antd";
 import dayjs from "dayjs";
 import { useContext, useEffect, useRef, useState } from "react";
-import { Link } from "react-router";
+import { Link, useParams } from "react-router";
 import { ColorModeContext } from "../../contexts/color-mode";
 import { IConversation, IMessage } from "../../interface/conversation";
-import { useChatSocket } from "../../socket";
+import { INotification } from "../../interface/notification";
+import { socket, useChatSocket } from "../../socket";
 import { axiosInstance } from "../../utils/axiosInstance";
-
-interface ChatShowProps {
-  id?: string;
-}
 
 type DisplayMessage = IMessage & { type?: "user"; senderRole?: string };
 
-const Messages = (props: ChatShowProps) => {
-  const paramId =
-    typeof window !== "undefined"
-      ? window.location.pathname.split("/").pop()
-      : undefined;
-  const id = props.id || paramId;
+const Messages = () => {
+  const { id } = useParams();
   const [input, setInput] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { mode } = useContext(ColorModeContext);
   const colorMode = mode === "dark" ? "#1a1a1a" : "white";
   const { useBreakpoint } = Grid;
-  const invalidate = useInvalidate();
   const screens = useBreakpoint();
-  const { queryResult } = useShow<IConversation>({
+  const invalidate = useInvalidate();
+
+  // ✅ Dùng useOne thay vì useShow
+  const { data, isLoading } = useOne<IConversation>({
     resource: "conversation",
     id,
     errorNotification: {
@@ -48,27 +43,37 @@ const Messages = (props: ChatShowProps) => {
     },
   });
 
-  const { data: conversation, isLoading } = queryResult;
+  const conversation = data?.data;
   const [displayMessages, setDisplayMessages] = useState<DisplayMessage[]>([]);
 
   // ✅ Gán displayMessages ban đầu từ conversation
   useEffect(() => {
-    if (!conversation?.data) return;
+    if (!conversation) return;
 
-    const userMessages: DisplayMessage[] = conversation.data.messages.map(
-      (m) => ({
+    const userMessages: DisplayMessage[] = conversation.messages.map((m) => {
+      const sender = conversation.participants.find(
+        (p) => p.userId === m.senderId
+      );
+      return {
         ...m,
+        senderRole: sender?.role ?? "user",
         type: "user",
-      })
-    );
+      };
+    });
 
     setDisplayMessages(userMessages);
   }, [conversation]);
 
+  useEffect(() => {
+    if (id) {
+      socket.emit("join-conversation", id);
+    }
+  }, [id]);
+
   // ✅ Lắng nghe tin nhắn realtime
   useChatSocket(id || "", (msg: { message: IMessage }) => {
     const realMessage = msg.message;
-    const sender = conversation?.data?.participants.find(
+    const sender = conversation?.participants.find(
       (p) => p.userId === realMessage.senderId
     );
     setDisplayMessages((prev) => [
@@ -91,6 +96,20 @@ const Messages = (props: ChatShowProps) => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [displayMessages]);
 
+  const { data: notification } = useList<INotification>({
+    resource: "notification",
+    filters: [
+      {
+        field: "link",
+        operator: "eq",
+        value: id,
+      },
+    ],
+    pagination: {
+      mode: "off",
+    },
+  });
+
   const handleSend = async () => {
     if (!input.trim()) return;
     try {
@@ -98,6 +117,22 @@ const Messages = (props: ChatShowProps) => {
         content: input,
         conversationId: id,
       });
+      if (notification?.data && Array.isArray(notification?.data)) {
+        const unreadNotifications = notification?.data.filter(
+          (n) => n.isRead === false
+        );
+
+        await Promise.all(
+          unreadNotifications.map((n) =>
+            axiosInstance.patch(`/notification/${n._id}`, { isRead: true })
+          )
+        );
+
+        invalidate({
+          resource: "notification",
+          invalidates: ["list"],
+        });
+      }
       invalidate({
         resource: "conversation",
         id,
@@ -120,10 +155,8 @@ const Messages = (props: ChatShowProps) => {
       >
         Khách hàng:{" "}
         <Tooltip title="Xem thông tin khách hàng">
-          <Link
-            to={`/users/show/${conversation?.data?.participants[0]?.userId}`}
-          >
-            {conversation?.data?.participants[0]?.fullName}
+          <Link to={`/users/show/${conversation?.participants[0]?.userId}`}>
+            {conversation?.participants[0]?.fullName}
           </Link>
         </Tooltip>
       </Typography.Title>
@@ -169,43 +202,40 @@ const Messages = (props: ChatShowProps) => {
                   }}
                 >
                   {isUser && (
-                    <Avatar
-                      size={28}
-                      src={
-                        conversation?.data?.participants.find(
-                          (p) => p.userId === message.senderId
-                        )?.avatar || "/avtDefault.png"
-                      }
-                    />
+                    <div style={{ flexShrink: 0, marginRight: 8 }}>
+                      <Avatar
+                        size={28}
+                        src={
+                          conversation?.participants.find(
+                            (p) => p.userId === message.senderId
+                          )?.avatar || "/avtDefault.png"
+                        }
+                      />
+                    </div>
                   )}
-                  <div
-                    style={{
-                      background: isUser
-                        ? mode === "dark"
-                          ? "#575757"
-                          : "#f0f0f0"
-                        : "#1269EB",
-                      color: isUser ? undefined : "#fff",
-                      borderRadius: 16,
-                      padding: screens?.xs ? "6px 10px" : "8px 16px",
-                      maxWidth: screens?.xs ? 220 : 320,
-                      wordBreak: "break-word",
-                      fontSize: screens?.xs ? 13 : 15,
-                      textAlign: "left",
-                    }}
+                  <Tooltip
+                    title={dayjs(message.createdAt).format("HH:mm")}
+                    placement="left"
                   >
-                    {message.content}
                     <div
                       style={{
-                        fontSize: 10,
-                        color: "#bdbdbd",
-                        marginTop: 2,
-                        textAlign: isUser ? "left" : "right",
+                        background: isUser
+                          ? mode === "dark"
+                            ? "#575757"
+                            : "#f0f0f0"
+                          : "#1269EB",
+                        color: isUser ? undefined : "#fff",
+                        borderRadius: 16,
+                        padding: screens?.xs ? "6px 10px" : "8px 16px",
+                        maxWidth: screens?.xs ? 220 : 320,
+                        wordBreak: "break-word",
+                        fontSize: screens?.xs ? 13 : 15,
+                        textAlign: "left",
                       }}
                     >
-                      {dayjs(message.createdAt).format("HH:mm")}
+                      {message.content}
                     </div>
-                  </div>
+                  </Tooltip>
                 </div>
               </List.Item>
             );

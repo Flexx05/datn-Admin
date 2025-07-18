@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Show } from "@refinedev/antd";
 import { useShow } from "@refinedev/core";
 import {
@@ -18,7 +19,6 @@ const { Title, Text } = Typography;
 
 export const BrandShow = () => {
   const { queryResult } = useShow({
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     errorNotification: (error: any) => ({
       message:
         "❌ Lỗi hệ thống " + (error.response?.data?.message | error.message),
