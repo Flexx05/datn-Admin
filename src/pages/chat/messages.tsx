@@ -19,11 +19,15 @@ import { IConversation, IMessage } from "../../interface/conversation";
 import { INotification } from "../../interface/notification";
 import { socket, useChatSocket } from "../../socket";
 import { axiosInstance } from "../../utils/axiosInstance";
+import CloseConversation from "./CloseConversation";
+import { SendOutlined } from "@ant-design/icons";
 
 type DisplayMessage = IMessage & { type?: "user"; senderRole?: string };
 
+// TODO: thêm Icon và xử lý logic thêm ảnh
+
 const Messages = () => {
-  const { id } = useParams();
+  const { id } = useParams<string>();
   const [input, setInput] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { mode } = useContext(ColorModeContext);
@@ -32,7 +36,6 @@ const Messages = () => {
   const screens = useBreakpoint();
   const invalidate = useInvalidate();
 
-  // ✅ Dùng useOne thay vì useShow
   const { data, isLoading } = useOne<IConversation>({
     resource: "conversation",
     id,
@@ -56,7 +59,7 @@ const Messages = () => {
       );
       return {
         ...m,
-        senderRole: sender?.role ?? "user",
+        senderRole: m.senderRole || sender?.role,
         type: "user",
       };
     });
@@ -144,22 +147,30 @@ const Messages = () => {
     setInput("");
   };
 
+  const closedConversation = conversation?.status === "closed";
+
   return (
     <div style={{ width: "100%", maxWidth: "auto", margin: "0 auto" }}>
-      <Typography.Title
-        level={5}
-        style={{
-          fontSize: "clamp(18px, 3vw, 24px)",
-          marginBottom: 16,
-        }}
-      >
-        Khách hàng:{" "}
-        <Tooltip title="Xem thông tin khách hàng">
-          <Link to={`/users/show/${conversation?.participants[0]?.userId}`}>
-            {conversation?.participants[0]?.fullName}
-          </Link>
-        </Tooltip>
-      </Typography.Title>
+      <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+        <Typography.Title
+          level={5}
+          style={{
+            fontSize: "clamp(18px, 3vw, 24px)",
+            marginBottom: 16,
+          }}
+        >
+          Khách hàng:{" "}
+          <Tooltip title="Xem thông tin khách hàng">
+            <Link to={`/users/show/${conversation?.participants[0]?.userId}`}>
+              {conversation?.participants[0]?.fullName}
+            </Link>
+          </Tooltip>
+        </Typography.Title>
+        <CloseConversation
+          conversationId={id || ""}
+          hiddenStatus={closedConversation}
+        />
+      </div>
 
       <div
         style={{
@@ -180,6 +191,7 @@ const Messages = () => {
           loading={isLoading}
           renderItem={(message) => {
             const isUser = message.senderRole === "user";
+
             return (
               <List.Item
                 key={message._id}
@@ -244,30 +256,40 @@ const Messages = () => {
         <div ref={messagesEndRef} />
       </div>
 
-      <Space.Compact style={{ width: "100%" }}>
-        <Input
-          style={{
-            width: "100%",
-            minWidth: 0,
-            fontSize: "clamp(14px, 2.5vw, 16px)",
-            padding: screens?.xs ? "6px 8px" : undefined,
-          }}
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onPressEnter={handleSend}
-          placeholder="Nhập tin nhắn..."
-        />
-        <Button
-          type="primary"
-          onClick={handleSend}
-          style={{
-            width: screens?.xs ? 60 : 80,
-            fontSize: screens?.xs ? 13 : 16,
-          }}
-        >
-          Gửi
-        </Button>
-      </Space.Compact>
+      <Tooltip
+        title={
+          closedConversation
+            ? "Không thể nhắn tin khi đoạn chat đã kết thúc"
+            : null
+        }
+      >
+        <Space.Compact style={{ width: "100%" }}>
+          <Input
+            style={{
+              width: "100%",
+              minWidth: 0,
+              fontSize: "clamp(14px, 2.5vw, 16px)",
+              padding: screens?.xs ? "5px 7px" : undefined,
+              borderRadius: 30,
+            }}
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onPressEnter={handleSend}
+            placeholder="Nhập tin nhắn..."
+            disabled={closedConversation}
+          />
+          <Button
+            type="link"
+            icon={<SendOutlined />}
+            onClick={handleSend}
+            disabled={closedConversation}
+            style={{
+              width: screens?.xs ? 20 : 40,
+              fontSize: screens?.xs ? 13 : 16,
+            }}
+          />
+        </Space.Compact>
+      </Tooltip>
     </div>
   );
 };

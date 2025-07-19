@@ -65,7 +65,15 @@ const ChatShow = () => {
         </Descriptions.Item>
 
         <Descriptions.Item label="Trạng thái">
-          <Tag color={record?.status === "active" ? "green" : "default"}>
+          <Tag
+            color={
+              record?.status === "active"
+                ? "green"
+                : record?.status === "closed"
+                ? "red"
+                : "yellow"
+            }
+          >
             {satusMap[record?.status ?? "default"] || "Không rõ"}
           </Tag>
         </Descriptions.Item>
@@ -85,7 +93,15 @@ const ChatShow = () => {
               title="Trạng thái"
               dataIndex={"status"}
               render={(value) => (
-                <Tag color={value === "active" ? "green" : "default"}>
+                <Tag
+                  color={
+                    value === "active"
+                      ? "green"
+                      : value === "closed"
+                      ? "red"
+                      : "yellow"
+                  }
+                >
                   {satusMap[value] || "Không rõ"}
                 </Tag>
               )}
