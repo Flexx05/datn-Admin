@@ -108,6 +108,12 @@ const AppRoutes = () => {
             <Route path="edit/:id" element={<VoucherEdit />} />
             <Route path="id/:id" element={<VoucherShow />} />
           </Route>
+          <Route path="/statistics/top-products">
+            <Route index element={<TopProductsStatistics />} />
+          </Route>
+          <Route path="/statistics/order-revenue">
+            <Route index element={<RevenueOrdersStatistics />} />
+          </Route>
         </Route>
         <Route
           element={
@@ -118,6 +124,7 @@ const AppRoutes = () => {
         >
           <Route path="/login" element={<Login />} />
         </Route>
+        
       </Routes>
     </div>
   );
