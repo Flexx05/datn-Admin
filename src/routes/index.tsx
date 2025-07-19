@@ -32,6 +32,8 @@ import VoucherCreate from "../pages/voucher/create";
 import VoucherEdit from "../pages/voucher/edit";
 import VoucherList from "../pages/voucher/list";
 import VoucherShow from "../pages/voucher/show";
+import TopProductsStatistics from "../pages/statistics/top-products";
+import RevenueOrdersStatistics from "../pages/statistics/order-statistics";
 import Messages from "../pages/chat/messages";
 import ChatShow from "../pages/chat/show";
 import ChatList from "../pages/chat/list";
@@ -106,7 +108,6 @@ const AppRoutes = () => {
             <Route path="edit/:id" element={<VoucherEdit />} />
             <Route path="id/:id" element={<VoucherShow />} />
           </Route>
-          <Route path="*" element={<ErrorComponent />} />
         </Route>
         <Route
           element={

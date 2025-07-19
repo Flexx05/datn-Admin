@@ -14,9 +14,10 @@ import {
 } from "antd";
 import { DeleteOutlined, RollbackOutlined } from "@ant-design/icons";
 import { IVoucher } from "../../interface/voucher";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import dayjs from "dayjs";
 import { axiosInstance } from "../../utils/axiosInstance";
+import { io } from "socket.io-client";
 
 const VoucherList = () => {
   const [filterIsDeleted, setFilterIsDeleted] = useState<boolean>(true);
@@ -54,6 +55,22 @@ const VoucherList = () => {
 
   const invalidate = useInvalidate();
 
+  useEffect(() => {
+    const socket = io("http://localhost:8080"); // Đúng port backend của bạn
+    socket.on("connect", () => {
+      console.log("Socket connected!", socket.id);
+    });
+    socket.on("voucherStatusUpdated", () => {
+      invalidate({
+        resource: "vouchers",
+        invalidates: ["list"],
+      });
+    });
+    return () => {
+      socket.disconnect();
+    };
+  }, [invalidate]);
+  
   // Xử lý xóa mềm voucher (chuyển vào thùng rác)
   const handleDelete = useCallback(
     async (id: string) => {
