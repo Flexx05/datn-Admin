@@ -48,7 +48,7 @@ const LineChartComponent = () => {
     pagination: { mode: "off" },
   });
 
-  const orderSuccess = data?.data?.filter((order) => order.status === 4);
+  const orderSuccess = data?.data?.filter((order) => order.status === 4 && order.paymentStatus === 1) || [];
 
   // Xử lý dữ liệu nhóm theo lựa chọn
   const revenueData = useMemo(() => {

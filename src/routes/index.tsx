@@ -32,6 +32,8 @@ import VoucherList from "../pages/voucher/list";
 import VoucherCreate from "../pages/voucher/create";
 import VoucherEdit from "../pages/voucher/edit";
 import VoucherShow from "../pages/voucher/show";
+import TopProductsStatistics from "../pages/statistics/top-products";
+import RevenueOrdersStatistics from "../pages/statistics/order-statistics";
 import { ReturnRequestDetail } from "../pages/order/returnRequestDetail";
 
 const AppRoutes = () => {
@@ -101,6 +103,12 @@ const AppRoutes = () => {
             <Route path="add" element={<VoucherCreate />} />
             <Route path="edit/:id" element={<VoucherEdit />} />
             <Route path="id/:id" element={<VoucherShow />} />
+          </Route>
+          <Route path="/statistics/top-products">
+            <Route index element={<TopProductsStatistics />} />
+          </Route>
+          <Route path="/statistics/order-revenue">
+            <Route index element={<RevenueOrdersStatistics />} />
           </Route>
         </Route>
         <Route
