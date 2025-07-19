@@ -40,7 +40,7 @@ interface ReturnRequest {
     _id: string;
     orderCode: string;
     totalAmount: number;
-    userId: string; // Added to support refund API
+    userId: string;
   };
   products: {
     productId: string;
@@ -62,7 +62,6 @@ const paymentStatusMap: Record<number, { text: string; color: string }> = {
   3: { text: "Đã hủy", color: "red" },
 };
 
-// Trạng thái yêu cầu hoàn hàng
 const returnStatusMap: Record<number, { text: string; color: string }> = {
   0: { text: "Chờ duyệt", color: "orange" },
   1: { text: "Đã chấp nhận", color: "green" },
@@ -295,7 +294,7 @@ export const OrderList: React.FC = () => {
   const handleChangeReturnStatus = async (record: ReturnRequest, newStatus: number) => {
     setLoadingId(record._id);
     try {
-      // If status is 3 (Đã hoàn tiền), call refund API
+      // If status is 3 (Đã hoàn tiền), process refund and update order's totalAmount
       if (newStatus === 3) {
         const refundResponse = await axios.post(
           `${API_URL}/wallet/cancel-refund`,
@@ -303,8 +302,9 @@ export const OrderList: React.FC = () => {
             orderId: record.orderId._id,
             type: "refund",
             amount: record.refundAmount,
-            status: 1, // Mark as successful refund
-            description: `Hoàn tiền cho yêu cầu hoàn hàng đơn ${record.orderId.orderCode}: ${record.reason}`,
+            status: 1, 
+            description: `Hoàn tiền cho yêu cầu hoàn hàng đơn ${record.orderId.orderCode}: ${record.reason}`,
+            returnRequestId: record._id,
           },
           {
             headers: {
@@ -316,6 +316,24 @@ export const OrderList: React.FC = () => {
 
         if (!refundResponse.data.success) {
           throw new Error(refundResponse.data.message || "Refund request failed");
+        }
+
+        // Update order's totalAmount
+        const orderResponse = await axios.patch(
+          `${API_URL}/order/update-total/${record.orderId._id}`,
+          {
+            refundAmount: record.refundAmount,
+          },
+          {
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${localStorage.getItem("token")}`,
+            },
+          }
+        );
+
+        if (!orderResponse.data.success) {
+          throw new Error(orderResponse.data.message || "Failed to update order totalAmount");
         }
       }
 
@@ -337,6 +355,9 @@ export const OrderList: React.FC = () => {
           req._id === record._id ? { ...req, status: newStatus } : req
         )
       );
+
+      // Invalidate order list to refresh data
+      await invalidate({ resource: "order", invalidates: ["list"] });
     } catch (error: any) {
       message.error(error.message || "Cập nhật trạng thái yêu cầu hoàn hàng thất bại");
       console.error(error);
