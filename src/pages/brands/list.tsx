@@ -139,7 +139,7 @@ export const BrandList = () => {
         onSearch={handleSearch}
         style={{ marginBottom: 16, maxWidth: 300 }}
       />
-      <Table {...tableProps} rowKey="_id">
+      <Table {...tableProps} rowKey="_id" loading={tableProps.loading}>
         <Table.Column
           dataIndex="stt"
           title={"STT"}

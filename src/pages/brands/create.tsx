@@ -8,7 +8,7 @@ import { useState } from "react";
 import { CLOUDINARY_URL } from "../../config/dataProvider";
 
 export const BrandCreate = () => {
-  const { formProps, saveButtonProps } = useForm({
+  const { formProps, saveButtonProps, formLoading } = useForm({
     successNotification: () => ({
       message: "🎉 Thêm mới thành công",
       description: "Thương hiệu đã được thêm mới!",
@@ -66,7 +66,11 @@ export const BrandCreate = () => {
   };
 
   return (
-    <Create saveButtonProps={saveButtonProps} title="Tạo thương hiệu">
+    <Create
+      saveButtonProps={saveButtonProps}
+      title="Tạo thương hiệu"
+      isLoading={formLoading}
+    >
       <Form
         {...formProps}
         layout="vertical"

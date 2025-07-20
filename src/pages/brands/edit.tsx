@@ -7,7 +7,7 @@ import axios from "axios";
 import { useEffect, useState } from "react";
 
 export const BrandEdit = () => {
-  const { formProps, saveButtonProps, queryResult } = useForm({
+  const { formProps, saveButtonProps, queryResult, formLoading } = useForm({
     successNotification: () => ({
       message: "🎉 Cập nhật thành công",
       description: "Thương hiệu đã được cập nhật!",
@@ -104,7 +104,7 @@ export const BrandEdit = () => {
     <Edit
       saveButtonProps={saveButtonProps}
       title="Chỉnh sửa thương hiệu"
-      isLoading={queryResult?.isLoading}
+      isLoading={formLoading}
       canDelete={false}
     >
       <Form
