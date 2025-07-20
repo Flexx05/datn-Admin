@@ -1,15 +1,23 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import { List, ShowButton, useTable } from "@refinedev/antd";
+import { LogicalFilter, useUpdate } from "@refinedev/core";
 import {
-  List,
-  ShowButton,
-  useTable,
-} from "@refinedev/antd";
-import { IComment } from "../../interface/comment";
-import { Space, Table, Rate, message, Switch, Popconfirm, Form, Input, Button, Select, DatePicker, Tooltip } from "antd";
-import { useUpdate } from "@refinedev/core";
+  Button,
+  DatePicker,
+  Form,
+  Input,
+  message,
+  Popconfirm,
+  Rate,
+  Space,
+  Switch,
+  Table,
+  Tooltip,
+} from "antd";
 import { useState } from "react";
-import { LogicalFilter } from "@refinedev/core";
+import { IComment } from "../../interface/comment";
 
-const {RangePicker} = DatePicker;
+const { RangePicker } = DatePicker;
 
 export const CommentList = () => {
   const [form] = Form.useForm();
@@ -21,8 +29,7 @@ export const CommentList = () => {
       pageSize: 10,
     },
   });
-  
-  
+
   const { mutate } = useUpdate();
   const [status, setStatus] = useState<string | null>(null);
 
@@ -30,7 +37,7 @@ export const CommentList = () => {
   const handleSearch = () => {
     const values = form.getFieldsValue();
     const filters: LogicalFilter[] = [];
-    
+
     // Xử lý tìm kiếm
     if (values.search?.trim()) {
       filters.push({
@@ -97,18 +104,26 @@ export const CommentList = () => {
           </Button>
         </Form.Item>
       </Form>
-      
-      <Table {...tableProps} rowKey="_id">
-        <Table.Column dataIndex="_id" title="STT" render={(_text, _record, index) => index + 1} />
+
+      <Table {...tableProps} rowKey="_id" loading={tableProps.loading}>
+        <Table.Column
+          dataIndex="_id"
+          title="STT"
+          render={(_text, _record, index) => index + 1}
+        />
 
         <Table.Column
           title="Sản phẩm"
           dataIndex={["productId", "name"]}
           key="productName"
           render={(_text, record: IComment) =>
-            record.productId && typeof record.productId === "object" && "name" in record.productId
-              ? (record.productId as { name: string }).name
-              : <span style={{ color: "red" }}>Sản phẩm không tồn tại</span>
+            record.productId &&
+            typeof record.productId === "object" &&
+            "name" in record.productId ? (
+              (record.productId as { name: string }).name
+            ) : (
+              <span style={{ color: "red" }}>Sản phẩm không tồn tại</span>
+            )
           }
         />
 
@@ -118,123 +133,125 @@ export const CommentList = () => {
           key="userName"
         />
 
-        <Table.Column 
-          dataIndex="content" 
-          title="Nội dung"  
+        <Table.Column
+          dataIndex="content"
+          title="Nội dung"
           render={(text: string | undefined | null) => {
             if (!text || text.trim() === "") {
-              return <i style={{ color: "gray" }}>Không có nội dung đánh giá</i>;
+              return (
+                <i style={{ color: "gray" }}>Không có nội dung đánh giá</i>
+              );
             }
             return text.length > 50 ? text.slice(0, 50) + "..." : text;
-          }} 
+          }}
         />
 
         <Table.Column
-            dataIndex="rating"
-            title="Đánh giá"
-            filters={[
-              { text: "1 sao", value: 1 },
-              { text: "2 sao", value: 2 },
-              { text: "3 sao", value: 3 },
-              { text: "4 sao", value: 4 },
-              { text: "5 sao", value: 5 },
-            ]}
-            onFilter={(value, record) => record.rating === value}
-            render={(value: number) => (
-              <Rate disabled value={value} style={{ fontSize: "15px" }} />
-            )}
-          />
+          dataIndex="rating"
+          title="Đánh giá"
+          filters={[
+            { text: "1 sao", value: 1 },
+            { text: "2 sao", value: 2 },
+            { text: "3 sao", value: 3 },
+            { text: "4 sao", value: 4 },
+            { text: "5 sao", value: 5 },
+          ]}
+          onFilter={(value, record) => record.rating === value}
+          render={(value: number) => (
+            <Rate disabled value={value} style={{ fontSize: "15px" }} />
+          )}
+        />
 
-
-
-          <Table.Column
-              dataIndex="status"
-              title="Trạng thái"
-              filters={[
-                { text: "Hiển thị", value: "visible" },
-                { text: "Ẩn", value: "hidden" },
-              ]}
-              onFilter={(value, record) => record.status === value}
-              render={(value: string, record: IComment) => {
-                const isVisible = value === "visible";
-                const isProductDeleted = !record.productId;
-                const switchDisabled = !isVisible && isProductDeleted;
-                return (
-                  <Popconfirm
-                    title="Bạn có chắc muốn ẩn bình luận này không?"
-                    onConfirm={() => {
-                      const newStatus = isVisible ? "hidden" : "visible";
-                      setStatus(String(record._id));
-                      mutate(
-                        {
-                          resource: "comments",
-                          id: record._id,
-                          values: { status: newStatus },
-                        },
-                        {
-                          onSuccess: () => {
-                            message.success("Cập nhật trạng thái thành công");
-                            setStatus(null);
-                          },
-                          onError: () => {
-                            message.error("Cập nhật trạng thái thất bại");
-                            setStatus(null);
-                          },
-                        }
-                      );
-                    }}
-                    disabled={!isVisible}
-                  >
-                    <Tooltip
-                      title={
-                        switchDisabled
-                          ? "Không thể chuyển sang trạng thái hiển thị vì sản phẩm đã bị xóa"
-                          : ""
-                      }
-                    >
-                      <span>
-                        <Switch
-                          checked={isVisible}
-                          checkedChildren="Hiện"
-                          unCheckedChildren="Ẩn"
-                          loading={status === String(record._id)}
-                          disabled={switchDisabled}
-                          onChange={(checked) => {
-                            if (!checked && isVisible) {
-                              // Nếu chuyển từ hiện sang ẩn thì show confirm
-                            } else {
-                              // Nếu chuyển từ ẩn sang hiện mà sản phẩm đã bị xóa thì không làm gì
-                              if (checked && isProductDeleted) {
-                                return;
-                              }
-                              const newStatus = checked ? "visible" : "hidden";
-                              setStatus(String(record._id));
-                              mutate(
-                                {
-                                  resource: "comments",
-                                  id: record._id,
-                                  values: { status: newStatus },
-                                },
-                                {
-                                  onSuccess: () => {
-                                    message.success("Cập nhật trạng thái thành công");
-                                    setStatus(null);
-                                  },
-                                  onError: () => {
-                                    message.error("Cập nhật trạng thái thất bại");
-                                    setStatus(null);
-                                  },
-                                }
-                              );
+        <Table.Column
+          dataIndex="status"
+          title="Trạng thái"
+          filters={[
+            { text: "Hiển thị", value: "visible" },
+            { text: "Ẩn", value: "hidden" },
+          ]}
+          onFilter={(value, record) => record.status === value}
+          render={(value: string, record: IComment) => {
+            const isVisible = value === "visible";
+            const isProductDeleted = !record.productId;
+            const switchDisabled = !isVisible && isProductDeleted;
+            return (
+              <Popconfirm
+                title="Bạn có chắc muốn ẩn bình luận này không?"
+                onConfirm={() => {
+                  const newStatus = isVisible ? "hidden" : "visible";
+                  setStatus(String(record._id));
+                  mutate(
+                    {
+                      resource: "comments",
+                      id: record._id,
+                      values: { status: newStatus },
+                    },
+                    {
+                      onSuccess: () => {
+                        message.success("Cập nhật trạng thái thành công");
+                        setStatus(null);
+                      },
+                      onError: () => {
+                        message.error("Cập nhật trạng thái thất bại");
+                        setStatus(null);
+                      },
+                    }
+                  );
+                }}
+                disabled={!isVisible}
+              >
+                <Tooltip
+                  title={
+                    switchDisabled
+                      ? "Không thể chuyển sang trạng thái hiển thị vì sản phẩm đã bị xóa"
+                      : ""
+                  }
+                >
+                  <span>
+                    <Switch
+                      checked={isVisible}
+                      checkedChildren="Hiện"
+                      unCheckedChildren="Ẩn"
+                      loading={status === String(record._id)}
+                      disabled={switchDisabled}
+                      onChange={(checked) => {
+                        if (!checked && isVisible) {
+                          // Nếu chuyển từ hiện sang ẩn thì show confirm
+                        } else {
+                          // Nếu chuyển từ ẩn sang hiện mà sản phẩm đã bị xóa thì không làm gì
+                          if (checked && isProductDeleted) {
+                            return;
+                          }
+                          const newStatus = checked ? "visible" : "hidden";
+                          setStatus(String(record._id));
+                          mutate(
+                            {
+                              resource: "comments",
+                              id: record._id,
+                              values: { status: newStatus },
+                            },
+                            {
+                              onSuccess: () => {
+                                message.success(
+                                  "Cập nhật trạng thái thành công"
+                                );
+                                setStatus(null);
+                              },
+                              onError: () => {
+                                message.error("Cập nhật trạng thái thất bại");
+                                setStatus(null);
+                              },
                             }
-                          }}
-                        />
-                      </span>
-                    </Tooltip>
-                  </Popconfirm>
-                );
-              }}
-          />
+                          );
+                        }
+                      }}
+                    />
+                  </span>
+                </Tooltip>
+              </Popconfirm>
+            );
+          }}
+        />
 
         <Table.Column
           dataIndex="adminReply"
