@@ -26,7 +26,7 @@ import { VariationItem } from "./VariationItem";
 import "./variation-animations.css";
 
 export const ProductCreate = () => {
-  const { formProps, saveButtonProps } = useForm({
+  const { formProps, saveButtonProps, formLoading } = useForm({
     successNotification: () => ({
       message: "🎉 Tạo sản phẩm thành công!",
       description: "Sản phẩm mới đã được thêm vào hệ thống.",
@@ -42,7 +42,6 @@ export const ProductCreate = () => {
 
   const [fileList, setFileList] = useState<UploadFile[]>([]);
   const [uploadedImageUrls, setUploadedImageUrls] = useState<string[]>([]);
-  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const { mode } = useContext(ColorModeContext);
   const colorMode = mode === "light" ? "light" : "dark";
 
@@ -174,7 +173,6 @@ export const ProductCreate = () => {
   }, [allBrands]);
 
   const handleFinish = async (values: any) => {
-    setIsSubmitting(true);
     try {
       if (uploadedImageUrls.length === 0) {
         message.error("Bạn chưa tải ảnh hoặc ảnh chưa upload xong.");
@@ -263,8 +261,6 @@ export const ProductCreate = () => {
     } catch (error) {
       message.error("Lỗi khi tạo sản phẩm!");
       console.error(error);
-    } finally {
-      setIsSubmitting(false);
     }
   };
 
@@ -277,177 +273,175 @@ export const ProductCreate = () => {
   }
 
   return (
-    <Create saveButtonProps={saveButtonProps} title="Tạo sản phẩm">
-      <Spin spinning={isSubmitting} tip="Đang xử lý...">
-        <Form {...formProps} layout="vertical" onFinish={handleFinish}>
-          <Form.Item
-            label="Tên sản phẩm"
-            name="name"
-            rules={[
-              { required: true, message: "Vui lòng nhập tên sản phẩm" },
-              { min: 3, message: "Tên sản phẩm phải có ít nhất 3 ký tự" },
-              {
-                max: 100,
-                message: "Tên sản phẩm không được vượt quá 100 ký tự",
-              },
-              {
-                pattern: /^[\p{L}0-9\s]+$/u,
-                message: "Tên sản phẩm không được chứa ký tự đặc biệt",
-              },
-            ]}
-          >
-            <Input />
-          </Form.Item>
+    <Create
+      saveButtonProps={saveButtonProps}
+      title="Tạo sản phẩm"
+      isLoading={formLoading}
+    >
+      <Form {...formProps} layout="vertical" onFinish={handleFinish}>
+        <Form.Item
+          label="Tên sản phẩm"
+          name="name"
+          rules={[
+            { required: true, message: "Vui lòng nhập tên sản phẩm" },
+            { min: 3, message: "Tên sản phẩm phải có ít nhất 3 ký tự" },
+            {
+              max: 100,
+              message: "Tên sản phẩm không được vượt quá 100 ký tự",
+            },
+            {
+              pattern: /^[\p{L}0-9\s]+$/u,
+              message: "Tên sản phẩm không được chứa ký tự đặc biệt",
+            },
+          ]}
+        >
+          <Input />
+        </Form.Item>
 
-          <Form.Item
-            label="Hình ảnh"
-            name="image"
-            valuePropName="fileList"
-            rules={[{ required: true, message: "Vui chọn hình ảnh" }]}
-            getValueFromEvent={normFile}
+        <Form.Item
+          label="Hình ảnh"
+          name="image"
+          valuePropName="fileList"
+          rules={[{ required: true, message: "Vui chọn hình ảnh" }]}
+          getValueFromEvent={normFile}
+        >
+          <Upload
+            listType="picture-card"
+            fileList={fileList}
+            onChange={handleChange}
+            maxCount={5}
+            beforeUpload={() => false}
           >
-            <Upload
-              listType="picture-card"
-              fileList={fileList}
-              onChange={handleChange}
-              maxCount={5}
-              beforeUpload={() => false}
-            >
-              {fileList.length >= 5 ? null : (
-                <div>
-                  <PlusOutlined />
-                  <div style={{ marginTop: 8 }}>Tải ảnh</div>
-                </div>
-              )}
-            </Upload>
-          </Form.Item>
+            {fileList.length >= 5 ? null : (
+              <div>
+                <PlusOutlined />
+                <div style={{ marginTop: 8 }}>Tải ảnh</div>
+              </div>
+            )}
+          </Upload>
+        </Form.Item>
 
-          <Form.Item label="Mô tả" name="description">
-            <MDEditor data-color-mode={colorMode} />
-          </Form.Item>
+        <Form.Item label="Mô tả" name="description">
+          <MDEditor data-color-mode={colorMode} />
+        </Form.Item>
 
-          <Form.Item
-            label="Danh mục"
-            name="categoryId"
-            rules={[{ required: true, message: "Vui lòng chọn danh mục" }]}
-          >
-            <Select loading={category?.isLoading}>
-              <Select.Option value={"684b9ab14a1d82d1e454b374"}>
-                Danh mục không xác định
+        <Form.Item
+          label="Danh mục"
+          name="categoryId"
+          rules={[{ required: true, message: "Vui lòng chọn danh mục" }]}
+        >
+          <Select loading={category?.isLoading}>
+            <Select.Option value={"684b9ab14a1d82d1e454b374"}>
+              Danh mục không xác định
+            </Select.Option>
+            {categoryOptions.map((item) => (
+              <Select.Option key={item.value} value={item.value}>
+                {item.label}
               </Select.Option>
-              {categoryOptions.map((item) => (
-                <Select.Option key={item.value} value={item.value}>
-                  {item.label}
-                </Select.Option>
-              ))}
-            </Select>
+            ))}
+          </Select>
+        </Form.Item>
+
+        <Form.Item
+          label="Thương hiệu"
+          name="brandId"
+          rules={[{ required: true, message: "Vui lòng chọn thương hiệu" }]}
+        >
+          <Select loading={brand?.isLoading} options={brandOptions} />
+        </Form.Item>
+
+        <Form.Item
+          label="Thuộc tính"
+          name="attributes"
+          rules={[{ required: true, message: "Thuộc tính bắt buộc nhập" }]}
+        >
+          <Form.List name="attributes">
+            {(fields, { add, remove }) => (
+              <>
+                {fields.map((field) => (
+                  <AttributeItem
+                    key={field.key}
+                    field={field}
+                    remove={remove}
+                    allAttributes={allAttributes}
+                    form={formProps.form}
+                  />
+                ))}
+                <Form.Item>
+                  <Button
+                    type="dashed"
+                    onClick={() => add()}
+                    icon={<PlusOutlined />}
+                    block
+                  >
+                    Thêm thuộc tính
+                  </Button>
+                </Form.Item>
+              </>
+            )}
+          </Form.List>
+
+          <Form.Item label={null}>
+            <Button
+              onClick={async () => {
+                try {
+                  const attributes =
+                    formProps.form?.getFieldValue("attributes");
+
+                  if (!attributes || attributes.length === 0) {
+                    message.error("Vui lòng thêm thuộc tính trước!");
+                    return;
+                  }
+                  const response = await axios.post(
+                    `${API_URL}/product/generate-variations`,
+                    {
+                      attributes,
+                    }
+                  );
+
+                  const generatedVariations = response.data.variation.map(
+                    (item: any) => ({
+                      attributes: item.attributes || [],
+                      regularPrice: 0,
+                      stock: 0,
+                    })
+                  );
+
+                  await formProps.form?.setFieldsValue({
+                    variation: generatedVariations,
+                  });
+
+                  message.success("Tạo biến thể thành công!");
+                } catch (error) {
+                  message.error("Lỗi khi tạo biến thể!");
+                }
+              }}
+            >
+              Tạo sản phẩm biến thể
+            </Button>
           </Form.Item>
 
-          <Form.Item
-            label="Thương hiệu"
-            name="brandId"
-            rules={[{ required: true, message: "Vui lòng chọn thương hiệu" }]}
-          >
-            <Select loading={brand?.isLoading} options={brandOptions} />
-          </Form.Item>
-
-          <Form.Item
-            label="Thuộc tính"
-            name="attributes"
-            rules={[{ required: true, message: "Thuộc tính bắt buộc nhập" }]}
-          >
-            <Form.List name="attributes">
-              {(fields, { add, remove }) => (
-                <>
-                  {fields.map((field) => (
-                    <AttributeItem
-                      key={field.key}
+          <Form.List name="variation">
+            {(fields, { remove }) => (
+              <TransitionGroup>
+                {fields.map((field) => (
+                  <CSSTransition
+                    key={field.key}
+                    timeout={400}
+                    classNames="variation-fade"
+                  >
+                    <VariationItem
                       field={field}
                       remove={remove}
-                      allAttributes={allAttributes}
                       form={formProps.form}
                     />
-                  ))}
-                  <Form.Item>
-                    <Button
-                      type="dashed"
-                      onClick={() => add()}
-                      icon={<PlusOutlined />}
-                      block
-                    >
-                      Thêm thuộc tính
-                    </Button>
-                  </Form.Item>
-                </>
-              )}
-            </Form.List>
-
-            <Form.Item label={null}>
-              <Button
-                onClick={async () => {
-                  setIsSubmitting(true);
-                  try {
-                    const attributes =
-                      formProps.form?.getFieldValue("attributes");
-
-                    if (!attributes || attributes.length === 0) {
-                      message.error("Vui lòng thêm thuộc tính trước!");
-                      return;
-                    }
-                    const response = await axios.post(
-                      `${API_URL}/product/generate-variations`,
-                      {
-                        attributes,
-                      }
-                    );
-
-                    const generatedVariations = response.data.variation.map(
-                      (item: any) => ({
-                        attributes: item.attributes || [],
-                        regularPrice: 0,
-                        stock: 0,
-                      })
-                    );
-
-                    await formProps.form?.setFieldsValue({
-                      variation: generatedVariations,
-                    });
-
-                    message.success("Tạo biến thể thành công!");
-                  } catch (error) {
-                    message.error("Lỗi khi tạo biến thể!");
-                  } finally {
-                    setIsSubmitting(false);
-                  }
-                }}
-                disabled={isSubmitting}
-              >
-                Tạo sản phẩm biến thể
-              </Button>
-            </Form.Item>
-
-            <Form.List name="variation">
-              {(fields, { remove }) => (
-                <TransitionGroup>
-                  {fields.map((field) => (
-                    <CSSTransition
-                      key={field.key}
-                      timeout={400}
-                      classNames="variation-fade"
-                    >
-                      <VariationItem
-                        field={field}
-                        remove={remove}
-                        form={formProps.form}
-                      />
-                    </CSSTransition>
-                  ))}
-                </TransitionGroup>
-              )}
-            </Form.List>
-          </Form.Item>
-        </Form>
-      </Spin>
+                  </CSSTransition>
+                ))}
+              </TransitionGroup>
+            )}
+          </Form.List>
+        </Form.Item>
+      </Form>
     </Create>
   );
 };

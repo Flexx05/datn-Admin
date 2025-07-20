@@ -188,6 +188,7 @@ export const ProductList = () => {
       <Table
         {...tableProps}
         rowKey="_id"
+        loading={tableProps.loading}
         rowSelection={{
           type: "checkbox",
           selectedRowKeys,

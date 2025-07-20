@@ -3,31 +3,22 @@ import { PlusOutlined } from "@ant-design/icons";
 import { Edit, useForm, useSelect } from "@refinedev/antd";
 import { HttpError } from "@refinedev/core";
 import MDEditor from "@uiw/react-md-editor";
-import {
-  Button,
-  Form,
-  Input,
-  Select,
-  Upload,
-  UploadFile,
-  message,
-  Spin,
-} from "antd";
+import { Button, Form, Input, message, Select, Upload, UploadFile } from "antd";
 import axios from "axios";
 import { useContext, useEffect, useMemo, useState } from "react";
+import { CSSTransition, TransitionGroup } from "react-transition-group";
 import { API_URL } from "../../config/dataProvider";
+import { ColorModeContext } from "../../contexts/color-mode";
 import { IAttribute } from "../../interface/attribute";
 import { IBrand } from "../../interface/brand";
 import { ICategory } from "../../interface/category";
 import { IVariation } from "../../interface/product";
 import { AttributeItem } from "./AttributeItem";
-import { VariationItem } from "./VariationItem";
-import { CSSTransition, TransitionGroup } from "react-transition-group";
 import "./variation-animations.css";
-import { ColorModeContext } from "../../contexts/color-mode";
+import { VariationItem } from "./VariationItem";
 
 export const ProductEdit = () => {
-  const { formProps, saveButtonProps, queryResult } = useForm({
+  const { formProps, saveButtonProps, queryResult, formLoading } = useForm({
     successNotification: () => ({
       message: "✅ Cập nhật sản phẩm thành công!",
       description: "Thông tin sản phẩm đã được cập nhật.",
@@ -313,20 +304,17 @@ export const ProductEdit = () => {
     }
   };
 
-  if (queryResult?.isLoading) {
-    return (
-      <div style={{ textAlign: "center", padding: "50px 0" }}>
-        <Spin size="large" />
-      </div>
-    );
-  }
-
   return (
     <Edit
       saveButtonProps={saveButtonProps}
       title="Chỉnh sửa sản phẩm"
       canDelete={false}
-      isLoading={queryResult?.isLoading}
+      isLoading={
+        formLoading ||
+        category?.isLoading ||
+        brand?.isLoading ||
+        attribute?.isLoading
+      }
     >
       <Form {...formProps} layout="vertical" onFinish={handleFinish}>
         <Form.Item
