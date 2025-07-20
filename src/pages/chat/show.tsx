@@ -3,7 +3,7 @@ import { Show } from "@refinedev/antd";
 import { useShow } from "@refinedev/core";
 import { Descriptions, Table, Tag, Typography } from "antd";
 import dayjs from "dayjs";
-import { IConversation } from "../../interface/conversation";
+import { IConversation, IStatusLog } from "../../interface/conversation";
 
 const ChatShow = () => {
   const { queryResult } = useShow<IConversation>({
@@ -92,6 +92,12 @@ const ChatShow = () => {
             <Table.Column
               title="Trạng thái"
               dataIndex={"status"}
+              filters={[
+                { text: "Hoạt động", value: "active" },
+                { text: "Đang chờ", value: "waiting" },
+                { text: "Đã đóng", value: "closed" },
+              ]}
+              onFilter={(value, record) => record.status === value}
               render={(value) => (
                 <Tag
                   color={
@@ -119,6 +125,11 @@ const ChatShow = () => {
             <Table.Column
               title="Thời gian cập nhật"
               dataIndex={"updatedAt"}
+              sorter={(a: IStatusLog, b: IStatusLog) =>
+                new Date(a.updatedAt).getTime() -
+                new Date(b.updatedAt).getTime()
+              }
+              defaultSortOrder="descend"
               render={(value: string) => (
                 <>{dayjs(value).format("HH:mm DD/MM/YYYY")}</>
               )}

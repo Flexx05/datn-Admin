@@ -35,6 +35,8 @@ const { Sider, Content } = Layout;
 
 const ChatList = () => {
   const [selectedConversation, setSelectedConversation] = useState<any>(null);
+  const [filterChatType, setFilterChatType] = useState<number>(0);
+  const [filterStatus, setFilterStatus] = useState<string>("all");
   const [hoveredConversation, setHoveredConversation] = useState<string | null>(
     null
   );
@@ -55,13 +57,32 @@ const ChatList = () => {
       message: "Lỗi khi tải danh sách hội thoại",
       description: "Vui lòng thử lại sau.",
     },
+    filters: [
+      {
+        field: "chatType",
+        operator: "eq",
+        value: filterChatType,
+      },
+      {
+        field: "status",
+        operator: "eq",
+        value: filterStatus,
+      },
+    ],
   });
 
   const invalidate = useInvalidate();
 
   useEffect(() => {
     if (id) socket.emit("join-conversation", id);
-  }, [id]);
+    socket.emit("conversation-updated", () => {
+      invalidate({
+        resource: "conversation",
+        id,
+        invalidates: ["list", "detail"],
+      });
+    });
+  }, [id, invalidate]);
 
   useEffect(() => {
     const handleChange = () => {
@@ -90,32 +111,56 @@ const ChatList = () => {
   };
 
   const chatTypeMap: Record<number, { label: string; color: string }> = {
-    1: { label: "Hỗ trợ", color: "#1890ff" }, // xanh
-    2: { label: "Đơn hàng", color: "#52c41a" }, // xanh lá
-    3: { label: "Phản hồi", color: "#faad14" }, // cam
-    4: { label: "Khác", color: "#bab9b9ff" }, // xám
+    1: { label: "Hỗ trợ", color: "#1890ff" },
+    2: { label: "Đơn hàng", color: "#52c41a" },
+    3: { label: "Phản hồi", color: "#faad14" },
+    4: { label: "Khác", color: "#ffbcbcff" },
   };
 
   const statusMap: Record<string, { label: string; color: string }> = {
-    active: { label: "Hoạt động", color: "#52c41a" },
-    waiting: { label: "Đang chờ", color: "#faad14" },
-    closed: { label: "Đã đóng", color: "#f5222d" },
+    active: { label: "Hoạt động", color: "green" },
+    waiting: { label: "Đang chờ", color: "yellow" },
+    closed: { label: "Đã đóng", color: "red" },
   };
 
   const chatData = data?.data.filter((item) => item.messages.length > 1) || [];
 
-  const popoverContent = (
+  const getPopoverStatusContent = (
+    typeMap: Record<string, { label: string; color: string }> = statusMap
+  ) => (
     <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-      {Object.entries(chatTypeMap).map(([key, { label, color }]) => (
+      {Object.entries(typeMap).map(([key, { label, color }]) => (
         <Button
           key={key}
           type="link"
           style={{
-            color: mode === "dark" ? "#fff" : "#000",
+            color: "black",
             backgroundColor: color,
             textAlign: "left",
           }}
-          onClick={() => handleChangeChatType(Number(key))}
+          onClick={() => setFilterStatus(key)}
+        >
+          {label}
+        </Button>
+      ))}
+    </div>
+  );
+
+  const getPopoverContent = (
+    onChange: (type: number) => void,
+    typeMap: Record<number, { label: string; color: string }> = chatTypeMap
+  ) => (
+    <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+      {Object.entries(typeMap).map(([key, { label, color }]) => (
+        <Button
+          key={key}
+          type="link"
+          style={{
+            color: "white",
+            backgroundColor: color,
+            textAlign: "left",
+          }}
+          onClick={() => onChange(Number(key))}
         >
           {label}
         </Button>
@@ -150,6 +195,26 @@ const ChatList = () => {
             Đoạn chat
           </Title>
         </div>
+        {/* Phân loại kiểu đoạn chat */}
+        <Popover
+          trigger={"click"}
+          content={getPopoverContent(setFilterChatType, {
+            0: { label: "Tất cả", color: "#a4a4a4ff" },
+            ...chatTypeMap,
+          })}
+        >
+          <Button>Phân loại</Button>
+        </Popover>
+        {/* Phân loại trạng thái đoạn chat */}
+        <Popover
+          trigger={"click"}
+          content={getPopoverStatusContent({
+            all: { label: "Tất cả", color: "#a4a4a4ff" },
+            ...statusMap,
+          })}
+        >
+          <Button>Trạng thái</Button>
+        </Popover>
 
         {chatData.length > 0 ? (
           chatData.map((conversation) => {
@@ -205,16 +270,6 @@ const ChatList = () => {
                           }}
                         >
                           {customer.fullName || "Khách hàng"}
-                          <Tag
-                            color={statusMap[conversation.status].color}
-                            style={{
-                              fontSize: 12,
-                              width: "fit-content",
-                              marginLeft: 8,
-                            }}
-                          >
-                            {statusMap[conversation.status].label}
-                          </Tag>
                         </Text>
                       </Col>
                       <Col span={19}>
@@ -236,6 +291,16 @@ const ChatList = () => {
                           {dayjs(conversation.lastUpdated).format("HH:mm")}
                         </Text>
                       </Col>
+                      <Tag
+                        color={statusMap[conversation.status].color}
+                        style={{
+                          fontSize: 12,
+                          width: "fit-content",
+                          marginLeft: 8,
+                        }}
+                      >
+                        {statusMap[conversation.status].label}
+                      </Tag>
                     </Row>
                   </Col>
                   <Col flex="20px">
@@ -246,8 +311,8 @@ const ChatList = () => {
                     style={{
                       fontSize: 12,
                       position: "absolute",
-                      top: -42,
-                      right: -18,
+                      top: -45,
+                      right: -15,
                     }}
                     color={chatTypeMap[conversation.chatType].color}
                   />
@@ -259,12 +324,14 @@ const ChatList = () => {
                       position: "absolute",
                       right: 16,
                       top: "50%",
+
                       transform: "translateY(-50%)",
                       zIndex: 10,
                     }}
                   >
                     <Dropdown
                       trigger={["click"]}
+                      onOpenChange={(visible) => setPopoverOpen(visible)}
                       popupRender={() => (
                         <div
                           style={{
@@ -287,7 +354,7 @@ const ChatList = () => {
                           </Button>
 
                           <Popover
-                            content={popoverContent}
+                            content={getPopoverContent(handleChangeChatType)}
                             title="Phân loại"
                             trigger="click"
                             placement="rightTop"

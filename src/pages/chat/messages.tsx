@@ -141,8 +141,8 @@ const Messages = () => {
         id,
         invalidates: ["list", "detail"],
       });
-    } catch (error) {
-      message.error("Lỗi khi gửi tin nhắn");
+    } catch (error: any) {
+      message.error("Lỗi khi gửi tin nhắn" + error.message);
     }
     setInput("");
   };
@@ -256,40 +256,30 @@ const Messages = () => {
         <div ref={messagesEndRef} />
       </div>
 
-      <Tooltip
-        title={
-          closedConversation
-            ? "Không thể nhắn tin khi đoạn chat đã kết thúc"
-            : null
-        }
-      >
-        <Space.Compact style={{ width: "100%" }}>
-          <Input
-            style={{
-              width: "100%",
-              minWidth: 0,
-              fontSize: "clamp(14px, 2.5vw, 16px)",
-              padding: screens?.xs ? "5px 7px" : undefined,
-              borderRadius: 30,
-            }}
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onPressEnter={handleSend}
-            placeholder="Nhập tin nhắn..."
-            disabled={closedConversation}
-          />
-          <Button
-            type="link"
-            icon={<SendOutlined />}
-            onClick={handleSend}
-            disabled={closedConversation}
-            style={{
-              width: screens?.xs ? 20 : 40,
-              fontSize: screens?.xs ? 13 : 16,
-            }}
-          />
-        </Space.Compact>
-      </Tooltip>
+      <Space.Compact style={{ width: "100%" }}>
+        <Input
+          style={{
+            width: "100%",
+            minWidth: 0,
+            fontSize: "clamp(14px, 2.5vw, 16px)",
+            padding: screens?.xs ? "5px 7px" : undefined,
+            borderRadius: 30,
+          }}
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          onPressEnter={handleSend}
+          placeholder="Nhập tin nhắn..."
+        />
+        <Button
+          type="link"
+          icon={<SendOutlined />}
+          onClick={handleSend}
+          style={{
+            width: screens?.xs ? 20 : 40,
+            fontSize: screens?.xs ? 13 : 16,
+          }}
+        />
+      </Space.Compact>
     </div>
   );
 };
