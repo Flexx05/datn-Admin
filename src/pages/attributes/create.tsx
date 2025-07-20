@@ -5,7 +5,7 @@ import { Button, Form, Input, Space, Switch, message } from "antd";
 import { useState } from "react";
 
 export const AttributeCreate = () => {
-  const { formProps, saveButtonProps } = useForm({
+  const { formProps, saveButtonProps, formLoading } = useForm({
     successNotification: () => ({
       message: "🎉 Thêm mới thành công",
       description: "Thuộc tính đã được thêm mới!",
@@ -20,16 +20,21 @@ export const AttributeCreate = () => {
   const [isColorMode, setIsColorMode] = useState(false);
 
   return (
-    <Create title="Tạo thuộc tính" saveButtonProps={saveButtonProps}>
+    <Create
+      title="Tạo thuộc tính"
+      saveButtonProps={saveButtonProps}
+      isLoading={formLoading}
+    >
       <Form
         {...formProps}
         layout="vertical"
-        onFinish={(values: any) => {
+        onFinish={async (values: any) => {
           try {
             if (values.name && typeof values.name === "string") {
               values.name = values.name.trim();
             }
             values.values.map((v: any) => (v = v.trim()));
+            await formProps.onFinish?.(values);
           } catch (error) {
             message.error("Có lỗi xảy ra trong quá trình xử lý.");
           }

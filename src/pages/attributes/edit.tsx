@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { Edit, useForm } from "@refinedev/antd";
-import { Form, Input, Button, Space, Switch, Spin } from "antd";
 import { MinusCircleOutlined, PlusOutlined } from "@ant-design/icons";
+import { Edit, useForm } from "@refinedev/antd";
+import { Button, Form, Input, Space, Switch } from "antd";
 import { useEffect, useState } from "react";
 import { IAttribute } from "../../interface/attribute";
 
@@ -28,19 +28,12 @@ export const AttributeEdit = () => {
     }
   }, [formProps.initialValues, formProps.form]);
 
-  if (formLoading) {
-    return (
-      <div className="flex justify-center items-center h-64">
-        <Spin size="large" />
-      </div>
-    );
-  }
-
   return (
     <Edit
       title="Chỉnh sửa thuộc tính"
       saveButtonProps={saveButtonProps}
       canDelete={false}
+      isLoading={formLoading}
     >
       <Form
         {...formProps}
