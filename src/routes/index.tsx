@@ -37,6 +37,10 @@ import RevenueOrdersStatistics from "../pages/statistics/order-statistics";
 import Messages from "../pages/chat/messages";
 import ChatShow from "../pages/chat/show";
 import ChatList from "../pages/chat/list";
+import QuickChatList from "../pages/quick-chat/list";
+import QuickChatCreate from "../pages/quick-chat/create";
+import QuickChatEdit from "../pages/quick-chat/edit";
+import QuickChatShow from "../pages/quick-chat/show";
 
 const AppRoutes = () => {
   return (
@@ -114,6 +118,14 @@ const AppRoutes = () => {
           <Route path="/statistics/order-revenue">
             <Route index element={<RevenueOrdersStatistics />} />
           </Route>
+          <Route path="/quick-chat">
+            <Route index element={<QuickChatList />} />
+            <Route path="add" element={<QuickChatCreate />} />
+            <Route path="edit/:id" element={<QuickChatEdit />} />
+            <Route path="id/:id" element={<QuickChatShow />} />
+          </Route>
+          {/* Cấm xóa */}
+          <Route path="*" element={<ErrorComponent />} />
         </Route>
         <Route
           element={
@@ -124,7 +136,6 @@ const AppRoutes = () => {
         >
           <Route path="/login" element={<Login />} />
         </Route>
-        
       </Routes>
     </div>
   );
