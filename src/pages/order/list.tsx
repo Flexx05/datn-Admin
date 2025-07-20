@@ -260,6 +260,7 @@ export const OrderList = () => {
         {...tableProps}
         dataSource={filteredData}
         rowKey="_id"
+        loading={tableProps.loading}
         scroll={{ x: 1200 }}
       >
         <Table.Column

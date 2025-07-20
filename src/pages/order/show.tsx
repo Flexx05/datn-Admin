@@ -294,16 +294,13 @@ export const OrderShow = () => {
     },
   ];
 
-  if (isLoading) {
-    return <div>Đang tải...</div>;
-  }
-
   if (!orderData) {
     return <div>Không tìm thấy đơn hàng</div>;
   }
 
   return (
     <Show
+      isLoading={isLoading}
       title={`Chi tiết đơn hàng ${orderData.orderCode}`}
       headerButtons={() => (
         <Space>
