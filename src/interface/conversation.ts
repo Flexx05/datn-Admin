@@ -35,3 +35,13 @@ export interface IStatusLog {
   updatedAt: string;
   _id: string;
 }
+
+export interface IQuickChat {
+  _id: string;
+  content: string;
+  category: number;
+  createdBy: string;
+  updatedBy: string;
+  createdAt: string;
+  updatedAt: string;
+}
