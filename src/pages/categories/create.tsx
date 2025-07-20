@@ -6,7 +6,7 @@ import { ICategory } from "../../interface/category";
 import { HttpError } from "@refinedev/core";
 
 export const CategoryCreate = () => {
-  const { formProps, saveButtonProps } = useForm({
+  const { formProps, saveButtonProps, formLoading } = useForm({
     successNotification: () => ({
       message: "🎉 Tạo danh mục thành công!",
       description: "Danh mục mới đã được thêm vào hệ thống.",
@@ -74,7 +74,11 @@ export const CategoryCreate = () => {
   };
 
   return (
-    <Create saveButtonProps={saveButtonProps} title="Tạo danh mục">
+    <Create
+      saveButtonProps={saveButtonProps}
+      title="Tạo danh mục"
+      isLoading={formLoading}
+    >
       <Form {...formProps} layout="vertical" onFinish={handleFinish}>
         <Form.Item
           label="Tên danh mục"

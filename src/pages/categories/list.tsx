@@ -52,10 +52,8 @@ export const CategoryList = () => {
   });
 
   const invalidate = useInvalidate();
-  const [loadingId, setLoadingId] = useState<string | number | null>(null);
 
   const handleChangeStatus = async (record: ICategory) => {
-    setLoadingId(record._id);
     try {
       await axios.patch(`${API_URL}/category/edit/${record._id}`, {
         parentId: record.parentId,
@@ -70,8 +68,6 @@ export const CategoryList = () => {
       });
     } catch (error) {
       message.error("Cập nhật trạng thái thất bại");
-    } finally {
-      setLoadingId(null);
     }
   };
 
@@ -193,7 +189,6 @@ export const CategoryList = () => {
               }
               confirmCancelText="Hủy"
               confirmOkText="Xóa"
-              loading={loadingId === record._id}
               hidden={isUnknown}
             />
             {record.isActive === false && (
@@ -202,7 +197,6 @@ export const CategoryList = () => {
                 onConfirm={() => handleChangeStatus(record)}
                 okText="Kích hoạt"
                 cancelText="Hủy"
-                okButtonProps={{ loading: loadingId === record._id }}
               >
                 <Button size="small" type="default">
                   Kích hoạt
@@ -234,6 +228,7 @@ export const CategoryList = () => {
       />
       <Table
         {...tableProps}
+        loading={tableProps.loading}
         rowKey="_id"
         columns={columns}
         expandable={{

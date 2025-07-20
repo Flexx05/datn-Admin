@@ -9,6 +9,7 @@ export const CategoryEdit = () => {
     formProps,
     saveButtonProps,
     queryResult: editQueryResult,
+    formLoading,
   } = useForm({
     successNotification: () => ({
       message: "🎉 Cập nhật danh mục thành công!",
@@ -85,7 +86,7 @@ export const CategoryEdit = () => {
       saveButtonProps={saveButtonProps}
       title="Cập nhật danh mục"
       canDelete={false}
-      isLoading={editQueryResult?.isLoading}
+      isLoading={formLoading}
       // Note: Thêm loading cho các trang edit khác
     >
       <Form {...formProps} layout="vertical" onFinish={handleFinish}>
