@@ -1,29 +1,21 @@
-import React from "react";
-import { useShow } from "@refinedev/core";
-import { Descriptions, Tag, Spin, Typography, Divider } from "antd";
 import { Show } from "@refinedev/antd";
-
-const { Title, Text } = Typography;
+import { useShow } from "@refinedev/core";
+import { Descriptions, Tag } from "antd";
 
 const VoucherShow = () => {
   const { queryResult } = useShow();
   const { data, isLoading } = queryResult;
   const voucher = data?.data?.data;
 
-  if (isLoading) return <Spin tip="Đang tải chi tiết voucher..." style={{ marginTop: 40 }} />;
-  
   return (
-    <Show>
-      <Title level={4} >
-        Chi tiết Voucher
-      </Title>
-      <Divider />
-      <Descriptions   bordered
+    <Show title="Chi tiết voucher" canDelete={false} isLoading={isLoading}>
+      <Descriptions
+        bordered
         column={1}
         size="middle"
         labelStyle={{ fontWeight: 600, width: "250px" }}
-        contentStyle={{ whiteSpace: "pre-wrap" }}>
-
+        contentStyle={{ whiteSpace: "pre-wrap" }}
+      >
         <Descriptions.Item label="Mã giảm giá">
           <strong>{voucher?.code}</strong>
         </Descriptions.Item>
@@ -43,21 +35,29 @@ const VoucherShow = () => {
         </Descriptions.Item>
 
         <Descriptions.Item label="Loại voucher">
-          {voucher?.voucherType === "product" && <Tag color="purple">Dành cho sản phẩm</Tag>}
-          {voucher?.voucherType === "shipping" && <Tag color="blue">Dành cho phí vận chuyển</Tag>}
+          {voucher?.voucherType === "product" && (
+            <Tag color="purple">Dành cho sản phẩm</Tag>
+          )}
+          {voucher?.voucherType === "shipping" && (
+            <Tag color="blue">Dành cho phí vận chuyển</Tag>
+          )}
         </Descriptions.Item>
 
         <Descriptions.Item label="Kiểu giảm giá">
-          {voucher?.discountType === "fixed" && <Tag color="geekblue">Giảm cố định</Tag>}
-          {voucher?.discountType === "percent" && <Tag color="volcano">Giảm phần trăm</Tag>}
+          {voucher?.discountType === "fixed" && (
+            <Tag color="geekblue">Giảm cố định</Tag>
+          )}
+          {voucher?.discountType === "percent" && (
+            <Tag color="volcano">Giảm phần trăm</Tag>
+          )}
         </Descriptions.Item>
 
         <Descriptions.Item label="Giá trị giảm">
           {voucher?.discountType === "fixed"
             ? `${voucher?.discountValue?.toLocaleString()}đ`
             : voucher?.discountType === "percent"
-              ? `${voucher?.discountValue}%`
-              : ""}
+            ? `${voucher?.discountValue}%`
+            : ""}
         </Descriptions.Item>
 
         <Descriptions.Item label="Đơn tối thiểu">
@@ -78,9 +78,15 @@ const VoucherShow = () => {
         </Descriptions.Item>
 
         <Descriptions.Item label="Trạng thái">
-          {voucher?.voucherStatus === "active" && <Tag color="green">Có hiệu lực</Tag>}
-          {voucher?.voucherStatus === "inactive" && <Tag color="yellow">Không có hiệu lực</Tag>}
-          {voucher?.voucherStatus === "expired" && <Tag color="red">Hết hạn</Tag>}
+          {voucher?.voucherStatus === "active" && (
+            <Tag color="green">Có hiệu lực</Tag>
+          )}
+          {voucher?.voucherStatus === "inactive" && (
+            <Tag color="yellow">Không có hiệu lực</Tag>
+          )}
+          {voucher?.voucherStatus === "expired" && (
+            <Tag color="red">Hết hạn</Tag>
+          )}
         </Descriptions.Item>
 
         <Descriptions.Item label="Ngày bắt đầu">
@@ -90,7 +96,7 @@ const VoucherShow = () => {
         <Descriptions.Item label="Ngày kết thúc">
           {voucher?.endDate && new Date(voucher.endDate).toLocaleString()}
         </Descriptions.Item>
-        
+
         <Descriptions.Item label="Ngày tạo">
           {voucher?.createdAt && new Date(voucher.createdAt).toLocaleString()}
         </Descriptions.Item>
@@ -98,7 +104,6 @@ const VoucherShow = () => {
         <Descriptions.Item label="Ngày cập nhật">
           {voucher?.updatedAt && new Date(voucher.updatedAt).toLocaleString()}
         </Descriptions.Item>
-
       </Descriptions>
     </Show>
   );

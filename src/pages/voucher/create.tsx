@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState } from "react";
 import { Form, Input, InputNumber, DatePicker, Select } from "antd";
 import { HttpError } from "@refinedev/core";
@@ -8,7 +9,7 @@ import { axiosInstance } from "../../utils/axiosInstance";
 const { RangePicker } = DatePicker;
 
 const VoucherCreate = () => {
-  const { formProps, saveButtonProps } = useForm({
+  const { formProps, saveButtonProps, formLoading } = useForm({
     successNotification: () => ({
       message: "Tạo voucher thành công!",
       description: "Voucher mới đã được thêm vào hệ thống.",
@@ -85,7 +86,11 @@ const VoucherCreate = () => {
   };
 
   return (
-    <Create saveButtonProps={saveButtonProps} title="Thêm mới Voucher">
+    <Create
+      saveButtonProps={saveButtonProps}
+      title="Thêm mới Voucher"
+      isLoading={formLoading}
+    >
       <Form {...formProps} layout="vertical" onFinish={handleFinish}>
         <Form.Item
           label="Loại voucher"
@@ -337,7 +342,7 @@ const VoucherCreate = () => {
               // Disable ngày trước hôm nay
               return current && current < dayjs().startOf("day");
             }}
-            disabledTime={(date, type) => {
+            disabledTime={(date) => {
               if (!date) return {};
               const isToday = date.isSame(dayjs(), "day");
 

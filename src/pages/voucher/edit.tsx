@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from "react";
-import { Form, Input, InputNumber, DatePicker, Select, message } from "antd";
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Edit, useForm } from "@refinedev/antd";
+import { DatePicker, Form, Input, InputNumber, Select } from "antd";
 import dayjs from "dayjs";
+import { useEffect, useState } from "react";
 import { axiosInstance } from "../../utils/axiosInstance";
 
 const { RangePicker } = DatePicker;
@@ -12,11 +13,7 @@ const VoucherEdit = () => {
   const [percentValue, setPercentValue] = useState<number | undefined>();
   const [maxDiscount, setMaxDiscount] = useState<number | undefined>();
 
-  const {
-    formProps,
-    saveButtonProps,
-    queryResult,
-  } = useForm({
+  const { formProps, saveButtonProps, queryResult, formLoading } = useForm({
     successNotification: () => ({
       message: "Cập nhật voucher thành công!",
       description: "Voucher đã được cập nhật.",
@@ -35,7 +32,7 @@ const VoucherEdit = () => {
   const record = queryResult?.data?.data?.data;
 
   useEffect(() => {
-     if (record) {
+    if (record) {
       setDiscountType(record.discountType);
       if (record.discountType === "fixed") {
         setFixedValue(record.discountValue);
@@ -49,18 +46,16 @@ const VoucherEdit = () => {
         dateRange: [dayjs(record.startDate), dayjs(record.endDate)],
       });
     }
-  
   }, [record, formProps.form]);
 
   const handleFinish = (values: any) => {
     const [startDate, endDate] = values.dateRange || [];
-    const now = new Date();
 
     if (startDate && endDate) {
       const start = dayjs(startDate);
       const end = dayjs(endDate);
       const now = dayjs();
-    
+
       // 1. Ngày bắt đầu > ngày kết thúc
       if (start.isAfter(end)) {
         formProps.form?.setFields([
@@ -71,24 +66,25 @@ const VoucherEdit = () => {
         ]);
         return;
       }
-    
+
       // 2. Thời gian kết thúc không sau ít nhất 1 phút
       if (end.diff(start, "minute") < 1) {
         formProps.form?.setFields([
           {
             name: "dateRange",
-            errors: ["Thời gian kết thúc phải sau thời gian bắt đầu ít nhất 1 phút"],
+            errors: [
+              "Thời gian kết thúc phải sau thời gian bắt đầu ít nhất 1 phút",
+            ],
           },
         ]);
         return;
       }
-    
+
       // 3. Nếu được chỉnh ngày bắt đầu, không cho phép chỉnh về quá khứ
-      const isStartDateEditable =
-        !(
-          record?.voucherStatus === "active" ||
-          dayjs(record?.startDate).isBefore(now, "minute")
-        );
+      const isStartDateEditable = !(
+        record?.voucherStatus === "active" ||
+        dayjs(record?.startDate).isBefore(now, "minute")
+      );
       if (isStartDateEditable && start.isBefore(now)) {
         formProps.form?.setFields([
           {
@@ -99,7 +95,6 @@ const VoucherEdit = () => {
         return;
       }
     }
-    
 
     const payload = {
       ...values,
@@ -112,7 +107,11 @@ const VoucherEdit = () => {
   };
 
   return (
-    <Edit saveButtonProps={saveButtonProps} title="Cập nhật Voucher">
+    <Edit
+      saveButtonProps={saveButtonProps}
+      title="Cập nhật Voucher"
+      isLoading={formLoading}
+    >
       <Form {...formProps} layout="vertical" onFinish={handleFinish}>
         <Form.Item
           label="Loại voucher"
@@ -121,63 +120,71 @@ const VoucherEdit = () => {
         >
           <Select placeholder="Chọn loại voucher">
             <Select.Option value="product">Dành cho sản phẩm</Select.Option>
-            <Select.Option value="shipping">Dành cho phí vận chuyển</Select.Option>
+            <Select.Option value="shipping">
+              Dành cho phí vận chuyển
+            </Select.Option>
           </Select>
         </Form.Item>
 
-          <Form.Item
-                  label="Mã giảm giá"
-                  name="code"
-                  rules={[
-                    { required: true, message: "Vui lòng nhập mã giảm giá" },
-                    { min: 3, message: "Mã giảm giá phải có ít nhất 3 ký tự" },
-                    {
-                      pattern: /^[A-Z0-9]+$/,
-                      message: "Mã giảm giá chỉ chứa chữ in hoa và số (Không bao gồm khoảng trắng)",
-                    },
-                  
-                    {
-                      validator: async (_, value) => {
-                        if (!value || value.trim().length === 0) {
-                          return Promise.resolve();
-                        }
-                    
-                        // Cho phép giữ nguyên nếu không thay đổi mã
-                        if (value.trim().toLowerCase() === record?.code?.trim().toLowerCase()) {
-                          return Promise.resolve();
-                        }
-                    
-                        try {
-                          const response = await axiosInstance(`/vouchers?code=${value.trim()}&isDeleted=all`);
-                          const data = response?.data?.docs || [];
-                    
-                          const duplicate = data.find(
-                            (v: any) =>
-                              v.code.trim().toLowerCase() === value.trim().toLowerCase() &&
-                              v._id !== record?._id // Không phải chính voucher đang sửa
-                          );
-                    
-                          if (duplicate) {
-                            if (duplicate.isDeleted) {
-                              return Promise.reject(
-                                "Mã giảm giá này đã từng tồn tại (hiện đang bị xóa). Vui lòng dùng mã khác hoặc khôi phục mã cũ."
-                              );
-                            }
-                            return Promise.reject("Mã giảm giá đã tồn tại");
-                          }
-                        } catch (error) {
-                          console.error("Lỗi kiểm tra mã:", error);
-                          return Promise.reject("Không thể kiểm tra mã giảm giá. Vui lòng thử lại.");
-                        }
-                    
-                        return Promise.resolve();
-                      },
+        <Form.Item
+          label="Mã giảm giá"
+          name="code"
+          rules={[
+            { required: true, message: "Vui lòng nhập mã giảm giá" },
+            { min: 3, message: "Mã giảm giá phải có ít nhất 3 ký tự" },
+            {
+              pattern: /^[A-Z0-9]+$/,
+              message:
+                "Mã giảm giá chỉ chứa chữ in hoa và số (Không bao gồm khoảng trắng)",
+            },
+
+            {
+              validator: async (_, value) => {
+                if (!value || value.trim().length === 0) {
+                  return Promise.resolve();
+                }
+
+                // Cho phép giữ nguyên nếu không thay đổi mã
+                if (
+                  value.trim().toLowerCase() ===
+                  record?.code?.trim().toLowerCase()
+                ) {
+                  return Promise.resolve();
+                }
+
+                try {
+                  const response = await axiosInstance(
+                    `/vouchers?code=${value.trim()}&isDeleted=all`
+                  );
+                  const data = response?.data?.docs || [];
+
+                  const duplicate = data.find(
+                    (v: any) =>
+                      v.code.trim().toLowerCase() ===
+                        value.trim().toLowerCase() && v._id !== record?._id // Không phải chính voucher đang sửa
+                  );
+
+                  if (duplicate) {
+                    if (duplicate.isDeleted) {
+                      return Promise.reject(
+                        "Mã giảm giá này đã từng tồn tại (hiện đang bị xóa). Vui lòng dùng mã khác hoặc khôi phục mã cũ."
+                      );
                     }
-                    
-                  ]}
-                  
-                >
-             <Input placeholder="Nhập mã giảm giá" />
+                    return Promise.reject("Mã giảm giá đã tồn tại");
+                  }
+                } catch (error) {
+                  console.error("Lỗi kiểm tra mã:", error);
+                  return Promise.reject(
+                    "Không thể kiểm tra mã giảm giá. Vui lòng thử lại."
+                  );
+                }
+
+                return Promise.resolve();
+              },
+            },
+          ]}
+        >
+          <Input placeholder="Nhập mã giảm giá" />
         </Form.Item>
 
         <Form.Item label="Link" name="link">
@@ -210,8 +217,7 @@ const VoucherEdit = () => {
           name="discountType"
           rules={[{ required: true, message: "Vui lòng chọn kiểu giảm giá" }]}
         >
-
-        <Select
+          <Select
             onChange={(value) => {
               setDiscountType(value);
               if (value === "fixed") {
@@ -264,9 +270,7 @@ const VoucherEdit = () => {
           <InputNumber
             style={{ width: "100%" }}
             placeholder={
-              discountType === "fixed"
-                ? "Nhập số tiền giảm"
-                : "Nhập % giảm"
+              discountType === "fixed" ? "Nhập số tiền giảm" : "Nhập % giảm"
             }
           />
         </Form.Item>
@@ -303,9 +307,11 @@ const VoucherEdit = () => {
             },
             {
               validator: (_, value) => {
-                const discountType = formProps.form?.getFieldValue("discountType");
-                const discountValue = formProps.form?.getFieldValue("discountValue");
-        
+                const discountType =
+                  formProps.form?.getFieldValue("discountType");
+                const discountValue =
+                  formProps.form?.getFieldValue("discountValue");
+
                 if (discountType === "fixed") {
                   if (
                     typeof value === "number" &&
@@ -317,10 +323,10 @@ const VoucherEdit = () => {
                     );
                   }
                 }
-        
+
                 return Promise.resolve();
               },
-            },    
+            },
           ]}
         >
           <InputNumber
@@ -361,13 +367,12 @@ const VoucherEdit = () => {
           />
         </Form.Item>
 
-
-                
-
         <Form.Item
           label="Thời gian áp dụng"
           name="dateRange"
-          rules={[{ required: true, message: "Vui lòng chọn thời gian áp dụng" }]}
+          rules={[
+            { required: true, message: "Vui lòng chọn thời gian áp dụng" },
+          ]}
         >
           <RangePicker
             showTime
@@ -399,11 +404,12 @@ const VoucherEdit = () => {
               return {};
             }}
             // Chỉ cho chỉnh ngày bắt đầu nếu voucher chưa active và ngày bắt đầu chưa qua
-            disabled={[ 
-              record?.voucherStatus === "active" || dayjs(record?.startDate).isBefore(dayjs(), "minute"), // disable startDate
-              false // endDate vẫn cho chỉnh
+            disabled={[
+              record?.voucherStatus === "active" ||
+                dayjs(record?.startDate).isBefore(dayjs(), "minute"), // disable startDate
+              false, // endDate vẫn cho chỉnh
             ]}
-        />
+          />
         </Form.Item>
       </Form>
     </Edit>

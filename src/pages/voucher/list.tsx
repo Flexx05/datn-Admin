@@ -70,7 +70,7 @@ const VoucherList = () => {
       socket.disconnect();
     };
   }, [invalidate]);
-  
+
   // Xử lý xóa mềm voucher (chuyển vào thùng rác)
   const handleDelete = useCallback(
     async (id: string) => {
@@ -190,7 +190,7 @@ const VoucherList = () => {
         style={{ marginBottom: 16, maxWidth: 300 }}
       />
 
-      <Table {...tableProps} rowKey="_id">
+      <Table {...tableProps} rowKey="_id" loading={tableProps.loading}>
         <Table.Column title="STT" render={(_, __, index) => index + 1} />
         <Table.Column title="Mã giảm giá" dataIndex="code" />
 
