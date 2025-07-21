@@ -10,8 +10,9 @@ import { Link } from "react-router-dom";
 import { IBrand } from "../../interface/brand";
 import { ICategory } from "../../interface/category";
 import { IProduct } from "../../interface/product";
-import LineChartComponent from "./LineChartComponent";
 import TopSellingProducts from "./TopSellingProducts";
+import OrderRevenueLineChart from "./OrderRevenueLineChart";
+import OrderPaymentPieChart from "./OrderPaymentPieChart";
 import PieChartComponent from "./PieChartComponent";
 import OrderNearly from "./OrderNearly";
 
@@ -130,11 +131,17 @@ export const Dashboard: React.FC = () => {
       </Row>
 
       <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
-        <Col xs={24} md={12}>
-          <LineChartComponent />
+        <Col xs={24} md={13}>
+          <OrderRevenueLineChart />
+        </Col>
+        <Col xs={24} md={11}>
+          <PieChartComponent />
         </Col>
         <Col xs={24} md={12}>
-          <PieChartComponent />
+          <OrderPaymentPieChart />
+        </Col>
+        <Col xs={24} md={12}>
+            {/* Để làm top danh mục */}
         </Col>
       </Row>
 

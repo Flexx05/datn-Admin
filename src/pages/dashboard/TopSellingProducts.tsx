@@ -11,7 +11,7 @@ type Props = {
 
 const TopSellingProducts = ({ productsData, ordersData, isLoading }: Props) => {
   const orderSuccess = ordersData?.data?.filter(
-    (order: any) => order.status === 4
+    (order: any) => order.status === 4 && order.paymentStatus === 1
   );
 
   // Tính tổng số lượng bán cho từng sản phẩm
