@@ -1,13 +1,19 @@
+/* eslint-disable @typescript-eslint/no-non-null-assertion */
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import { SendOutlined, ThunderboltOutlined } from "@ant-design/icons";
 import { useInvalidate, useList, useOne } from "@refinedev/core";
 import {
   Avatar,
   Button,
+  Dropdown,
   Grid,
   Input,
   List,
+  Menu,
   message,
+  Popover,
   Space,
+  Spin,
   Tooltip,
   Typography,
 } from "antd";
@@ -15,20 +21,28 @@ import dayjs from "dayjs";
 import { useContext, useEffect, useRef, useState } from "react";
 import { Link, useParams } from "react-router";
 import { ColorModeContext } from "../../contexts/color-mode";
-import { IConversation, IMessage } from "../../interface/conversation";
+import {
+  IConversation,
+  IMessage,
+  IQuickChat,
+} from "../../interface/conversation";
 import { INotification } from "../../interface/notification";
 import { socket, useChatSocket } from "../../socket";
 import { axiosInstance } from "../../utils/axiosInstance";
 import CloseConversation from "./CloseConversation";
-import { SendOutlined } from "@ant-design/icons";
 
 type DisplayMessage = IMessage & { type?: "user"; senderRole?: string };
 
 // TODO: thêm Icon và xử lý logic thêm ảnh
+// TODO: Tích hợp chat nhanh
 
 const Messages = () => {
   const { id } = useParams<string>();
   const [input, setInput] = useState("");
+  const [searchTerm, setSearchTerm] = useState<string>("");
+  const [displayMessages, setDisplayMessages] = useState<DisplayMessage[]>([]);
+  const [filterCategory, setFilterCategory] = useState<number>(0);
+
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { mode } = useContext(ColorModeContext);
   const colorMode = mode === "dark" ? "#1a1a1a" : "white";
@@ -47,7 +61,6 @@ const Messages = () => {
   });
 
   const conversation = data?.data;
-  const [displayMessages, setDisplayMessages] = useState<DisplayMessage[]>([]);
 
   // ✅ Gán displayMessages ban đầu từ conversation
   useEffect(() => {
@@ -113,6 +126,7 @@ const Messages = () => {
     },
   });
 
+  // ✅ Hành động gửi tin nhắn
   const handleSend = async () => {
     if (!input.trim()) return;
     try {
@@ -148,6 +162,75 @@ const Messages = () => {
   };
 
   const closedConversation = conversation?.status === "closed";
+
+  // ✅ Hành động gửi tin nhắn nhanh
+  const {
+    data: quickChat,
+    refetch,
+    isLoading: isLoadingQuickChat,
+    isFetching,
+  } = useList<IQuickChat>({
+    resource: "quick-chat",
+    meta: {
+      _limit: "off",
+    },
+    filters: [
+      {
+        field: "search",
+        operator: "contains",
+        value: searchTerm,
+      },
+      {
+        field: "category",
+        operator: "eq",
+        value: filterCategory,
+      },
+    ],
+    pagination: { mode: "off" },
+    queryOptions: {
+      // 👇 dùng searchTerm làm key để trigger lại
+      queryKey: ["quick-chat", "search", searchTerm],
+      enabled: !!searchTerm || searchTerm === "", // để cho phép fetch khi search
+    },
+  });
+
+  useEffect(() => {
+    const delayDebounce = setTimeout(() => {
+      refetch();
+    }, 400); // debounce 400ms
+
+    return () => clearTimeout(delayDebounce);
+  }, [searchTerm, filterCategory, refetch]);
+
+  const categoryMap: Record<number, string> = {
+    0: "Tất cả",
+    1: "Chung",
+    2: "Đơn hàng",
+    3: "Thanh toán",
+    4: "Vận chuyển",
+    5: "Hóa đơn",
+    6: "Khác",
+  };
+
+  const getPopoverCategoryContent = (
+    <div
+      style={{ display: "flex", flexDirection: "column", gap: 8, zIndex: 100 }}
+    >
+      {Object.entries(categoryMap).map(([key, label]) => (
+        <Button
+          key={key}
+          type="link"
+          style={{
+            color: mode === "dark" ? "white" : "black",
+            textAlign: "left",
+          }}
+          onClick={() => setFilterCategory(Number(key))}
+        >
+          {label}
+        </Button>
+      ))}
+    </div>
+  );
 
   return (
     <div style={{ width: "100%", maxWidth: "auto", margin: "0 auto" }}>
@@ -257,13 +340,59 @@ const Messages = () => {
       </div>
 
       <Space.Compact style={{ width: "100%" }}>
+        <Tooltip title={"Tin nhắn nhanh"}>
+          <Dropdown
+            placement="topLeft"
+            trigger={["click"]}
+            popupRender={() => (
+              <>
+                {isLoadingQuickChat && isFetching ? (
+                  <Spin />
+                ) : (
+                  <Menu
+                    items={quickChat?.data?.map((item: IQuickChat) => ({
+                      key: item._id,
+                      label: item.content,
+                    }))}
+                    onClick={({ key }) => {
+                      const selected = quickChat?.data?.find(
+                        (item: IQuickChat) => item._id === key
+                      );
+                      if (selected) setInput(selected.content);
+                    }}
+                  />
+                )}
+                <div style={{ padding: 8, display: "flex", gap: 10 }}>
+                  <Input
+                    placeholder="Tìm tin nhắn nhanh..."
+                    value={searchTerm}
+                    onChange={(e) => {
+                      setSearchTerm(e.target.value);
+                      setInput(e.target.value);
+                    }}
+                  />
+                  <Popover
+                    content={getPopoverCategoryContent}
+                    trigger="click"
+                    getPopupContainer={(trigger) => trigger.parentElement!}
+                  >
+                    <Button>Mục</Button>
+                  </Popover>
+                </div>
+              </>
+            )}
+          >
+            <Button icon={<ThunderboltOutlined />} type="link" />
+          </Dropdown>
+        </Tooltip>
+
         <Input
           style={{
             width: "100%",
             minWidth: 0,
             fontSize: "clamp(14px, 2.5vw, 16px)",
             padding: screens?.xs ? "5px 7px" : undefined,
-            borderRadius: 30,
+            borderRadius: "20px",
           }}
           value={input}
           onChange={(e) => setInput(e.target.value)}
@@ -275,6 +404,8 @@ const Messages = () => {
           icon={<SendOutlined />}
           onClick={handleSend}
           style={{
+            borderTopRightRadius: 30,
+            borderBottomRightRadius: 30,
             width: screens?.xs ? 20 : 40,
             fontSize: screens?.xs ? 13 : 16,
           }}
