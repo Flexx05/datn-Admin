@@ -14,6 +14,7 @@ const TopSellingProducts = ({ productsData, ordersData, isLoading }: Props) => {
     (order: any) => order.status === 4 && order.paymentStatus === 1
   );
 
+
   // Tính tổng số lượng bán cho từng sản phẩm
   const productSales: Record<string, number> = {};
   orderSuccess?.forEach((order: any) => {
@@ -26,7 +27,7 @@ const TopSellingProducts = ({ productsData, ordersData, isLoading }: Props) => {
   // Lấy top 10 productId bán chạy nhất
   const topProductIds = Object.entries(productSales)
     .sort((a, b) => b[1] - a[1])
-    .slice(0, 10)
+    .slice(0, 20)
     .map(([productId]) => productId);
 
   // Lấy thông tin chi tiết sản phẩm từ productsData
@@ -38,8 +39,8 @@ const TopSellingProducts = ({ productsData, ordersData, isLoading }: Props) => {
       })
       .filter(
         (item): item is IProduct & { totalSold: number } => item !== null
-      ) || [];
-
+      ).slice(0,10) || [];
+    
   return (
     <List
       dataSource={topProducts}

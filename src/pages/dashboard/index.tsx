@@ -15,6 +15,8 @@ import OrderRevenueLineChart from "./OrderRevenueLineChart";
 import OrderPaymentPieChart from "./OrderPaymentPieChart";
 import PieChartComponent from "./PieChartComponent";
 import OrderNearly from "./OrderNearly";
+import TopSellingCategories from "./TopSellingCategories";
+
 
 const { Title } = Typography;
 
@@ -141,7 +143,11 @@ export const Dashboard: React.FC = () => {
           <OrderPaymentPieChart />
         </Col>
         <Col xs={24} md={12}>
-            {/* Để làm top danh mục */}
+          <TopSellingCategories
+            productsData={productsData?.data ?? []}
+            ordersData={ordersData}
+            isLoading={isLoadingProducts || isLoadingOrders}
+          />
         </Col>
       </Row>
 
