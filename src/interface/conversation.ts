@@ -40,8 +40,14 @@ export interface IQuickChat {
   _id: string;
   content: string;
   category: number;
-  createdBy: string;
-  updatedBy: string;
+  createdBy: {
+    _id: string;
+    fullName: string;
+  };
+  updatedBy: {
+    _id: string;
+    fullName: string;
+  };
   createdAt: string;
   updatedAt: string;
 }
