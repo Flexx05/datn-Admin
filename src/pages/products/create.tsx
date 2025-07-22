@@ -3,16 +3,7 @@ import { PlusOutlined } from "@ant-design/icons";
 import { Create, useForm, useSelect } from "@refinedev/antd";
 import { HttpError } from "@refinedev/core";
 import MDEditor from "@uiw/react-md-editor";
-import {
-  Button,
-  Form,
-  Input,
-  Select,
-  Spin,
-  Upload,
-  UploadFile,
-  message,
-} from "antd";
+import { Button, Form, Input, Select, Upload, UploadFile, message } from "antd";
 import axios from "axios";
 import { useContext, useMemo, useState } from "react";
 import { CSSTransition, TransitionGroup } from "react-transition-group";
@@ -21,6 +12,7 @@ import { ColorModeContext } from "../../contexts/color-mode";
 import { IAttribute } from "../../interface/attribute";
 import { IBrand } from "../../interface/brand";
 import { ICategory } from "../../interface/category";
+import LoadingShoes from "../../utils/loading";
 import { AttributeItem } from "./AttributeItem";
 import { VariationItem } from "./VariationItem";
 import "./variation-animations.css";
@@ -265,11 +257,7 @@ export const ProductCreate = () => {
   };
 
   if (category?.isLoading || brand?.isLoading || attribute?.isLoading) {
-    return (
-      <div style={{ textAlign: "center", padding: "50px 0" }}>
-        <Spin size="large" />
-      </div>
-    );
+    return <LoadingShoes />;
   }
 
   return (

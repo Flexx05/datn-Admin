@@ -6,7 +6,7 @@ import {
   useState,
 } from "react";
 import { IUser } from "../../interface/user";
-import { Spin } from "antd";
+import LoadingShoes from "../../utils/loading";
 
 interface AuthContextType {
   user: IUser | null;
@@ -49,7 +49,7 @@ export const AuthContextProvider = ({ children }: { children: ReactNode }) => {
     setToken(null);
   };
 
-  if (isLoading) return <Spin />;
+  if (isLoading) return <LoadingShoes />;
 
   return (
     <AuthContext.Provider
