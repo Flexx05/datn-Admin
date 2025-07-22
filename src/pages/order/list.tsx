@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import React, { useEffect, useMemo, useState } from "react";
 import {
   CheckOutlined,
   CloseOutlined,
@@ -9,50 +10,240 @@ import {
 import { List, useTable } from "@refinedev/antd";
 import { useInvalidate } from "@refinedev/core";
 import axios from "axios";
-import { useEffect, useMemo, useState } from "react";
-import { Link } from "react-router";
-import { API_URL } from "../../config/dataProvider";
-import { socket } from "../../socket";
-import { formatCurrency } from "./formatCurrency";
-
+import { Link } from "react-router-dom";
 import {
-  Input as AntInput,
-  Select as AntSelect,
-  Button,
-  Form,
-  Input,
-  message,
-  Modal,
-  Popconfirm,
   Space,
   Table,
   Tag,
+  Input,
+  Select,
+  Button,
+  Form,
+  Modal,
+  Popconfirm,
   Tooltip,
+  Input as AntInput,
+  message,
+  Tabs,
 } from "antd";
+
+import { API_URL } from "../../config/dataProvider";
+import { socket } from "../../socket";
+import { formatCurrency } from "./formatCurrency";
 import { Order } from "../../interface/order";
 import { statusMap } from "../dashboard/statusMap";
+
+// Định nghĩa interface cho yêu cầu hoàn hàng
+interface ReturnRequest {
+  _id: string;
+  orderId: {
+    _id: string;
+    orderCode: string;
+    totalAmount: number;
+    userId: string;
+  };
+  products: {
+    productId: string;
+    quantity: number;
+    price: number;
+    _id: string;
+  }[];
+  reason: string;
+  refundAmount: number;
+  status: number;
+  createdAt: string;
+  updatedAt: string;
+}
 
 const paymentStatusMap: Record<number, { text: string; color: string }> = {
   0: { text: "Chưa thanh toán", color: "orange" },
   1: { text: "Đã thanh toán", color: "green" },
   2: { text: "Hoàn tiền", color: "blue" },
-  3: { text: "Đã hủy", color: "red" },
+  3: { text: "Đã hủy", color: "red" },
+};
+
+const returnStatusMap: Record<number, { text: string; color: string }> = {
+  0: { text: "Chờ duyệt", color: "orange" },
+  1: { text: "Đã chấp nhận", color: "green" },
+  2: { text: "Đã nhận hàng", color: "blue" },
+  3: { text: "Đã hoàn tiền", color: "green" },
+  4: { text: "Đã từ chối", color: "red" },
 };
 
 const cancelReasons = [
-  "Bão lũ giao hàng không được",
-  "Shipper ốm",
-  "Hết hàng",
+  "Bão lũ giao hàng không được",
+  "Shipper ốm",
+  "Hết hàng",
   "Khác",
 ];
 
-export const OrderList = () => {
+// Component xử lý hành động cho yêu cầu hoàn hàng
+const ReturnRequestActions: React.FC<{
+  record: ReturnRequest;
+  loadingId: string | null;
+  onChangeReturnStatus: (record: ReturnRequest, newStatus: number) => Promise<void>;
+}> = ({ record, loadingId, onChangeReturnStatus }) => {
+  const isLoading = loadingId === record._id;
+
+  switch (record.status) {
+    case 0: // Chờ duyệt
+      return (
+        <Space>
+          <Popconfirm
+            title="Chấp nhận yêu cầu hoàn hàng?"
+            onConfirm={() => onChangeReturnStatus(record, 1)}
+            okText="Chấp nhận"
+            cancelText="Hủy"
+            okButtonProps={{ loading: isLoading }}
+          >
+            <Button size="small" type="primary" icon={<CheckOutlined />} loading={isLoading}>
+              Chấp nhận
+            </Button>
+          </Popconfirm>
+          <Popconfirm
+            title="Từ chối yêu cầu hoàn hàng?"
+            onConfirm={() => onChangeReturnStatus(record, 4)}
+            okText="Từ chối"
+            cancelText="Hủy"
+            okButtonProps={{ loading: isLoading }}
+          >
+            <Button size="small" danger icon={<CloseOutlined />} loading={isLoading}>
+              Từ chối
+            </Button>
+          </Popconfirm>
+        </Space>
+      );
+    case 1: // Đã chấp nhận
+      return (
+        <Space>
+          <Popconfirm
+            title="Xác nhận đã nhận hàng hoàn?"
+            onConfirm={() => onChangeReturnStatus(record, 2)}
+            okText="Xác nhận"
+            cancelText="Hủy"
+            okButtonProps={{ loading: isLoading }}
+          >
+            <Button size="small" type="primary" icon={<TruckOutlined />} loading={isLoading}>
+              Đã nhận hàng
+            </Button>
+          </Popconfirm>
+        </Space>
+      );
+    case 2: // Đã nhận hàng
+      return (
+        <Space>
+          <Popconfirm
+            title="Xác nhận đã hoàn tiền?"
+            onConfirm={() => onChangeReturnStatus(record, 3)}
+            okText="Xác nhận"
+            cancelText="Hủy"
+            okButtonProps={{ loading: isLoading }}
+          >
+            <Button size="small" type="primary" icon={<CheckOutlined />} loading={isLoading}>
+              Đã hoàn tiền
+            </Button>
+          </Popconfirm>
+        </Space>
+      );
+    case 3: // Đã hoàn tiền
+    case 4: // Đã từ chối
+      return null;
+    default:
+      return null;
+  }
+};
+
+// Component xử lý hành động (Action buttons) tùy trạng thái đơn hàng
+const OrderActions: React.FC<{
+  record: Order;
+  loadingId: string | null;
+  onChangeStatus: (
+    record: Order,
+    newStatus: number,
+    reason?: string,
+    paymentStatus?: number
+  ) => Promise<void>;
+  onShowCancelModal: (id: string) => void;
+}> = ({ record, loadingId, onChangeStatus, onShowCancelModal }) => {
+  const isLoading = loadingId === record._id;
+
+  switch (record.status) {
+    case 0:
+      return (
+        <Space>
+          <Popconfirm
+            title="Xác nhận đơn hàng này?"
+            onConfirm={() => onChangeStatus(record, 1)}
+            okText="Xác nhận"
+            cancelText="Hủy"
+            okButtonProps={{ loading: isLoading }}
+          >
+            <Button size="small" type="primary" icon={<CheckOutlined />} loading={isLoading}>
+              Xác nhận
+            </Button>
+          </Popconfirm>
+          <Button
+            size="small"
+            danger
+            icon={<CloseOutlined />}
+            onClick={() => onShowCancelModal(record._id)}
+          >
+            Hủy
+          </Button>
+        </Space>
+      );
+
+    case 1:
+      return (
+        <Space>
+          <Button
+            size="small"
+            icon={<TruckOutlined />}
+            onClick={() => onChangeStatus(record, 2)}
+          >
+            Giao hàng
+          </Button>
+          <Button
+            size="small"
+            danger
+            icon={<CloseOutlined />}
+            onClick={() => onShowCancelModal(record._id)}
+          >
+            Hủy
+          </Button>
+        </Space>
+      );
+
+    case 2:
+      return (
+        <Button
+          size="small"
+          type="primary"
+          icon={<CheckOutlined />}
+          onClick={() => onChangeStatus(record, 3)}
+        >
+          Đã giao
+        </Button>
+      );
+
+    case 6:
+      return (
+        <Tag color="cyan" icon={<UndoOutlined />}>
+          Hoàn hàng
+        </Tag>
+      );
+
+    default:
+      return null;
+  }
+};
+
+export const OrderList: React.FC = () => {
   const { tableProps } = useTable<Order>({
     syncWithLocation: true,
     resource: "order",
     errorNotification: (error: any) => ({
-      message:
-        "❌ Lỗi hệ thống " + (error.response?.data?.message || error.message),
+      message: "❌ Lỗi hệ thống " + (error.response?.data?.message || error.message),
       description: "Có lỗi xảy ra trong quá trình xử lý.",
       type: "error",
     }),
@@ -65,66 +256,170 @@ export const OrderList = () => {
   });
 
   const invalidate = useInvalidate();
+
   const [loadingId, setLoadingId] = useState<string | null>(null);
-  const [searchText, setSearchText] = useState<string>("");
-  const [orderStatusFilter, setOrderStatusFilter] = useState<
-    number | undefined
-  >(undefined);
-  const [paymentStatusFilter, setPaymentStatusFilter] = useState<
-    number | undefined
-  >(undefined);
+  const [searchText, setSearchText] = useState("");
+  const [orderStatusFilter, setOrderStatusFilter] = useState<number | undefined>();
+  const [paymentStatusFilter, setPaymentStatusFilter] = useState<number | undefined>();
+  const [returnStatusFilter, setReturnStatusFilter] = useState<number | undefined>();
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<"all" | "returnRequests">("all");
+  const [returnRequests, setReturnRequests] = useState<ReturnRequest[]>([]);
+
   const [form] = Form.useForm();
 
-  // Filter logic
-  const filteredData = useMemo(() => {
-    if (!tableProps.dataSource) return [];
-    let filtered: Order[] = [...tableProps.dataSource];
-    if (searchText) {
-      const lower = searchText.toLowerCase();
-      filtered = filtered.filter(
-        (order) =>
-          order.recipientInfo?.name?.toLowerCase().includes(lower) ||
-          order.recipientInfo?.phone?.toLowerCase().includes(lower) ||
-          order.recipientInfo?.email?.toLowerCase().includes(lower) ||
-          order.orderCode?.toLowerCase().includes(lower)
-      );
+  // Fetch return requests từ API
+  useEffect(() => {
+    if (activeTab === "returnRequests") {
+      const fetchReturnRequests = async () => {
+        try {
+          const response = await axios.get(`${API_URL}/return-requests`, {
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${localStorage.getItem("token")}`,
+            },
+          });
+          setReturnRequests(response.data.data?.returnRequests || []);
+        } catch (error: any) {
+          message.error("Lỗi khi tải danh sách yêu cầu hoàn hàng");
+          console.error(error);
+        }
+      };
+      fetchReturnRequests();
     }
-    if (orderStatusFilter !== undefined) {
-      filtered = filtered.filter((order) => order.status === orderStatusFilter);
-    }
-    if (paymentStatusFilter !== undefined) {
-      filtered = filtered.filter(
-        (order) => order.paymentStatus === paymentStatusFilter
-      );
-    }
-    filtered.sort(
-      (a, b) =>
-        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-    );
-    return filtered;
-  }, [
-    tableProps.dataSource,
-    searchText,
-    orderStatusFilter,
-    paymentStatusFilter,
-  ]);
+  }, [activeTab]);
 
-  // Cập nhật danh sách đơn hàng realtime
+  // Xử lý thay đổi trạng thái yêu cầu hoàn hàng
+  const handleChangeReturnStatus = async (record: ReturnRequest, newStatus: number) => {
+    setLoadingId(record._id);
+    try {
+      // If status is 3 (Đã hoàn tiền), process refund and update order's totalAmount
+      if (newStatus === 3) {
+        const refundResponse = await axios.post(
+          `${API_URL}/wallet/cancel-refund`,
+          {
+            orderId: record.orderId._id,
+            type: "refund",
+            amount: record.refundAmount,
+            status: 1, 
+            description: `Hoàn tiền cho yêu cầu hoàn hàng đơn ${record.orderId.orderCode}: ${record.reason}`,
+            returnRequestId: record._id,
+          },
+          {
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${localStorage.getItem("token")}`,
+            },
+          }
+        );
+
+        if (!refundResponse.data.success) {
+          throw new Error(refundResponse.data.message || "Refund request failed");
+        }
+
+        // Update order's totalAmount
+        const orderResponse = await axios.patch(
+          `${API_URL}/order/update-total/${record.orderId._id}`,
+          {
+            refundAmount: record.refundAmount,
+          },
+          {
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${localStorage.getItem("token")}`,
+            },
+          }
+        );
+
+        if (!orderResponse.data.success) {
+          throw new Error(orderResponse.data.message || "Failed to update order totalAmount");
+        }
+      }
+
+      // Update return request status
+      await axios.patch(
+        `${API_URL}/return-requests/${record._id}/status`,
+        { status: newStatus },
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        }
+      );
+
+      message.success("Cập nhật trạng thái yêu cầu hoàn hàng thành công");
+      setReturnRequests((prev) =>
+        prev.map((req) =>
+          req._id === record._id ? { ...req, status: newStatus } : req
+        )
+      );
+
+      // Invalidate order list to refresh data
+      await invalidate({ resource: "order", invalidates: ["list"] });
+    } catch (error: any) {
+      message.error(error.message || "Cập nhật trạng thái yêu cầu hoàn hàng thất bại");
+      console.error(error);
+    } finally {
+      setLoadingId(null);
+    }
+  };
+
+  // Lọc dữ liệu dựa trên tab đang chọn và các bộ lọc khác
+  const filteredData = useMemo(() => {
+    let data: any =
+      activeTab === "returnRequests" ? returnRequests : (tableProps.dataSource as Order[]) || [];
+
+    const lowerSearch = searchText.toLowerCase();
+
+    if (activeTab === "returnRequests") {
+      data = data.filter((request: any) => {
+        const matchSearch =
+          !searchText ||
+          request.orderId.orderCode.toLowerCase().includes(lowerSearch) ||
+          request.reason.toLowerCase().includes(lowerSearch);
+
+        const matchReturnStatus =
+          returnStatusFilter === undefined || request.status === returnStatusFilter;
+
+        return matchSearch && matchReturnStatus;
+      });
+    } else {
+      data = data.filter((order: Order) => {
+        const matchSearch =
+          !searchText ||
+          order.recipientInfo?.name?.toLowerCase().includes(lowerSearch) ||
+          order.recipientInfo?.phone?.toLowerCase().includes(lowerSearch) ||
+          order.recipientInfo?.email?.toLowerCase().includes(lowerSearch) ||
+          order.orderCode?.toLowerCase().includes(lowerSearch);
+
+        const matchStatus =
+          orderStatusFilter === undefined || order.status === orderStatusFilter;
+
+        const matchPayment =
+          paymentStatusFilter === undefined || order.paymentStatus === paymentStatusFilter;
+
+        return matchSearch && matchStatus && matchPayment;
+      });
+    }
+
+    return data.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  }, [tableProps.dataSource, returnRequests, searchText, orderStatusFilter, paymentStatusFilter, returnStatusFilter, activeTab]);
+
+  // Lắng nghe sự kiện socket để cập nhật bảng realtime
   useEffect(() => {
     const handleChange = () => {
       invalidate({ resource: "order", invalidates: ["list"] });
     };
     socket.on("order-status-changed", handleChange);
-    socket.on("new-nontification", handleChange);
+    socket.on("new-notification", handleChange);
     return () => {
       socket.off("order-status-changed", handleChange);
-      socket.off("new-nontification", handleChange);
+      socket.off("new-notification", handleChange);
     };
-  });
+  }, [invalidate]);
 
-  // Đổi trạng thái đơn hàng
   const handleChangeStatus = async (
     record: Order,
     newStatus: number,
@@ -132,19 +427,24 @@ export const OrderList = () => {
     paymentStatus?: number
   ) => {
     setLoadingId(record._id);
-    const user = localStorage.getItem("user");
-    const parsedUser = user ? JSON.parse(user) : null;
     try {
-      let currentPaymentStatus =
+      const userRaw = localStorage.getItem("user");
+      const user = userRaw ? JSON.parse(userRaw) : null;
+
+      let effectivePaymentStatus =
         paymentStatus !== undefined ? paymentStatus : record.paymentStatus;
-      if (newStatus === 3) currentPaymentStatus = 1; // Đã giao hàng thì thanh toán luôn
+
+      if (newStatus === 3) {
+        effectivePaymentStatus = 1;
+      }
+
       await axios.patch(
         `${API_URL}/order/status/${record._id}`,
         {
           status: newStatus,
-          paymentStatus: currentPaymentStatus,
-          ...(reason && { cancelReason: reason }), // Include reason if provided
-          userId: parsedUser?._id,
+          paymentStatus: effectivePaymentStatus,
+          ...(reason && { cancelReason: reason }),
+          userId: user?._id,
         },
         {
           headers: {
@@ -153,9 +453,11 @@ export const OrderList = () => {
           },
         }
       );
+
       await invalidate({ resource: "order", invalidates: ["list"] });
       message.success("Cập nhật trạng thái thành công");
     } catch (error: any) {
+      console.error(error);
       message.error("Cập nhật trạng thái thất bại");
     } finally {
       setLoadingId(null);
@@ -167,16 +469,13 @@ export const OrderList = () => {
     setIsModalVisible(true);
   };
 
-  const handleCancelOrder = async (values: {
-    reason: string;
-    customReason?: string;
-  }) => {
+  const handleCancelOrder = async (values: { reason: string; customReason?: string }) => {
     if (!selectedOrderId) return;
+
     const finalReason =
-      values.reason === "Khác" && values.customReason
-        ? values.customReason
-        : values.reason;
-    const record = filteredData.find((order) => order._id === selectedOrderId);
+      values.reason === "Khác" && values.customReason ? values.customReason : values.reason;
+
+    const record = filteredData.find((order: Order) => order._id === selectedOrderId);
     if (record) {
       await handleChangeStatus(record, 5, finalReason, 3);
     }
@@ -193,9 +492,10 @@ export const OrderList = () => {
     setSearchText("");
     setOrderStatusFilter(undefined);
     setPaymentStatusFilter(undefined);
+    setReturnStatusFilter(undefined);
   };
 
-  const formatDate = (dateString: string) => {
+  const formatDate = (dateString?: string) => {
     if (!dateString) return "N/A";
     try {
       return new Date(dateString).toLocaleString("vi-VN", {
@@ -214,291 +514,313 @@ export const OrderList = () => {
     <List title="Quản lý đơn hàng">
       <Space style={{ marginBottom: 16 }} wrap>
         <Input.Search
-          placeholder="Tìm kiếm theo tên, SĐT, email khách hàng"
+          placeholder={
+            activeTab === "returnRequests"
+              ? "Tìm kiếm theo mã đơn hoặc lý do hoàn"
+              : "Tìm kiếm theo tên, SĐT, email khách hàng"
+          }
           allowClear
           value={searchText}
           onChange={(e) => setSearchText(e.target.value)}
           style={{ width: 300 }}
+          enterButton
         />
-        <AntSelect
-          placeholder="Lọc trạng thái đơn hàng"
-          allowClear
-          value={orderStatusFilter}
-          style={{ width: 200 }}
-          onChange={setOrderStatusFilter}
-        >
-          {Object.entries(statusMap).map(([key, val]) => (
-            <AntSelect.Option key={key} value={Number(key)}>
-              {val.text}
-            </AntSelect.Option>
-          ))}
-        </AntSelect>
-        <AntSelect
-          placeholder="Lọc trạng thái thanh toán"
-          allowClear
-          value={paymentStatusFilter}
-          style={{ width: 200 }}
-          onChange={setPaymentStatusFilter}
-        >
-          {Object.entries(paymentStatusMap).map(([key, val]) => (
-            <AntSelect.Option key={key} value={Number(key)}>
-              {val.text}
-            </AntSelect.Option>
-          ))}
-        </AntSelect>
-        {(searchText ||
-          orderStatusFilter !== undefined ||
-          paymentStatusFilter !== undefined) && (
+        {activeTab === "all" ? (
+          <>
+            <Select
+              placeholder="Lọc trạng thái đơn hàng"
+              allowClear
+              value={orderStatusFilter}
+              style={{ width: 200 }}
+              onChange={setOrderStatusFilter}
+              options={Object.entries(statusMap).map(([key, val]) => ({
+                label: val.text,
+                value: Number(key),
+              }))}
+            />
+            <Select
+              placeholder="Lọc trạng thái thanh toán"
+              allowClear
+              value={paymentStatusFilter}
+              style={{ width: 200 }}
+              onChange={setPaymentStatusFilter}
+              options={Object.entries(paymentStatusMap).map(([key, val]) => ({
+                label: val.text,
+                value: Number(key),
+              }))}
+            />
+          </>
+        ) : (
+          <Select
+            placeholder="Lọc trạng thái yêu cầu hoàn"
+            allowClear
+            value={returnStatusFilter}
+            style={{ width: 200 }}
+            onChange={setReturnStatusFilter}
+            options={Object.entries(returnStatusMap).map(([key, val]) => ({
+              label: val.text,
+              value: Number(key),
+            }))}
+          />
+        )}
+        {(searchText || orderStatusFilter !== undefined || paymentStatusFilter !== undefined || returnStatusFilter !== undefined) && (
           <Button onClick={handleClearAllFilters}>Xóa tất cả bộ lọc</Button>
         )}
-        <div style={{ color: "#666", fontSize: "12px" }}>
-          Hiển thị {filteredData.length} / {tableProps.dataSource?.length || 0}{" "}
-          đơn hàng
+        <div style={{ color: "#666", fontSize: 12 }}>
+          Hiển thị {filteredData.length} / {(activeTab === "returnRequests" ? returnRequests : tableProps.dataSource)?.length || 0}{" "}
+          {activeTab === "returnRequests" ? "yêu cầu hoàn hàng" : "đơn hàng"}
         </div>
       </Space>
-      <Table
-        {...tableProps}
-        dataSource={filteredData}
-        rowKey="_id"
-        scroll={{ x: 1200 }}
+
+      <Tabs
+        activeKey={activeTab}
+        onChange={(key) => setActiveTab(key as "all" | "returnRequests")}
+        style={{ marginBottom: 16 }}
       >
-        <Table.Column
-          dataIndex="orderCode"
-          title="Mã đơn"
-          width={120}
-          fixed="left"
-          render={(code: string) => (
-            <Tag color="blue" style={{ fontWeight: "bold" }}>
-              #{code || "N/A"}
-            </Tag>
-          )}
-        />
-        <Table.Column
-          title="Khách hàng"
-          width={180}
-          render={(_, record: Order) => (
-            <div>
-              <div style={{ fontWeight: 500 }}>
-                {record.recipientInfo?.name || "N/A"}
-              </div>
-              <div style={{ fontSize: "12px", color: "#888" }}>
-                {record.recipientInfo?.phone}
-              </div>
-              <div style={{ fontSize: "12px", color: "#888" }}>
-                {record.recipientInfo?.email}
-              </div>
-            </div>
-          )}
-        />
-        <Table.Column
-          title="Địa chỉ"
-          width={200}
-          render={(_, record: Order) => (
-            <div style={{ fontSize: "13px", color: "#555" }}>
-              {record.shippingAddress || "N/A"}
-            </div>
-          )}
-        />
-        <Table.Column
-          title="Ngày đặt"
-          dataIndex="createdAt"
-          width={150}
-          sorter={(a, b) =>
-            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-          }
-          render={(createdAt: string) => (
-            <div style={{ fontSize: "13px", color: "#555" }}>
-              {createdAt ? formatDate(createdAt) : "N/A"}
-            </div>
-          )}
-        />
-        <Table.Column
-          title="Trạng thái"
-          dataIndex="status"
-          width={150}
-          filters={Object.entries(statusMap).map(([key, val]) => ({
-            text: val.text,
-            value: Number(key),
-          }))}
-          onFilter={(value, record) => record.status === value}
-          render={(status: number) => {
-            const s = statusMap[status];
-            return (
+        <Tabs.TabPane tab="Tất cả đơn hàng" key="all" />
+        <Tabs.TabPane tab="Yêu cầu hoàn hàng" key="returnRequests" />
+      </Tabs>
+
+      {activeTab === "all" ? (
+        <Table<Order>
+          {...tableProps}
+          dataSource={filteredData as Order[]}
+          rowKey="_id"
+          scroll={{ x: 1200 }}
+          pagination={tableProps.pagination}
+        >
+          <Table.Column<Order>
+            dataIndex="orderCode"
+            title="Mã đơn"
+            width={120}
+            fixed="left"
+            render={(code) => (
+              <Tag color="blue" style={{ fontWeight: "bold" }}>
+                #{code || "N/A"}
+              </Tag>
+            )}
+          />
+          <Table.Column<Order>
+            title="Khách hàng"
+            width={180}
+            render={(_, record) => (
               <div>
-                <Tag
-                  color={s?.color}
-                  icon={s?.icon}
-                  style={{ fontWeight: "bold" }}
-                >
+                <div style={{ fontWeight: 500 }}>{record.recipientInfo?.name || "N/A"}</div>
+                <div style={{ fontSize: 12, color: "#888" }}>{record.recipientInfo?.phone}</div>
+                <div style={{ fontSize: 12, color: "#888" }}>{record.recipientInfo?.email}</div>
+              </div>
+            )}
+          />
+          <Table.Column<Order>
+            title="Địa chỉ"
+            width={200}
+            render={(_, record) => (
+              <div style={{ fontSize: 13, color: "#555" }}>{record.shippingAddress || "N/A"}</div>
+            )}
+          />
+          <Table.Column<Order>
+            title="Ngày đặt"
+            dataIndex="createdAt"
+            width={150}
+            sorter={(a, b) =>
+              new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+            }
+            render={(createdAt) => (
+              <div style={{ fontSize: 13, color: "#555" }}>{formatDate(createdAt)}</div>
+            )}
+          />
+          <Table.Column<Order>
+            title="Trạng thái"
+            dataIndex="status"
+            width={150}
+            filters={Object.entries(statusMap).map(([key, val]) => ({
+              text: val.text,
+              value: Number(key),
+            }))}
+            onFilter={(value, record) => record.status === value}
+            render={(status) => {
+              const s = statusMap[status];
+              return (
+                <Tag color={s?.color} icon={s?.icon} style={{ fontWeight: "bold" }}>
                   {s?.text || status}
                 </Tag>
-              </div>
-            );
-          }}
-        />
-        <Table.Column
-          title="Thanh toán"
-          dataIndex="paymentStatus"
-          width={130}
-          filters={Object.entries(paymentStatusMap).map(([key, val]) => ({
-            text: val.text,
-            value: Number(key),
-          }))}
-          onFilter={(value, record) => record.paymentStatus === value}
-          render={(paymentStatus: number) => {
-            const p = paymentStatusMap[paymentStatus];
-            return (
-              <Tag color={p?.color} style={{ fontWeight: "bold" }}>
-                {p?.text || paymentStatus}
-              </Tag>
-            );
-          }}
-        />
-        <Table.Column
-          title="Tổng tiền"
-          dataIndex="totalAmount"
-          width={120}
-          render={(value: number) => (
-            <span style={{ fontWeight: 500, color: "#d4380d" }}>
-              {formatCurrency(value)}
-            </span>
-          )}
-        />
-        <Table.Column
-          title="Hành động"
-          width={220}
-          fixed="right"
-          render={(_, record: Order) => (
-            <Space>
-              <Tooltip title="Xem chi tiết">
-                <Link to={`/orders/show/${record._id}`}>
-                  <Button size="small" icon={<EyeOutlined />} />
-                </Link>
-              </Tooltip>
-              {record.status === 0 && (
-                <>
-                  <Popconfirm
-                    title="Xác nhận đơn hàng này?"
-                    onConfirm={() => handleChangeStatus(record, 1)}
-                    okText="Xác nhận"
-                    cancelText="Huỷ"
-                    okButtonProps={{ loading: loadingId === record._id }}
-                  >
-                    <Button
-                      size="small"
-                      type="primary"
-                      icon={<CheckOutlined />}
-                      loading={loadingId === record._id}
-                    >
-                      Xác nhận
-                    </Button>
-                  </Popconfirm>
-                  <Popconfirm
-                    title="Huỷ đơn hàng này?"
-                    onConfirm={() => showCancelModal(record._id)}
-                    okText="Huỷ đơn"
-                    cancelText="Không"
-                    okButtonProps={{ danger: true }}
-                  >
-                    <Button size="small" danger icon={<CloseOutlined />}>
-                      Huỷ
-                    </Button>
-                  </Popconfirm>
-                </>
-              )}
-              {record.status === 1 && (
-                <>
-                  <Button
-                    size="small"
-                    onClick={() => handleChangeStatus(record, 2)}
-                    icon={<TruckOutlined />}
-                  >
-                    Giao hàng
-                  </Button>
-                  <Popconfirm
-                    title="Huỷ đơn hàng này?"
-                    onConfirm={() => showCancelModal(record._id)}
-                    okText="Huỷ đơn"
-                    cancelText="Không"
-                    okButtonProps={{ danger: true }}
-                  >
-                    <Button size="small" danger icon={<CloseOutlined />}>
-                      Huỷ
-                    </Button>
-                  </Popconfirm>
-                </>
-              )}
-              {record.status === 2 && (
-                <Button
-                  size="small"
-                  type="primary"
-                  onClick={() => handleChangeStatus(record, 3)}
-                  icon={<CheckOutlined />}
-                >
-                  Đã giao
-                </Button>
-              )}
-              {record.status === 6 && (
-                <Tag color="cyan" icon={<UndoOutlined />}>
-                  Hoàn hàng
+              );
+            }}
+          />
+          <Table.Column<Order>
+            title="Thanh toán"
+            dataIndex="paymentStatus"
+            width={130}
+            filters={Object.entries(paymentStatusMap).map(([key, val]) => ({
+              text: val.text,
+              value: Number(key),
+            }))}
+            onFilter={(value, record) => record.paymentStatus === value}
+            render={(paymentStatus) => {
+              const p = paymentStatusMap[paymentStatus];
+              return (
+                <Tag color={p?.color} style={{ fontWeight: "bold" }}>
+                  {p?.text || paymentStatus}
                 </Tag>
-              )}
-            </Space>
-          )}
-        />
-      </Table>
+              );
+            }}
+          />
+          <Table.Column<Order>
+            title="Tổng tiền"
+            dataIndex="totalAmount"
+            width={120}
+            render={(value) => (
+              <span style={{ fontWeight: 500, color: "#d4380d" }}>{formatCurrency(value)}</span>
+            )}
+          />
+          <Table.Column<Order>
+            title="Hành động"
+            width={220}
+            fixed="right"
+            render={(_, record) => (
+              <Space>
+                <Tooltip title="Xem chi tiết">
+                  <Link to={`/orders/show/${record._id}`}>
+                    <Button size="small" icon={<EyeOutlined />} />
+                  </Link>
+                </Tooltip>
+                <OrderActions
+                  record={record}
+                  loadingId={loadingId}
+                  onChangeStatus={handleChangeStatus}
+                  onShowCancelModal={showCancelModal}
+                />
+              </Space>
+            )}
+          />
+        </Table>
+      ) : (
+        <Table<ReturnRequest>
+          dataSource={filteredData as ReturnRequest[]}
+          rowKey="_id"
+          scroll={{ x: 1200 }}
+          pagination={{
+            current: 1,
+            pageSize: 10,
+            total: returnRequests.length,
+          }}
+        >
+          <Table.Column<ReturnRequest>
+            dataIndex={["orderId", "orderCode"]}
+            title="Mã đơn"
+            width={120}
+            fixed="left"
+            render={(code) => (
+              <Tag color="blue" style={{ fontWeight: "bold" }}>
+                #{code || "N/A"}
+              </Tag>
+            )}
+          />
+          <Table.Column<ReturnRequest>
+            title="Lý do hoàn"
+            dataIndex="reason"
+            width={200}
+            render={(reason) => (
+              <div style={{ fontSize: 13, color: "" }}>{reason || "N/A"}</div>
+            )}
+          />
+          <Table.Column<ReturnRequest>
+            title="Số tiền hoàn"
+            dataIndex="refundAmount"
+            width={120}
+            render={(value) => (
+              <span style={{ fontWeight: 500, color: "#d4380d" }}>{formatCurrency(value)}</span>
+            )}
+          />
+          <Table.Column<ReturnRequest>
+            title="Ngày yêu cầu"
+            dataIndex="createdAt"
+            width={150}
+            sorter={(a, b) =>
+              new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+            }
+            render={(createdAt) => (
+              <div style={{ fontSize: 13, color: "" }}>{formatDate(createdAt)}</div>
+            )}
+          />
+          <Table.Column<ReturnRequest>
+            title="Trạng thái"
+            dataIndex="status"
+            width={150}
+            filters={Object.entries(returnStatusMap).map(([key, val]) => ({
+              text: val.text,
+              value: Number(key),
+            }))}
+            onFilter={(value, record) => record.status === value}
+            render={(status) => {
+              const s = returnStatusMap[status];
+              return (
+                <Tag color={s?.color} style={{ fontWeight: "bold" }}>
+                  {s?.text || status}
+                </Tag>
+              );
+            }}
+          />
+          <Table.Column<ReturnRequest>
+            title="Hành động"
+            width={220}
+            fixed="right"
+            render={(_, record) => (
+              <Space>
+                <Tooltip title="Xem chi tiết đơn hàng">
+                  <Link to={`/orders/return-requests/show/${record._id}`}>
+                    <Button size="small" icon={<EyeOutlined />} />
+                  </Link>
+                </Tooltip>
+                <ReturnRequestActions
+                  record={record}
+                  loadingId={loadingId}
+                  onChangeReturnStatus={handleChangeReturnStatus}
+                />
+              </Space>
+            )}
+          />
+        </Table>
+      )}
+
       <Modal
         title="Hủy đơn hàng"
-        visible={isModalVisible}
+        open={isModalVisible}
         onCancel={handleModalCancel}
         footer={null}
         className="rounded-lg"
+        destroyOnClose
       >
-        <Form form={form} onFinish={handleCancelOrder} layout="vertical">
+        <Form form={form} onFinish={handleCancelOrder} layout="vertical" preserve={false}>
           <Form.Item
             name="reason"
             label="Lý do hủy"
             rules={[{ required: true, message: "Vui lòng chọn lý do hủy" }]}
           >
-            <AntSelect placeholder="Chọn lý do">
+            <Select placeholder="Chọn lý do">
               {cancelReasons.map((reason) => (
-                <AntSelect.Option key={reason} value={reason}>
+                <Select.Option key={reason} value={reason}>
                   {reason}
-                </AntSelect.Option>
+                </Select.Option>
               ))}
-            </AntSelect>
+            </Select>
           </Form.Item>
-          <Form.Item
-            noStyle
-            shouldUpdate={(prevValues, currentValues) =>
-              prevValues.reason !== currentValues.reason
-            }
-          >
+          <Form.Item noStyle shouldUpdate={(prev, current) => prev.reason !== current.reason}>
             {({ getFieldValue }) =>
               getFieldValue("reason") === "Khác" ? (
                 <Form.Item
                   name="customReason"
                   label="Lý do cụ thể"
-                  rules={[
-                    { required: true, message: "Vui lòng nhập lý do cụ thể" },
-                  ]}
+                  rules={[{ required: true, message: "Vui lòng nhập lý do cụ thể" }]}
                 >
-                  <AntInput.TextArea
-                    rows={3}
-                    placeholder="Nhập lý do hủy đơn hàng"
-                  />
+                  <AntInput.TextArea rows={3} placeholder="Nhập lý do hủy đơn hàng" />
                 </Form.Item>
               ) : null
             }
           </Form.Item>
           <Form.Item>
-            <div className="flex gap-2 justify-end">
-              <Button
-                onClick={handleModalCancel}
-                style={{ marginRight: "16px" }}
-              >
-                Hủy bỏ
-              </Button>
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: 12 }}>
+              <Button onClick={handleModalCancel}>Hủy bỏ</Button>
               <Button type="primary" htmlType="submit" danger>
                 Xác nhận hủy
               </Button>

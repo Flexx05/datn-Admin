@@ -34,6 +34,7 @@ import VoucherEdit from "../pages/voucher/edit";
 import VoucherShow from "../pages/voucher/show";
 import TopProductsStatistics from "../pages/statistics/top-products";
 import RevenueOrdersStatistics from "../pages/statistics/order-statistics";
+import { ReturnRequestDetail } from "../pages/order/returnRequestDetail";
 
 const AppRoutes = () => {
   return (
@@ -94,6 +95,7 @@ const AppRoutes = () => {
           <Route path="/orders">
             <Route index element={<OrderList />} />
             <Route path="show/:id" element={<OrderShow />} />
+            <Route path="return-requests/show/:id" element={<ReturnRequestDetail />} />
           </Route>
           <Route path="*" element={<ErrorComponent />} />
           <Route path="/vouchers">
