@@ -1,9 +1,4 @@
-import {
-  EditButton,
-  List,
-  ShowButton,
-  useTable,
-} from "@refinedev/antd";
+import { EditButton, List, ShowButton, useTable } from "@refinedev/antd";
 import { useInvalidate } from "@refinedev/core";
 import {
   Input,
@@ -16,15 +11,12 @@ import {
   Tabs,
   Tooltip,
 } from "antd";
-import {
-  DeleteOutlined,
-  RollbackOutlined,
-} from "@ant-design/icons";
+import { DeleteOutlined, RollbackOutlined } from "@ant-design/icons";
 import { IVoucher } from "../../interface/voucher";
 import { useCallback, useEffect, useState } from "react";
 import dayjs from "dayjs";
 import { axiosInstance } from "../../utils/axiosInstance";
-import { io } from "socket.io-client";
+import { socket } from "../../socket/socket";
 
 const VoucherList = () => {
   const [filterIsDeleted, setFilterIsDeleted] = useState<boolean>(true);
@@ -63,7 +55,9 @@ const VoucherList = () => {
   const invalidate = useInvalidate();
 
   useEffect(() => {
-    const socket = io("http://localhost:8080"); // Đúng port backend của bạn
+    if (!socket.connected) {
+      socket.connect();
+    }
     socket.on("connect", () => {
       console.log("Socket connected!", socket.id);
     });
@@ -74,45 +68,59 @@ const VoucherList = () => {
       });
     });
     return () => {
+      socket.off("voucherStatusUpdated");
+      socket.off("connect");
       socket.disconnect();
     };
   }, [invalidate]);
-  
+
   // Xử lý xóa mềm voucher (chuyển vào thùng rác)
-  const handleDelete = useCallback(async (id: string) => {
-    setLoadingId(id);
-    try {
-      await axiosInstance.delete(`/vouchers/delete/${id}`);
-      message.success("Thao tác xóa thành công");
-      await invalidate({
-        resource: "vouchers",
-        invalidates: ["list"],
-      });
-    } catch (error: any) {
-      const errorMessage = error.response?.data?.message || error.message || "Lỗi không xác định";
-      message.error("Xóa thất bại: " + errorMessage);
-    } finally {
-      setLoadingId(null);
-    }
-  }, [invalidate]);
-  
+  const handleDelete = useCallback(
+    async (id: string) => {
+      setLoadingId(id);
+      try {
+        await axiosInstance.delete(`/vouchers/delete/${id}`);
+        message.success("Thao tác xóa thành công");
+        await invalidate({
+          resource: "vouchers",
+          invalidates: ["list"],
+        });
+      } catch (error: any) {
+        const errorMessage =
+          error.response?.data?.message ||
+          error.message ||
+          "Lỗi không xác định";
+        message.error("Xóa thất bại: " + errorMessage);
+      } finally {
+        setLoadingId(null);
+      }
+    },
+    [invalidate]
+  );
+
   // Khôi phục voucher từ thùng rác
-  const handleRestore = useCallback(async (id: string) => {
-    setLoadingId(id);
-    try {
-      await axiosInstance.patch(`/vouchers/restore/${id}`);
-      message.success("Khôi phục voucher thành công");
-      await invalidate({
-        resource: "vouchers",
-        invalidates: ["list"],
-      });
-    } catch (error: any) {
-      const errorMessage = error.response?.data?.message || error.message || "Lỗi không xác định";
-      message.error("Khôi phục thất bại: " + errorMessage);
-    } finally {
-      setLoadingId(null);
-    }
-  }, [invalidate]);
+  const handleRestore = useCallback(
+    async (id: string) => {
+      setLoadingId(id);
+      try {
+        await axiosInstance.patch(`/vouchers/restore/${id}`);
+        message.success("Khôi phục voucher thành công");
+        await invalidate({
+          resource: "vouchers",
+          invalidates: ["list"],
+        });
+      } catch (error: any) {
+        const errorMessage =
+          error.response?.data?.message ||
+          error.message ||
+          "Lỗi không xác định";
+        message.error("Khôi phục thất bại: " + errorMessage);
+      } finally {
+        setLoadingId(null);
+      }
+    },
+    [invalidate]
+  );
 
   // Chuyển đổi giữa tab "Voucher đang hoạt động" và "Thùng rác"
   const handleTabChange = useCallback(
@@ -188,7 +196,7 @@ const VoucherList = () => {
       <Table {...tableProps} rowKey="_id">
         <Table.Column title="STT" render={(_, __, index) => index + 1} />
         <Table.Column title="Mã giảm giá" dataIndex="code" />
-        
+
         <Table.Column
           title="Loại voucher"
           dataIndex="voucherType"
@@ -221,7 +229,7 @@ const VoucherList = () => {
             return `${value}${max}`;
           }}
         />
-        
+
         <Table.Column
           title="Đơn tối thiểu"
           dataIndex="minOrderValues"
@@ -244,124 +252,116 @@ const VoucherList = () => {
           )}
         />
 
-      <Table.Column
-        title="Trạng thái"
-        dataIndex="voucherStatus"
-        filters={[
-          { text: "Có hiệu lực", value: "active" },
-          { text: "Không có hiệu lực", value: "inactive" },
-          { text: "Hết hạn", value: "expired" },
-        ]}
-        onFilter={(value, record) => record.voucherStatus === value}
-        render={(status: string) => {
-          if (status === "active")
-            return <Tag color="green">Có hiệu lực</Tag>;
-          if (status === "inactive")
-            return <Tag color="yellow">Không có hiệu lực</Tag>;
-          if (status === "expired")
-            return <Tag color="red">Hết hạn</Tag>;
-          return status;
-        }}
-      />
+        <Table.Column
+          title="Trạng thái"
+          dataIndex="voucherStatus"
+          filters={[
+            { text: "Có hiệu lực", value: "active" },
+            { text: "Không có hiệu lực", value: "inactive" },
+            { text: "Hết hạn", value: "expired" },
+          ]}
+          onFilter={(value, record) => record.voucherStatus === value}
+          render={(status: string) => {
+            if (status === "active")
+              return <Tag color="green">Có hiệu lực</Tag>;
+            if (status === "inactive")
+              return <Tag color="yellow">Không có hiệu lực</Tag>;
+            if (status === "expired") return <Tag color="red">Hết hạn</Tag>;
+            return status;
+          }}
+        />
 
+        <Table.Column<IVoucher>
+          title="Thao tác"
+          render={(_, record) => {
+            const isEditable =
+              record.voucherStatus === "active" ||
+              record.voucherStatus === "inactive";
 
-      <Table.Column<IVoucher>
-        title="Thao tác"
-        render={(_, record) => {
-          const isEditable =
-            record.voucherStatus === "active" ||
-            record.voucherStatus === "inactive";
-
-          const deleteButton = (
-            <Popconfirm
-              title="Bạn có chắc chắn chuyển voucher này vào thùng rác?"
-              onConfirm={() => handleDelete(record._id)}
-              okText="Xóa"
-              cancelText="Hủy"
-            >
-              <Button 
-                icon={<DeleteOutlined />} 
-                danger 
-                size="small"
-                loading={loadingId === record._id}
-                disabled={loadingId === record._id}
-              />
-            </Popconfirm>
-          );
-
-          const permanentDeleteButton = (
-            <Popconfirm
-              title="Bạn có chắc chắn muốn xóa vĩnh viễn voucher này? Hành động này không thể hoàn tác."
-              onConfirm={() => handleDelete(record._id)}
-              okText="Xóa vĩnh viễn"
-              cancelText="Hủy"
-              okButtonProps={{ danger: true, loading: loadingId === record._id }}
-            >
-              <Button
-                icon={<DeleteOutlined />}
-                danger
-                size="small"
-                loading={loadingId === record._id}
-                disabled={loadingId === record._id}
+            const deleteButton = (
+              <Popconfirm
+                title="Bạn có chắc chắn chuyển voucher này vào thùng rác?"
+                onConfirm={() => handleDelete(record._id)}
+                okText="Xóa"
+                cancelText="Hủy"
               >
-              </Button>
-            </Popconfirm>
-          );
-
-          const editButton = isEditable ? (
-            <EditButton 
-              hideText 
-              size="small" 
-              recordItemId={record._id} 
-            />
-          ) : (
-            <Tooltip title="Voucher đã hết hạn, không thể chỉnh sửa">
-              <span>
-                <EditButton
-                  hideText
+                <Button
+                  icon={<DeleteOutlined />}
+                  danger
                   size="small"
-                  recordItemId={record._id}
-                  disabled
+                  loading={loadingId === record._id}
+                  disabled={loadingId === record._id}
                 />
-              </span>
-            </Tooltip>
-          );
+              </Popconfirm>
+            );
 
-          return (
-            <Space>
-              {filterIsDeleted && editButton}
-              <ShowButton 
-                hideText 
-                size="small" 
-                recordItemId={record._id} 
-              />
-              {!filterIsDeleted ? (
-                <>
-                  {permanentDeleteButton}
-                  <Popconfirm
-                    title="Bạn chắc chắn khôi phục voucher này?"
-                    onConfirm={() => handleRestore(record._id)}
-                    okText="Khôi phục"
-                    cancelText="Hủy"
-                    okButtonProps={{ loading: loadingId === record._id }}
-                  >
-                    <Button
-                      icon={<RollbackOutlined />}
-                      size="small"
-                      loading={loadingId === record._id}
-                      disabled={loadingId === record._id}
+            const permanentDeleteButton = (
+              <Popconfirm
+                title="Bạn có chắc chắn muốn xóa vĩnh viễn voucher này? Hành động này không thể hoàn tác."
+                onConfirm={() => handleDelete(record._id)}
+                okText="Xóa vĩnh viễn"
+                cancelText="Hủy"
+                okButtonProps={{
+                  danger: true,
+                  loading: loadingId === record._id,
+                }}
+              >
+                <Button
+                  icon={<DeleteOutlined />}
+                  danger
+                  size="small"
+                  loading={loadingId === record._id}
+                  disabled={loadingId === record._id}
+                ></Button>
+              </Popconfirm>
+            );
+
+            const editButton = isEditable ? (
+              <EditButton hideText size="small" recordItemId={record._id} />
+            ) : (
+              <Tooltip title="Voucher đã hết hạn, không thể chỉnh sửa">
+                <span>
+                  <EditButton
+                    hideText
+                    size="small"
+                    recordItemId={record._id}
+                    disabled
+                  />
+                </span>
+              </Tooltip>
+            );
+
+            return (
+              <Space>
+                {filterIsDeleted && editButton}
+                <ShowButton hideText size="small" recordItemId={record._id} />
+                {!filterIsDeleted ? (
+                  <>
+                    {permanentDeleteButton}
+                    <Popconfirm
+                      title="Bạn chắc chắn khôi phục voucher này?"
+                      onConfirm={() => handleRestore(record._id)}
+                      okText="Khôi phục"
+                      cancelText="Hủy"
+                      okButtonProps={{ loading: loadingId === record._id }}
                     >
-                      Khôi phục
-                    </Button>
-                  </Popconfirm>
-                </>
-              ) : (
-                deleteButton
-              )}
-            </Space>
-          );
-        }}
-      />
+                      <Button
+                        icon={<RollbackOutlined />}
+                        size="small"
+                        loading={loadingId === record._id}
+                        disabled={loadingId === record._id}
+                      >
+                        Khôi phục
+                      </Button>
+                    </Popconfirm>
+                  </>
+                ) : (
+                  deleteButton
+                )}
+              </Space>
+            );
+          }}
+        />
       </Table>
     </List>
   );
