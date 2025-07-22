@@ -1,8 +1,27 @@
 import { useList } from "@refinedev/core";
 import { Card } from "antd";
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  Legend,
+} from "recharts";
 import dayjs from "dayjs";
+import isSameOrAfter from "dayjs/plugin/isSameOrAfter";
+import isSameOrBefore from "dayjs/plugin/isSameOrBefore";
 import { useMemo } from "react";
+import { DashboardFilterValue } from "./DashboardFilter";
+
+dayjs.extend(isSameOrAfter);
+dayjs.extend(isSameOrBefore);
+
+interface Props {
+  filter: DashboardFilterValue;
+}
 
 const CustomTooltip = ({ active, payload, label }: any) => {
   if (active && payload && payload.length) {
@@ -37,51 +56,91 @@ const CustomTooltip = ({ active, payload, label }: any) => {
   return null;
 };
 
-const OrderRevenueLineChart = () => {
-  const { data: ordersData, isLoading } = useList({ resource: "order", pagination: { mode: "off" } });
+const OrderRevenueLineChart = ({ filter }: Props) => {
+  const { data: ordersData, isLoading } = useList({
+    resource: "order",
+    pagination: { mode: "off" },
+  });
 
   const chartData = useMemo(() => {
     if (!ordersData?.data) return [];
-    const group: Record<string, { date: string; revenue: number; orderCount: number }> = {};
-    ordersData.data
-      .filter((order) => order.status === 4 && order.paymentStatus === 1)
-      .forEach((order) => {
-        const day = dayjs(order.createdAt).format("YYYY-MM-DD");
-        if (!group[day]) group[day] = { date: day, revenue: 0, orderCount: 0 };
-        group[day].revenue += order.totalAmount || 0;
-        group[day].orderCount += 1;
+    let filtered = ordersData.data.filter(
+      (order) => order.status === 4 && order.paymentStatus === 1
+    );
+    // Lọc theo khoảng ngày
+    if (filter.startDate && filter.endDate) {
+      filtered = filtered.filter((order) => {
+        const createdAt = dayjs(order.createdAt);
+        return (
+          createdAt.isSameOrAfter(dayjs(filter.startDate), "day") &&
+          createdAt.isSameOrBefore(dayjs(filter.endDate), "day")
+        );
       });
-    return Object.values(group).sort((a, b) => dayjs(a.date, "YYYY-MM-DD").unix() - dayjs(b.date, "YYYY-MM-DD").unix());
-  }, [ordersData]);
+    }
+    // Lọc theo tháng/năm
+    else if (filter.month && filter.year) {
+      filtered = filtered.filter((order) => {
+        const createdAt = dayjs(order.createdAt);
+        return (
+          createdAt.month() + 1 === filter.month &&
+          createdAt.year() === filter.year
+        );
+      });
+    }
+    const group: Record<
+      string,
+      { date: string; revenue: number; orderCount: number }
+    > = {};
+    filtered.forEach((order) => {
+      const day = dayjs(order.createdAt).format("YYYY-MM-DD");
+      if (!group[day]) group[day] = { date: day, revenue: 0, orderCount: 0 };
+      group[day].revenue += order.totalAmount || 0;
+      group[day].orderCount += 1;
+    });
+    return Object.values(group).sort(
+      (a, b) =>
+        dayjs(a.date, "YYYY-MM-DD").unix() - dayjs(b.date, "YYYY-MM-DD").unix()
+    );
+  }, [ordersData, filter]);
 
   return (
-    <Card title="Biểu đồ doanh thu & số đơn hàng theo ngày" bordered={false} loading={isLoading}>
+    <Card
+      title="Biểu đồ doanh thu & số đơn hàng theo ngày"
+      bordered={false}
+      loading={isLoading}
+    >
       <ResponsiveContainer width="100%" height={400}>
-        <LineChart data={chartData}>
-          <CartesianGrid strokeDasharray="3 3" />
-          <XAxis dataKey="date" />
-          <YAxis yAxisId="left" />
-          <YAxis yAxisId="right" orientation="right" />
-          <Tooltip content={<CustomTooltip />} />
-          <Legend />
-          <Line
-            yAxisId="left"
-            type="monotone"
-            dataKey="revenue"
-            stroke="#1890ff"
-            name="Doanh thu (₫)"
-          />
-          <Line
-            yAxisId="right"
-            type="monotone"
-            dataKey="orderCount"
-            stroke="#fa541c"
-            name="Số đơn hàng"
-          />
-        </LineChart>
+        {chartData.length > 0 ? (
+          <LineChart data={chartData}>
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis dataKey="date" />
+            <YAxis yAxisId="left" />
+            <YAxis yAxisId="right" orientation="right" />
+            <Tooltip content={<CustomTooltip />} />
+            <Legend />
+            <Line
+              yAxisId="left"
+              type="monotone"
+              dataKey="revenue"
+              stroke="#1890ff"
+              name="Doanh thu (₫)"
+            />
+            <Line
+              yAxisId="right"
+              type="monotone"
+              dataKey="orderCount"
+              stroke="#fa541c"
+              name="Số đơn hàng"
+            />
+          </LineChart>
+        ) : (
+          <div style={{ textAlign: "center", padding: "50px", color: "#999" }}>
+            Không có dữ liệu để hiển thị biểu đồ
+          </div>
+        )}
       </ResponsiveContainer>
     </Card>
   );
 };
 
-export default OrderRevenueLineChart; 
+export default OrderRevenueLineChart;

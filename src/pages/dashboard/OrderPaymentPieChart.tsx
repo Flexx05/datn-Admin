@@ -1,7 +1,20 @@
 import { useList } from "@refinedev/core";
 import { Card } from "antd";
-import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer } from "recharts";
+import {
+  PieChart,
+  Pie,
+  Cell,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+} from "recharts";
 import { useMemo } from "react";
+import { DashboardFilterValue } from "./DashboardFilter";
+import dayjs from "dayjs";
+
+interface Props {
+  filter: DashboardFilterValue;
+}
 
 const PAYMENT_COLORS = ["#1890ff", "#fa541c"];
 const paymentMethodMap: Record<string, string> = {
@@ -13,23 +26,49 @@ const paymentMethodMap: Record<string, string> = {
   MOMO: "Momo",
 };
 
-const OrderPaymentPieChart = () => {
-  const { data: ordersData, isLoading } = useList({ resource: "order", pagination: { mode: "off" } });
+const OrderPaymentPieChart = ({ filter }: Props) => {
+  const { data: ordersData, isLoading } = useList({
+    resource: "order",
+    pagination: { mode: "off" },
+  });
 
   const paymentData = useMemo(() => {
     if (!ordersData?.data) return [];
+    let filtered = ordersData.data.filter(
+      (order) => order.status === 4 && order.paymentStatus === 1
+    );
+    if (filter.startDate && filter.endDate) {
+      filtered = filtered.filter((order) => {
+        const createdAt = dayjs(order.createdAt);
+        return (
+          createdAt.isSameOrAfter(dayjs(filter.startDate), "day") &&
+          createdAt.isSameOrBefore(dayjs(filter.endDate), "day")
+        );
+      });
+    } else if (filter.month && filter.year) {
+      filtered = filtered.filter((order) => {
+        const createdAt = dayjs(order.createdAt);
+        return (
+          createdAt.month() + 1 === filter.month &&
+          createdAt.year() === filter.year
+        );
+      });
+    }
     const group: Record<string, number> = {};
-    ordersData.data.forEach((order) => {
-      if (order.status === 4 && order.paymentStatus === 1) {
-        const method = paymentMethodMap[order.paymentMethod] || order.paymentMethod || "Khác";
-        group[method] = (group[method] || 0) + 1;
-      }
+    filtered.forEach((order) => {
+      const method =
+        paymentMethodMap[order.paymentMethod] || order.paymentMethod || "Khác";
+      group[method] = (group[method] || 0) + 1;
     });
     return Object.entries(group).map(([name, value]) => ({ name, value }));
-  }, [ordersData]);
+  }, [ordersData, filter]);
 
   return (
-    <Card title="Tỷ lệ đơn hàng theo phương thức thanh toán" bordered={false} loading={isLoading}>
+    <Card
+      title="Tỷ lệ đơn hàng theo phương thức thanh toán"
+      bordered={false}
+      loading={isLoading}
+    >
       <ResponsiveContainer width="100%" height={350}>
         {paymentData.length > 0 ? (
           <PieChart>
@@ -43,7 +82,10 @@ const OrderPaymentPieChart = () => {
               label
             >
               {paymentData.map((entry, index) => (
-                <Cell key={`cell-${index}`} fill={PAYMENT_COLORS[index % PAYMENT_COLORS.length]} />
+                <Cell
+                  key={`cell-${index}`}
+                  fill={PAYMENT_COLORS[index % PAYMENT_COLORS.length]}
+                />
               ))}
             </Pie>
             <Tooltip formatter={(value: number) => `${value} đơn`} />
@@ -59,4 +101,4 @@ const OrderPaymentPieChart = () => {
   );
 };
 
-export default OrderPaymentPieChart; 
+export default OrderPaymentPieChart;
