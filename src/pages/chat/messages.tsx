@@ -3,6 +3,7 @@
 import {
   Loading3QuartersOutlined,
   SendOutlined,
+  SmileOutlined,
   ThunderboltOutlined,
 } from "@ant-design/icons";
 import { useInvalidate, useList, useOne } from "@refinedev/core";
@@ -34,6 +35,8 @@ import { INotification } from "../../interface/notification";
 import { socket, useChatSocket } from "../../socket";
 import { axiosInstance } from "../../utils/axiosInstance";
 import CloseConversation from "./CloseConversation";
+import emojiData from "@emoji-mart/data";
+import Picker from "@emoji-mart/react";
 
 type DisplayMessage = IMessage & { type?: "user"; senderRole?: string };
 
@@ -86,8 +89,15 @@ const Messages = () => {
   useEffect(() => {
     if (id) {
       socket.emit("join-conversation", id);
+      socket.on("conversation-updated", () => {
+        invalidate({
+          resource: "conversation",
+          id,
+          invalidates: ["list", "detail"],
+        });
+      });
     }
-  }, [id]);
+  }, [id, invalidate]);
 
   // ✅ Lắng nghe tin nhắn realtime
   useChatSocket(id || "", (msg: { message: IMessage }) => {
@@ -159,7 +169,7 @@ const Messages = () => {
         invalidates: ["list", "detail"],
       });
     } catch (error: any) {
-      message.error("Lỗi khi gửi tin nhắn" + error.message);
+      message.error("Lỗi khi gửi tin nhắn " + error.message);
     }
     setInput("");
   };
@@ -355,6 +365,7 @@ const Messages = () => {
         }
       >
         <Space.Compact style={{ width: "100%" }}>
+          {/* Tin nhắn nhanh */}
           <Tooltip title={"Tin nhắn nhanh"}>
             <Dropdown
               disabled={!customer?.userId?.isActive}
@@ -405,6 +416,26 @@ const Messages = () => {
             >
               <Button icon={<ThunderboltOutlined />} type="link" />
             </Dropdown>
+          </Tooltip>
+
+          {/* Icon */}
+          <Tooltip title="Emoji">
+            <Popover
+              content={
+                <Picker
+                  data={emojiData}
+                  onEmojiSelect={(emoji: any) => setInput(input + emoji.native)}
+                  theme={mode === "dark" ? "dark" : "light"}
+                />
+              }
+              trigger="click"
+            >
+              <Button
+                icon={<SmileOutlined />}
+                type="link"
+                disabled={!customer?.userId?.isActive}
+              />
+            </Popover>
           </Tooltip>
 
           <Input

@@ -134,7 +134,7 @@ const ChatList = () => {
           key={key}
           type="link"
           style={{
-            color: "black",
+            color: "white",
             backgroundColor: color,
             textAlign: "left",
           }}
