@@ -65,7 +65,13 @@ const QuickChatList = () => {
             title="STT"
             render={(_unknown, _: IQuickChat, index: number) => index + 1}
           />
-          <Table.Column dataIndex={"content"} title="Nội dung" />
+          <Table.Column
+            dataIndex={"content"}
+            title="Nội dung"
+            render={(value: string) =>
+              value.length > 50 ? value.slice(0, 50) + "..." : value
+            }
+          />
           <Table.Column
             dataIndex={"category"}
             title="Mục"

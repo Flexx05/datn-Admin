@@ -17,7 +17,7 @@ const ChatShow = () => {
   const { data, isLoading } = queryResult;
   const record = data?.data;
 
-  const customer = record?.participants.find((p) => p.role === "user");
+  const customer = record?.participants.find((p) => p.userId.role === "user");
   const participants = record?.participants;
 
   const chatTypeMap: Record<number, string> = {
@@ -38,7 +38,9 @@ const ChatShow = () => {
     <Show
       isLoading={isLoading}
       canDelete={false}
-      title={`Thông tin đoạn chat với ${customer?.fullName}`}
+      title={`Thông tin đoạn chat với ${
+        customer?.userId.fullName || "Khách hàng không xác định"
+      }`}
     >
       <Descriptions
         bordered
@@ -47,16 +49,16 @@ const ChatShow = () => {
         labelStyle={{ fontWeight: 600 }}
       >
         <Descriptions.Item label="Tên khách hàng">
-          {customer?.fullName || "Không xác định"}
+          {customer?.userId.fullName || "Không xác định"}
         </Descriptions.Item>
 
         <Descriptions.Item label="Người tham gia">
           {record?.participants.map((p) => (
-            <div key={p.userId}>
-              <Tag color={p.role === "admin" ? "geekblue" : "green"}>
-                {p.role.toUpperCase()}
+            <div key={p.userId._id}>
+              <Tag color={p.userId.role === "admin" ? "geekblue" : "green"}>
+                {p.userId.role.toUpperCase()}
               </Tag>{" "}
-              {p.fullName} – Tham gia lúc{" "}
+              {p.userId.fullName} – Tham gia lúc{" "}
               <Typography.Text type="secondary">
                 {dayjs(p.joinedAt).format("HH:mm DD/MM/YYYY")}
               </Typography.Text>
@@ -117,9 +119,9 @@ const ChatShow = () => {
               dataIndex={"updateBy"}
               render={(value: string) => {
                 const participant = participants?.find(
-                  (p) => p.userId === value
+                  (p) => p.userId._id === value
                 );
-                return <>{participant?.fullName}</>;
+                return <>{participant?.userId.fullName}</>;
               }}
             />
             <Table.Column

@@ -12,7 +12,6 @@ import {
   message,
   Popover,
   Row,
-  Spin,
   Tag,
   Typography,
 } from "antd";
@@ -28,6 +27,7 @@ import {
 } from "../../interface/conversation";
 import { socket } from "../../socket";
 import { axiosInstance } from "../../utils/axiosInstance";
+import LoadingShoes from "../../utils/loading";
 
 const { Text, Title } = Typography;
 const { useBreakpoint } = Grid;
@@ -168,7 +168,7 @@ const ChatList = () => {
     </div>
   );
 
-  if (isLoading) return <Spin size="large" />;
+  if (isLoading) return <LoadingShoes />;
 
   return (
     <Layout style={{ minHeight: "90vh", height: "90vh" }}>
@@ -229,7 +229,7 @@ const ChatList = () => {
               );
 
             const customer =
-              participants.find((p) => p.role === "user") ||
+              participants.find((p) => p.userId.role === "user") ||
               ({} as IParticipant);
 
             const isSelected = selectedConversation === conversation._id;
@@ -253,8 +253,10 @@ const ChatList = () => {
                 <Row wrap={false} align="middle">
                   <Col flex="48px">
                     <Avatar
-                      src={customer.avatar || "/avtDefault.png"}
-                      alt={customer.fullName || "Khách hàng"}
+                      src={customer.userId.avatar || "/avtDefault.png"}
+                      alt={
+                        customer.userId.fullName || "Khách hàng không xác định"
+                      }
                       size={48}
                     />
                   </Col>
@@ -269,7 +271,8 @@ const ChatList = () => {
                             fontSize: screens.xs ? 14 : 16,
                           }}
                         >
-                          {customer.fullName || "Khách hàng"}
+                          {customer.userId.fullName ||
+                            "Khách hàng không xác định"}
                         </Text>
                       </Col>
                       <Col span={19}>

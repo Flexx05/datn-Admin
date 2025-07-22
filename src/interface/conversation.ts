@@ -11,12 +11,14 @@ export interface IConversation {
 }
 
 export interface IParticipant {
-  userId: string;
-  avatar: string | null;
-  fullName: string;
-  role: string;
+  userId: {
+    _id: string;
+    fullName: string;
+    role: string;
+    avatar: string | null;
+    isActive: boolean;
+  };
   joinedAt: string;
-  _id: string;
 }
 
 export interface IMessage {

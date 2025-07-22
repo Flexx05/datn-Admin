@@ -1,6 +1,10 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { SendOutlined, ThunderboltOutlined } from "@ant-design/icons";
+import {
+  Loading3QuartersOutlined,
+  SendOutlined,
+  ThunderboltOutlined,
+} from "@ant-design/icons";
 import { useInvalidate, useList, useOne } from "@refinedev/core";
 import {
   Avatar,
@@ -13,7 +17,6 @@ import {
   message,
   Popover,
   Space,
-  Spin,
   Tooltip,
   Typography,
 } from "antd";
@@ -24,6 +27,7 @@ import { ColorModeContext } from "../../contexts/color-mode";
 import {
   IConversation,
   IMessage,
+  IParticipant,
   IQuickChat,
 } from "../../interface/conversation";
 import { INotification } from "../../interface/notification";
@@ -34,7 +38,6 @@ import CloseConversation from "./CloseConversation";
 type DisplayMessage = IMessage & { type?: "user"; senderRole?: string };
 
 // TODO: thêm Icon và xử lý logic thêm ảnh
-// TODO: Tích hợp chat nhanh
 
 const Messages = () => {
   const { id } = useParams<string>();
@@ -68,11 +71,11 @@ const Messages = () => {
 
     const userMessages: DisplayMessage[] = conversation.messages.map((m) => {
       const sender = conversation.participants.find(
-        (p) => p.userId === m.senderId
+        (p) => p.userId?._id === m.senderId
       );
       return {
         ...m,
-        senderRole: m.senderRole || sender?.role,
+        senderRole: m.senderRole || sender?.userId.role,
         type: "user",
       };
     });
@@ -90,13 +93,13 @@ const Messages = () => {
   useChatSocket(id || "", (msg: { message: IMessage }) => {
     const realMessage = msg.message;
     const sender = conversation?.participants.find(
-      (p) => p.userId === realMessage.senderId
+      (p) => p.userId._id === realMessage.senderId
     );
     setDisplayMessages((prev) => [
       ...prev,
       {
         ...realMessage,
-        senderRole: sender?.role ?? "user",
+        senderRole: sender?.userId?.role ?? "user",
         type: "user",
       },
     ]);
@@ -162,6 +165,9 @@ const Messages = () => {
   };
 
   const closedConversation = conversation?.status === "closed";
+  const customer =
+    conversation?.participants.find((p) => p.userId.role === "user") ||
+    ({} as IParticipant);
 
   // ✅ Hành động gửi tin nhắn nhanh
   const {
@@ -243,11 +249,15 @@ const Messages = () => {
           }}
         >
           Khách hàng:{" "}
-          <Tooltip title="Xem thông tin khách hàng">
-            <Link to={`/users/show/${conversation?.participants[0]?.userId}`}>
-              {conversation?.participants[0]?.fullName}
-            </Link>
-          </Tooltip>
+          {customer?.userId?.isActive ? (
+            <Tooltip title="Xem thông tin khách hàng">
+              <Link to={`/users/show/${customer?.userId?._id}`}>
+                {customer?.userId?.fullName || "Không xác định"}
+              </Link>
+            </Tooltip>
+          ) : (
+            customer.userId?.fullName
+          )}
         </Typography.Title>
         <CloseConversation
           conversationId={id || ""}
@@ -292,7 +302,7 @@ const Messages = () => {
                     alignItems: "flex-end",
                     gap: 8,
                     flexDirection: isUser ? "row" : "row-reverse",
-                    maxWidth: "70%",
+                    maxWidth: "90%",
                     width: "auto",
                   }}
                 >
@@ -302,8 +312,8 @@ const Messages = () => {
                         size={28}
                         src={
                           conversation?.participants.find(
-                            (p) => p.userId === message.senderId
-                          )?.avatar || "/avtDefault.png"
+                            (p) => p.userId._id === message.senderId
+                          )?.userId.avatar || "/avtDefault.png"
                         }
                       />
                     </div>
@@ -322,7 +332,7 @@ const Messages = () => {
                         color: isUser ? undefined : "#fff",
                         borderRadius: 16,
                         padding: screens?.xs ? "6px 10px" : "8px 16px",
-                        maxWidth: screens?.xs ? 220 : 320,
+                        maxWidth: screens?.xs ? 220 : 700,
                         wordBreak: "break-word",
                         fontSize: screens?.xs ? 13 : 15,
                         textAlign: "left",
@@ -339,78 +349,92 @@ const Messages = () => {
         <div ref={messagesEndRef} />
       </div>
 
-      <Space.Compact style={{ width: "100%" }}>
-        <Tooltip title={"Tin nhắn nhanh"}>
-          <Dropdown
-            placement="topLeft"
-            trigger={["click"]}
-            popupRender={() => (
-              <>
-                {isLoadingQuickChat && isFetching ? (
-                  <Spin />
-                ) : (
-                  <Menu
-                    items={quickChat?.data?.map((item: IQuickChat) => ({
-                      key: item._id,
-                      label: item.content,
-                    }))}
-                    onClick={({ key }) => {
-                      const selected = quickChat?.data?.find(
-                        (item: IQuickChat) => item._id === key
-                      );
-                      if (selected) setInput(selected.content);
-                    }}
-                  />
-                )}
-                <div style={{ padding: 8, display: "flex", gap: 10 }}>
-                  <Input
-                    placeholder="Tìm tin nhắn nhanh..."
-                    value={searchTerm}
-                    onChange={(e) => {
-                      setSearchTerm(e.target.value);
-                      setInput(e.target.value);
-                    }}
-                  />
-                  <Popover
-                    content={getPopoverCategoryContent}
-                    trigger="click"
-                    getPopupContainer={(trigger) => trigger.parentElement!}
-                  >
-                    <Button>Mục</Button>
-                  </Popover>
-                </div>
-              </>
-            )}
-          >
-            <Button icon={<ThunderboltOutlined />} type="link" />
-          </Dropdown>
-        </Tooltip>
+      <Tooltip
+        title={
+          !customer?.userId?.isActive && "Khách hàng này đã bị khóa tài khoản"
+        }
+      >
+        <Space.Compact style={{ width: "100%" }}>
+          <Tooltip title={"Tin nhắn nhanh"}>
+            <Dropdown
+              disabled={!customer?.userId?.isActive}
+              placement="topLeft"
+              trigger={["click"]}
+              popupRender={() => (
+                <>
+                  {isLoadingQuickChat && isFetching ? (
+                    <Loading3QuartersOutlined />
+                  ) : (
+                    <Menu
+                      style={{ maxHeight: 200, overflowY: "auto" }}
+                      items={quickChat?.data?.map((item: IQuickChat) => ({
+                        key: item._id,
+                        label:
+                          item.content.length > 100
+                            ? item.content.slice(0, 100) + "..."
+                            : item.content,
+                      }))}
+                      onClick={({ key }) => {
+                        const selected = quickChat?.data?.find(
+                          (item: IQuickChat) => item._id === key
+                        );
+                        if (selected) setInput(selected.content);
+                      }}
+                    />
+                  )}
+                  <div style={{ padding: 8, display: "flex", gap: 10 }}>
+                    <Input
+                      placeholder="Tìm tin nhắn nhanh..."
+                      value={searchTerm}
+                      disabled={!customer?.userId?.isActive}
+                      onChange={(e) => {
+                        setSearchTerm(e.target.value);
+                        setInput(e.target.value);
+                      }}
+                    />
+                    <Popover
+                      content={getPopoverCategoryContent}
+                      trigger="click"
+                      getPopupContainer={(trigger) => trigger.parentElement!}
+                    >
+                      <Button>Mục</Button>
+                    </Popover>
+                  </div>
+                </>
+              )}
+            >
+              <Button icon={<ThunderboltOutlined />} type="link" />
+            </Dropdown>
+          </Tooltip>
 
-        <Input
-          style={{
-            width: "100%",
-            minWidth: 0,
-            fontSize: "clamp(14px, 2.5vw, 16px)",
-            padding: screens?.xs ? "5px 7px" : undefined,
-            borderRadius: "20px",
-          }}
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onPressEnter={handleSend}
-          placeholder="Nhập tin nhắn..."
-        />
-        <Button
-          type="link"
-          icon={<SendOutlined />}
-          onClick={handleSend}
-          style={{
-            borderTopRightRadius: 30,
-            borderBottomRightRadius: 30,
-            width: screens?.xs ? 20 : 40,
-            fontSize: screens?.xs ? 13 : 16,
-          }}
-        />
-      </Space.Compact>
+          <Input
+            style={{
+              width: "100%",
+              minWidth: 0,
+              fontSize: "clamp(14px, 2.5vw, 16px)",
+              padding: screens?.xs ? "5px 7px" : undefined,
+              borderRadius: "20px",
+            }}
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onPressEnter={handleSend}
+            placeholder="Nhập tin nhắn..."
+            disabled={!customer?.userId?.isActive}
+          />
+          <Button
+            type="link"
+            icon={<SendOutlined />}
+            onClick={handleSend}
+            disabled={!customer?.userId?.isActive}
+            style={{
+              borderTopRightRadius: 30,
+              borderBottomRightRadius: 30,
+              width: screens?.xs ? 20 : 40,
+              fontSize: screens?.xs ? 13 : 16,
+            }}
+          />
+        </Space.Compact>
+      </Tooltip>
     </div>
   );
 };
