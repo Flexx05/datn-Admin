@@ -4,7 +4,7 @@ import { axiosInstance } from "../utils/axiosInstance";
 
 export const API_URL = "http://localhost:8080/api";
 export const CLOUDINARY_URL =
-  "https://api.cloudinary.com/v1_1/dtwm0rpqg/image/upload";
+  "https://api.cloudinary.com/v1_1/dtwm0rpqg/auto/upload";
 
 const dataProvider: DataProvider = {
   getApiUrl: () => API_URL,

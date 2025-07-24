@@ -2,16 +2,22 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import {
   Loading3QuartersOutlined,
+  PlusOutlined,
   SendOutlined,
   SmileOutlined,
   ThunderboltOutlined,
+  UploadOutlined,
 } from "@ant-design/icons";
+import emojiData from "@emoji-mart/data";
+import Picker from "@emoji-mart/react";
 import { useInvalidate, useList, useOne } from "@refinedev/core";
 import {
   Avatar,
   Button,
+  Card,
   Dropdown,
   Grid,
+  Image,
   Input,
   List,
   Menu,
@@ -20,10 +26,14 @@ import {
   Space,
   Tooltip,
   Typography,
+  Upload,
+  UploadFile,
 } from "antd";
+import axios from "axios";
 import dayjs from "dayjs";
 import { useContext, useEffect, useRef, useState } from "react";
 import { Link, useParams } from "react-router";
+import { CLOUDINARY_URL } from "../../config/dataProvider";
 import { ColorModeContext } from "../../contexts/color-mode";
 import {
   IConversation,
@@ -35,8 +45,6 @@ import { INotification } from "../../interface/notification";
 import { socket, useChatSocket } from "../../socket";
 import { axiosInstance } from "../../utils/axiosInstance";
 import CloseConversation from "./CloseConversation";
-import emojiData from "@emoji-mart/data";
-import Picker from "@emoji-mart/react";
 
 type DisplayMessage = IMessage & { type?: "user"; senderRole?: string };
 
@@ -48,6 +56,8 @@ const Messages = () => {
   const [searchTerm, setSearchTerm] = useState<string>("");
   const [displayMessages, setDisplayMessages] = useState<DisplayMessage[]>([]);
   const [filterCategory, setFilterCategory] = useState<number>(0);
+  const [fileList, setFileList] = useState<UploadFile[]>([]);
+  const [uploadedImageUrls, setUploadedImageUrls] = useState<string[]>([]);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { mode } = useContext(ColorModeContext);
@@ -139,14 +149,75 @@ const Messages = () => {
     },
   });
 
+  const handleUpload = async (newFileList: UploadFile[]) => {
+    const updatedFileList = newFileList.slice(0, 10).map((file) => ({
+      ...file,
+      status: file.status || "uploading",
+    }));
+    setFileList(updatedFileList);
+
+    const newUploadedUrls: string[] = [];
+
+    for (let i = 0; i < updatedFileList.length; i++) {
+      const file = updatedFileList[i];
+      const originFile = file.originFileObj as File;
+
+      if (
+        !originFile.type.startsWith("image/") &&
+        !originFile.type.startsWith("video/")
+      ) {
+        message.error("Vui lòng chỉ tải lên ảnh hoặc video.");
+        return;
+      }
+
+      if (!file.url && originFile) {
+        try {
+          const formData = new FormData();
+          formData.append("file", originFile);
+          formData.append("upload_preset", "Binova_Upload");
+
+          const { data } = await axios.post(CLOUDINARY_URL, formData);
+
+          let fileUrl = data.secure_url;
+
+          if (originFile.type.startsWith("image/")) {
+            // Chuyển URL sang định dạng WebP bằng cách thêm `.webp` và /upload/f_auto/ nếu cần
+            fileUrl = fileUrl.replace("/upload/", "/upload/f_webp/");
+          }
+
+          updatedFileList[i] = {
+            ...updatedFileList[i],
+            url: fileUrl,
+            status: "done",
+          };
+          newUploadedUrls.push(fileUrl);
+        } catch (error) {
+          updatedFileList[i] = {
+            ...updatedFileList[i],
+            status: "error",
+          };
+          message.error(`❌ Lỗi khi upload file: ${file.name}`);
+        }
+      } else if (file.url) {
+        newUploadedUrls.push(file.url);
+      }
+    }
+    setFileList(updatedFileList);
+    setUploadedImageUrls(newUploadedUrls);
+  };
+
   // ✅ Hành động gửi tin nhắn
   const handleSend = async () => {
-    if (!input.trim()) return;
+    if (!input.trim() && uploadedImageUrls.length === 0) return;
+
     try {
       await axiosInstance.post("/send-message", {
         content: input,
         conversationId: id,
+        files: uploadedImageUrls, // 🟡 Gửi kèm mảng đường dẫn ảnh đã upload
       });
+
+      // ✅ Đánh dấu thông báo là đã đọc nếu có
       if (notification?.data && Array.isArray(notification?.data)) {
         const unreadNotifications = notification?.data.filter(
           (n) => n.isRead === false
@@ -163,15 +234,20 @@ const Messages = () => {
           invalidates: ["list"],
         });
       }
+
       invalidate({
         resource: "conversation",
         id,
         invalidates: ["list", "detail"],
       });
+
+      // 🟢 Reset input và danh sách ảnh
+      setInput("");
+      setUploadedImageUrls([]);
+      setFileList([]);
     } catch (error: any) {
       message.error("Lỗi khi gửi tin nhắn " + error.message);
     }
-    setInput("");
   };
 
   const closedConversation = conversation?.status === "closed";
@@ -332,23 +408,51 @@ const Messages = () => {
                     title={dayjs(message.createdAt).format("HH:mm")}
                     placement="left"
                   >
+                    {message.content !== "" && (
+                      <div
+                        style={{
+                          background: isUser
+                            ? mode === "dark"
+                              ? "#575757"
+                              : "#f0f0f0"
+                            : "#1269EB",
+                          color: isUser ? undefined : "#fff",
+                          borderRadius: 16,
+                          padding: screens?.xs ? "6px 10px" : "8px 16px",
+                          maxWidth: screens?.xs ? 220 : 700,
+                          wordBreak: "break-word",
+                          fontSize: screens?.xs ? 13 : 15,
+                          textAlign: "left",
+                        }}
+                      >
+                        {message.content}
+                      </div>
+                    )}
                     <div
                       style={{
-                        background: isUser
-                          ? mode === "dark"
-                            ? "#575757"
-                            : "#f0f0f0"
-                          : "#1269EB",
-                        color: isUser ? undefined : "#fff",
-                        borderRadius: 16,
-                        padding: screens?.xs ? "6px 10px" : "8px 16px",
-                        maxWidth: screens?.xs ? 220 : 700,
-                        wordBreak: "break-word",
-                        fontSize: screens?.xs ? 13 : 15,
-                        textAlign: "left",
+                        display: "flex",
+                        gap: 8,
+                        flexWrap: "wrap",
+                        flexDirection: "row-reverse",
                       }}
                     >
-                      {message.content}
+                      {message.files &&
+                        message.files?.map((url) =>
+                          url.endsWith(".mp4") ? (
+                            <Card
+                              style={{ width: 200 }}
+                              cover={
+                                <video
+                                  src={url}
+                                  controls
+                                  style={{ width: "100%", borderRadius: 8 }}
+                                />
+                              }
+                            />
+                          ) : (
+                            <Image width={200} src={url} />
+                          )
+                        )}
                     </div>
                   </Tooltip>
                 </div>
@@ -426,12 +530,42 @@ const Messages = () => {
                   data={emojiData}
                   onEmojiSelect={(emoji: any) => setInput(input + emoji.native)}
                   theme={mode === "dark" ? "dark" : "light"}
+                  previewPosition="none"
                 />
               }
               trigger="click"
             >
               <Button
                 icon={<SmileOutlined />}
+                type="link"
+                disabled={!customer?.userId?.isActive}
+              />
+            </Popover>
+          </Tooltip>
+
+          <Tooltip title="Upload">
+            <Popover
+              trigger={["click"]}
+              placement="bottom"
+              content={
+                <Upload
+                  listType="picture-card"
+                  fileList={fileList}
+                  onChange={(e) => handleUpload(e.fileList)}
+                  disabled={!customer?.userId?.isActive}
+                  beforeUpload={() => false}
+                >
+                  {fileList.length >= 10 ? null : (
+                    <div>
+                      <PlusOutlined />
+                      <div style={{ marginTop: 8 }}>Tải ảnh</div>
+                    </div>
+                  )}
+                </Upload>
+              }
+            >
+              <Button
+                icon={<UploadOutlined />}
                 type="link"
                 disabled={!customer?.userId?.isActive}
               />
@@ -452,6 +586,7 @@ const Messages = () => {
             placeholder="Nhập tin nhắn..."
             disabled={!customer?.userId?.isActive}
           />
+
           <Button
             type="link"
             icon={<SendOutlined />}

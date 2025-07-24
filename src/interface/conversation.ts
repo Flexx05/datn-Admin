@@ -25,6 +25,7 @@ export interface IMessage {
   senderId: string;
   senderRole: string;
   content: string;
+  files: string[];
   readBy: string[];
   _id: string;
   createdAt: string;
