@@ -11,6 +11,7 @@ import {
   message,
   Select,
   Space,
+  Spin,
   Upload,
   UploadFile,
 } from "antd";
@@ -27,6 +28,7 @@ import { axiosInstance } from "../../utils/axiosInstance";
 import { AttributeItem } from "./AttributeItem";
 import "./variation-animations.css";
 import { VariationItem } from "./VariationItem";
+import LoadingShoes from "../../utils/loading";
 
 export const ProductEdit = () => {
   const { formProps, saveButtonProps, queryResult, formLoading } = useForm({
@@ -325,231 +327,236 @@ export const ProductEdit = () => {
       saveButtonProps={saveButtonProps}
       title="Chỉnh sửa sản phẩm"
       canDelete={false}
-      isLoading={
-        formLoading ||
-        category?.isLoading ||
-        brand?.isLoading ||
-        attribute?.isLoading
-      }
+      isLoading={false}
     >
-      <Form {...formProps} layout="vertical" onFinish={handleFinish}>
-        <Form.Item
-          label="Tên sản phẩm"
-          name="name"
-          rules={[
-            { required: true, message: "Vui lòng nhập tên sản phẩm" },
-            {
-              max: 100,
-              message: "Tên sản phẩm không được quá 100 ký tự",
-            },
-            {
-              min: 3,
-              message: "Tên sản phẩm phải có ít nhất 3 ký tự",
-            },
-            {
-              pattern: /^[\p{L}0-9\s]+$/u,
-              message: "Tên sản phẩm không được chứa ký tự đặc biệt",
-            },
-          ]}
-        >
-          <Input />
-        </Form.Item>
-
-        <Form.Item
-          label="Hình ảnh"
-          name="image"
-          rules={[{ required: true, message: "Vui lòng tải ảnh lên" }]}
-        >
-          <Upload
-            listType="picture-card"
-            fileList={Array.isArray(fileList) ? fileList : []}
-            onChange={(e) => handleUpload(e.fileList)}
-            maxCount={5}
-            beforeUpload={() => false}
+      <Spin
+        spinning={
+          formLoading ||
+          category?.isLoading ||
+          brand?.isLoading ||
+          attribute?.isLoading
+        }
+        indicator={<LoadingShoes />}
+      >
+        <Form {...formProps} layout="vertical" onFinish={handleFinish}>
+          <Form.Item
+            label="Tên sản phẩm"
+            name="name"
+            rules={[
+              { required: true, message: "Vui lòng nhập tên sản phẩm" },
+              {
+                max: 100,
+                message: "Tên sản phẩm không được quá 100 ký tự",
+              },
+              {
+                min: 3,
+                message: "Tên sản phẩm phải có ít nhất 3 ký tự",
+              },
+              {
+                pattern: /^[\p{L}0-9\s]+$/u,
+                message: "Tên sản phẩm không được chứa ký tự đặc biệt",
+              },
+            ]}
           >
-            {Array.isArray(fileList) && fileList.length >= 5 ? null : (
-              <div>
-                <PlusOutlined />
-                <div style={{ marginTop: 8 }}>Tải ảnh</div>
-              </div>
-            )}
-          </Upload>
-        </Form.Item>
+            <Input />
+          </Form.Item>
 
-        <Form.Item label="Mô tả" name="description">
-          <MDEditor data-color-mode={colorMode} />
-        </Form.Item>
-
-        <Form.Item
-          label="Danh mục"
-          name="categoryId"
-          rules={[{ required: true, message: "Vui lòng chọn danh mục" }]}
-        >
-          <Select loading={category?.isLoading}>
-            <Select.Option value={"684b9ab14a1d82d1e454b374"}>
-              Danh mục không xác định
-            </Select.Option>
-            {categoryOptions.map((option) => (
-              <Select.Option key={option.value} value={option.value}>
-                {option.label}
-              </Select.Option>
-            ))}
-          </Select>
-        </Form.Item>
-
-        <Form.Item
-          label="Thương hiệu"
-          name="brandId"
-          rules={[{ required: true, message: "Vui lòng chọn thương hiệu" }]}
-        >
-          <Select loading={brand?.isLoading} options={brandOptions} />
-        </Form.Item>
-
-        <Form.Item label="Thuộc tính" rules={[{ required: true }]}>
-          <Form.List name="attributes">
-            {(fields, { add, remove }) => (
-              <>
-                {fields.map((field) => (
-                  <AttributeItem
-                    key={field.key}
-                    field={field}
-                    remove={remove}
-                    allAttributes={allAttributes}
-                    form={formProps.form}
-                  />
-                ))}
-                <Form.Item>
-                  <Button
-                    type="dashed"
-                    onClick={() => add()}
-                    icon={<PlusOutlined />}
-                    block
-                  >
-                    Thêm thuộc tính
-                  </Button>
-                </Form.Item>
-              </>
-            )}
-          </Form.List>
-
-          <Form.Item label={null}>
-            <Button
-              onClick={async () => {
-                try {
-                  const response = await axiosInstance.post(
-                    `/product/generate-variations`,
-                    {
-                      attributes: formProps.form?.getFieldValue("attributes"),
-                    }
-                  );
-
-                  const generatedVariations = response.data.variation.map(
-                    (item: any) => ({
-                      attributes: item.attributes || [],
-                      regularPrice: 0,
-                      stock: 0,
-                    })
-                  );
-
-                  await formProps.form?.setFieldsValue({
-                    variation: generatedVariations,
-                  });
-
-                  message.success("Tạo biến thể thành công!");
-                } catch (error: any) {
-                  message.error(
-                    "Lỗi khi tạo biến thể! " + error.response.data.error ||
-                      error.response.data.message
-                  );
-                }
-              }}
+          <Form.Item
+            label="Hình ảnh"
+            name="image"
+            rules={[{ required: true, message: "Vui lòng tải ảnh lên" }]}
+          >
+            <Upload
+              listType="picture-card"
+              fileList={Array.isArray(fileList) ? fileList : []}
+              onChange={(e) => handleUpload(e.fileList)}
+              maxCount={5}
+              beforeUpload={() => false}
             >
-              Tạo sản phẩm biến thể
-            </Button>
+              {Array.isArray(fileList) && fileList.length >= 5 ? null : (
+                <div>
+                  <PlusOutlined />
+                  <div style={{ marginTop: 8 }}>Tải ảnh</div>
+                </div>
+              )}
+            </Upload>
           </Form.Item>
 
-          <Form.Item label="Áp dụng hàng loạt cho biến thể">
-            <Space.Compact style={{ display: "flex", gap: 12 }}>
-              <Form.Item name="defaultPrice" noStyle>
-                <InputNumber
-                  placeholder="Giá gốc"
-                  min={1000}
-                  style={{ width: 120 }}
-                />
-              </Form.Item>
-              <Form.Item name="defaultSalePrice" noStyle>
-                <InputNumber
-                  placeholder="Giá giảm"
-                  min={1000}
-                  style={{ width: 120 }}
-                />
-              </Form.Item>
-              <Form.Item name="defaultStock" noStyle>
-                <InputNumber
-                  placeholder="Tồn kho"
-                  min={0}
-                  style={{ width: 120 }}
-                />
-              </Form.Item>
-              <Button
-                type="primary"
-                onClick={() => {
-                  const values = formProps.form?.getFieldsValue([
-                    "defaultPrice",
-                    "defaultSalePrice",
-                    "defaultStock",
-                    "variation",
-                  ]);
-
-                  const {
-                    defaultPrice,
-                    defaultSalePrice,
-                    defaultStock,
-                    variation,
-                  } = values;
-
-                  if (!variation || variation.length === 0) {
-                    message.warning("Chưa có biến thể để áp dụng.");
-                    return;
-                  }
-
-                  const updated = variation.map((item: any) => ({
-                    ...item,
-                    regularPrice: defaultPrice ?? item.regularPrice,
-                    salePrice: defaultSalePrice ?? item.salePrice,
-                    stock: defaultStock ?? item.stock,
-                  }));
-
-                  formProps.form?.setFieldsValue({ variation: updated });
-                  message.success("✅ Đã áp dụng cho tất cả biến thể!");
-                }}
-              >
-                Áp dụng
-              </Button>
-            </Space.Compact>
+          <Form.Item label="Mô tả" name="description">
+            <MDEditor data-color-mode={colorMode} />
           </Form.Item>
 
-          <Form.List name="variation">
-            {(fields, { remove }) => (
-              <TransitionGroup>
-                {fields.map((field) => (
-                  <CSSTransition
-                    key={field.key}
-                    timeout={400}
-                    classNames="variation-fade"
-                  >
-                    <VariationItem
+          <Form.Item
+            label="Danh mục"
+            name="categoryId"
+            rules={[{ required: true, message: "Vui lòng chọn danh mục" }]}
+          >
+            <Select loading={category?.isLoading}>
+              <Select.Option value={"684b9ab14a1d82d1e454b374"}>
+                Danh mục không xác định
+              </Select.Option>
+              {categoryOptions.map((option) => (
+                <Select.Option key={option.value} value={option.value}>
+                  {option.label}
+                </Select.Option>
+              ))}
+            </Select>
+          </Form.Item>
+
+          <Form.Item
+            label="Thương hiệu"
+            name="brandId"
+            rules={[{ required: true, message: "Vui lòng chọn thương hiệu" }]}
+          >
+            <Select loading={brand?.isLoading} options={brandOptions} />
+          </Form.Item>
+
+          <Form.Item label="Thuộc tính" rules={[{ required: true }]}>
+            <Form.List name="attributes">
+              {(fields, { add, remove }) => (
+                <>
+                  {fields.map((field) => (
+                    <AttributeItem
+                      key={field.key}
                       field={field}
                       remove={remove}
+                      allAttributes={allAttributes}
                       form={formProps.form}
                     />
-                  </CSSTransition>
-                ))}
-              </TransitionGroup>
-            )}
-          </Form.List>
-        </Form.Item>
-      </Form>
+                  ))}
+                  <Form.Item>
+                    <Button
+                      type="dashed"
+                      onClick={() => add()}
+                      icon={<PlusOutlined />}
+                      block
+                    >
+                      Thêm thuộc tính
+                    </Button>
+                  </Form.Item>
+                </>
+              )}
+            </Form.List>
+
+            <Form.Item label={null}>
+              <Button
+                onClick={async () => {
+                  try {
+                    const response = await axiosInstance.post(
+                      `/product/generate-variations`,
+                      {
+                        attributes: formProps.form?.getFieldValue("attributes"),
+                      }
+                    );
+
+                    const generatedVariations = response.data.variation.map(
+                      (item: any) => ({
+                        attributes: item.attributes || [],
+                        regularPrice: 0,
+                        stock: 0,
+                      })
+                    );
+
+                    await formProps.form?.setFieldsValue({
+                      variation: generatedVariations,
+                    });
+
+                    message.success("Tạo biến thể thành công!");
+                  } catch (error: any) {
+                    message.error(
+                      "Lỗi khi tạo biến thể! " + error.response.data.error ||
+                        error.response.data.message
+                    );
+                  }
+                }}
+              >
+                Tạo sản phẩm biến thể
+              </Button>
+            </Form.Item>
+
+            <Form.Item label="Áp dụng hàng loạt cho biến thể">
+              <Space.Compact style={{ display: "flex", gap: 12 }}>
+                <Form.Item name="regularPrice" noStyle>
+                  <InputNumber
+                    placeholder="Giá gốc"
+                    min={1000}
+                    style={{ width: 120 }}
+                  />
+                </Form.Item>
+                <Form.Item name="salePrice" noStyle>
+                  <InputNumber
+                    placeholder="Giá giảm"
+                    min={1000}
+                    style={{ width: 120 }}
+                  />
+                </Form.Item>
+                <Form.Item name="stock" noStyle>
+                  <InputNumber
+                    placeholder="Tồn kho"
+                    min={0}
+                    style={{ width: 120 }}
+                  />
+                </Form.Item>
+                <Button
+                  type="primary"
+                  onClick={() => {
+                    const values = formProps.form?.getFieldsValue([
+                      "defaultPrice",
+                      "defaultSalePrice",
+                      "defaultStock",
+                      "variation",
+                    ]);
+
+                    const {
+                      defaultPrice,
+                      defaultSalePrice,
+                      defaultStock,
+                      variation,
+                    } = values;
+
+                    if (!variation || variation.length === 0) {
+                      message.warning("Chưa có biến thể để áp dụng.");
+                      return;
+                    }
+
+                    const updated = variation.map((item: any) => ({
+                      ...item,
+                      regularPrice: defaultPrice ?? item.regularPrice,
+                      salePrice: defaultSalePrice ?? item.salePrice,
+                      stock: defaultStock ?? item.stock,
+                    }));
+
+                    formProps.form?.setFieldsValue({ variation: updated });
+                    message.success("✅ Đã áp dụng cho tất cả biến thể!");
+                  }}
+                >
+                  Áp dụng
+                </Button>
+              </Space.Compact>
+            </Form.Item>
+
+            <Form.List name="variation">
+              {(fields, { remove }) => (
+                <TransitionGroup>
+                  {fields.map((field) => (
+                    <CSSTransition
+                      key={field.key}
+                      timeout={400}
+                      classNames="variation-fade"
+                    >
+                      <VariationItem
+                        field={field}
+                        remove={remove}
+                        form={formProps.form}
+                      />
+                    </CSSTransition>
+                  ))}
+                </TransitionGroup>
+              )}
+            </Form.List>
+          </Form.Item>
+        </Form>
+      </Spin>
     </Edit>
   );
 };

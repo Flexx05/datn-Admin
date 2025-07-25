@@ -28,6 +28,7 @@ import {
 import { axiosInstance } from "../../utils/axiosInstance";
 import { ColorDots } from "./ColorDots";
 import { VariationTable } from "./VariationTable";
+import LoadingShoes from "../../utils/loading";
 
 export const ProductList = () => {
   const [filterActive, setFilterActive] = useState<boolean>(true);
@@ -188,7 +189,13 @@ export const ProductList = () => {
       <Table
         {...tableProps}
         rowKey="_id"
-        loading={tableProps.loading}
+        loading={
+          tableProps.loading
+            ? {
+                indicator: <LoadingShoes />,
+              }
+            : false
+        }
         rowSelection={{
           type: "checkbox",
           selectedRowKeys,
