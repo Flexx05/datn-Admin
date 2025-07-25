@@ -3,6 +3,7 @@ import { MinusCircleOutlined, PlusOutlined } from "@ant-design/icons";
 import { Button, Form, InputNumber, message, Popconfirm, Upload } from "antd";
 import axios from "axios";
 import { ColorDots } from "./ColorDots";
+import { CLOUDINARY_URL } from "../../config/dataProvider";
 
 interface VariationItemProps {
   field: any;
@@ -34,10 +35,7 @@ export const VariationItem: React.FC<VariationItemProps> = ({
       formData.append("upload_preset", "Binova_Upload");
 
       try {
-        const res = await axios.post(
-          "https://api.cloudinary.com/v1_1/dtwm0rpqg/image/upload",
-          formData
-        );
+        const res = await axios.post(CLOUDINARY_URL, formData);
 
         const url = res.data.secure_url;
         const currentVariations = form.getFieldValue("variation") || [];
@@ -129,8 +127,6 @@ export const VariationItem: React.FC<VariationItemProps> = ({
           label="Ảnh biến thể"
           name={[field.name, "image"]}
           rules={[{ required: true, message: "Vui lòng chọn ảnh" }]}
-          valuePropName="fileList"
-          getValueFromEvent={(e) => (Array.isArray(e) ? e : e?.fileList)}
         >
           <Upload
             listType="picture-card"

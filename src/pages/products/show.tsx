@@ -43,14 +43,16 @@ export const ProductShow: React.FC = () => {
           )}
         </Descriptions.Item>
         <Descriptions.Item label="Hình ảnh">
-          {record?.image?.map((img: string, index: number) => (
-            <Image
-              key={index}
-              src={img}
-              width={100}
-              style={{ marginRight: 8 }}
-            />
-          ))}
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+            {record?.image?.map((img: string, index: number) => (
+              <Image
+                key={index}
+                src={img}
+                width={100}
+                style={{ marginRight: 8 }}
+              />
+            ))}
+          </div>
         </Descriptions.Item>
       </Descriptions>
 
