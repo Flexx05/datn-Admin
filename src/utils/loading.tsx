@@ -1,25 +1,28 @@
-const LoadingShoes = () => {
+import React from "react";
+
+const LoadingShoes: React.FC = () => {
   return (
     <div
       style={{
         display: "flex",
         justifyContent: "center",
         alignItems: "center",
+        flexDirection: "column",
         height: "100vh",
       }}
     >
       <div
         style={{
           position: "relative",
-          width: "256px",
-          height: "96px",
+          width: "260px",
+          height: "120px",
         }}
       >
-        {/* Road */}
+        {/* Con đường */}
         <div
           style={{
             position: "absolute",
-            bottom: "0",
+            bottom: 0,
             width: "100%",
             height: "32px",
             backgroundColor: "#4b5563",
@@ -43,17 +46,18 @@ const LoadingShoes = () => {
           ></div>
         </div>
 
-        {/* Shoes */}
+        {/* Giày đỏ */}
         <div
           style={{
             position: "absolute",
-            left: "0",
+            left: 0,
             bottom: "32px",
             width: "48px",
             height: "32px",
             backgroundColor: "#ef4444",
             borderRadius: "8px",
-            animation: "shoeMove 1.5s infinite",
+            animation: "shoeStepAlternate 1.5s infinite",
+            transformOrigin: "center bottom",
           }}
         >
           <div
@@ -61,13 +65,15 @@ const LoadingShoes = () => {
               position: "absolute",
               width: "16px",
               height: "8px",
-              backgroundColor: "#ffffff",
+              backgroundColor: "#ffdf99",
               borderRadius: "9999px",
               top: "-4px",
               left: "8px",
             }}
           ></div>
         </div>
+
+        {/* Giày xanh */}
         <div
           style={{
             position: "absolute",
@@ -77,7 +83,9 @@ const LoadingShoes = () => {
             height: "32px",
             backgroundColor: "#3b82f6",
             borderRadius: "8px",
-            animation: "shoeMove 1.5s infinite 0.2s",
+            animation: "shoeStepAlternate 1.5s infinite",
+            animationDelay: "0.75s",
+            transformOrigin: "center bottom",
           }}
         >
           <div
@@ -85,7 +93,7 @@ const LoadingShoes = () => {
               position: "absolute",
               width: "16px",
               height: "8px",
-              backgroundColor: "#ffffff",
+              backgroundColor: "#ffdf99",
               borderRadius: "9999px",
               top: "-4px",
               left: "8px",
@@ -93,22 +101,38 @@ const LoadingShoes = () => {
           ></div>
         </div>
       </div>
-      <style jsx>{`
-        @keyframes shoeMove {
+
+      {/* Text loading */}
+      <p
+        style={{
+          marginTop: "24px",
+          color: "#4b5563",
+          fontSize: "18px",
+          animation: "pulse 2s infinite",
+        }}
+      >
+        Đang chuẩn bị cho chuyến hành trình...
+      </p>
+
+      <style>{`
+        @keyframes shoeStepAlternate {
           0% {
-            transform: translateX(0) rotate(0deg);
+            transform: translateX(0) translateY(0) rotate(0deg);
           }
-          25% {
-            transform: translateX(20px) rotate(10deg);
+          20% {
+            transform: translateX(10px) translateY(-10px) rotate(8deg);
           }
-          50% {
-            transform: translateX(40px) rotate(0deg);
+          40% {
+            transform: translateX(20px) translateY(0) rotate(0deg);
           }
-          75% {
-            transform: translateX(20px) rotate(-10deg);
+          60% {
+            transform: translateX(30px) translateY(-8px) rotate(-8deg);
+          }
+          80% {
+            transform: translateX(40px) translateY(0) rotate(0deg);
           }
           100% {
-            transform: translateX(0) rotate(0deg);
+            transform: translateX(0) translateY(0) rotate(0deg);
           }
         }
 
@@ -118,6 +142,15 @@ const LoadingShoes = () => {
           }
           100% {
             background-position: 60px 0;
+          }
+        }
+
+        @keyframes pulse {
+          0%, 100% {
+            opacity: 1;
+          }
+          50% {
+            opacity: 0.5;
           }
         }
       `}</style>
