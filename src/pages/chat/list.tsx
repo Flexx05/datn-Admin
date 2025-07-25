@@ -70,19 +70,23 @@ const ChatList = () => {
       },
     ],
   });
-
   const invalidate = useInvalidate();
+  const chatData = data?.data.filter((item) => item.messages.length > 1) || [];
 
   useEffect(() => {
     if (id) socket.emit("join-conversation", id);
-    socket.emit("conversation-updated", () => {
-      invalidate({
-        resource: "conversation",
-        id,
-        invalidates: ["list", "detail"],
-      });
-    });
-  }, [id, invalidate]);
+  }, [id]);
+
+  useEffect(() => {
+    const handleChange = () => {
+      invalidate({ resource: "conversation", invalidates: ["list"] });
+      refetch();
+    };
+    socket.on("conversation-updated", handleChange);
+    return () => {
+      socket.off("conversation-updated", handleChange);
+    };
+  }, [invalidate, refetch]);
 
   useEffect(() => {
     const handleChange = () => {
@@ -122,8 +126,6 @@ const ChatList = () => {
     waiting: { label: "Đang chờ", color: "yellow" },
     closed: { label: "Đã đóng", color: "red" },
   };
-
-  const chatData = data?.data.filter((item) => item.messages.length > 1) || [];
 
   const getPopoverStatusContent = (
     typeMap: Record<string, { label: string; color: string }> = statusMap
@@ -285,8 +287,11 @@ const ChatList = () => {
                           }}
                         >
                           {(lastMessage.senderRole === "user" ? "" : "Bạn: ") +
-                            (lastMessage?.content?.slice(0, 20) || "") +
-                            "..."}
+                            (lastMessage?.files?.length > 0
+                              ? "đã gửi files"
+                              : lastMessage?.content
+                              ? lastMessage.content.slice(0, 20) + "..."
+                              : "Đã gửi tin nhắn")}
                         </Text>
                       </Col>
                       <Col span={5} style={{ textAlign: "right" }}>

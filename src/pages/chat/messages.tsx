@@ -48,8 +48,6 @@ import CloseConversation from "./CloseConversation";
 
 type DisplayMessage = IMessage & { type?: "user"; senderRole?: string };
 
-// TODO: thêm Icon và xử lý logic thêm ảnh
-
 const Messages = () => {
   const { id } = useParams<string>();
   const [input, setInput] = useState("");
@@ -132,7 +130,47 @@ const Messages = () => {
 
   // ✅ Scroll xuống cuối khi có tin nhắn mới
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    let mediaElements: (HTMLImageElement | HTMLVideoElement)[] = [];
+
+    // Lấy tất cả ảnh & video đang có trên trang
+    const imgs = Array.from(document.querySelectorAll("img"));
+    const videos = Array.from(document.querySelectorAll("video"));
+
+    mediaElements = [...imgs, ...videos];
+
+    let loadedCount = 0;
+
+    const checkAllLoaded = () => {
+      loadedCount++;
+      if (loadedCount === mediaElements.length) {
+        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+      }
+    };
+
+    if (mediaElements.length === 0) {
+      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+      return;
+    }
+
+    mediaElements.forEach((el) => {
+      if (
+        (el instanceof HTMLImageElement && el.complete) ||
+        (el instanceof HTMLVideoElement && el.readyState >= 3)
+      ) {
+        checkAllLoaded();
+      } else {
+        el.addEventListener("load", checkAllLoaded);
+        el.addEventListener("loadeddata", checkAllLoaded);
+      }
+    });
+
+    // Dọn sự kiện
+    return () => {
+      mediaElements.forEach((el) => {
+        el.removeEventListener("load", checkAllLoaded);
+        el.removeEventListener("loadeddata", checkAllLoaded);
+      });
+    };
   }, [displayMessages]);
 
   const { data: notification } = useList<INotification>({

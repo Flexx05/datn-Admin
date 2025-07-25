@@ -17,6 +17,7 @@ export interface IParticipant {
     role: string;
     avatar: string | null;
     isActive: boolean;
+    activeStatus: boolean;
   };
   joinedAt: string;
 }
