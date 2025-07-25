@@ -1,8 +1,17 @@
 import React, { useState, useEffect } from "react";
-import { Form, Input, InputNumber, DatePicker, Select, message } from "antd";
+import {
+  Form,
+  Input,
+  InputNumber,
+  DatePicker,
+  Select,
+  message,
+  Tag,
+} from "antd";
 import { Edit, useForm } from "@refinedev/antd";
 import dayjs from "dayjs";
 import { axiosInstance } from "../../utils/axiosInstance";
+import debounce from "lodash/debounce";
 
 const { RangePicker } = DatePicker;
 
@@ -11,12 +20,16 @@ const VoucherEdit = () => {
   const [fixedValue, setFixedValue] = useState<number | undefined>();
   const [percentValue, setPercentValue] = useState<number | undefined>();
   const [maxDiscount, setMaxDiscount] = useState<number | undefined>();
+  const [voucherScope, setVoucherScope] = useState<"shared" | "private">(
+    "shared"
+  );
+  const [userIds, setUserIds] = useState<string[]>([]);
+  const [userOptions, setUserOptions] = useState<
+    { label: string; value: string }[]
+  >([]);
+  const [fetching, setFetching] = useState(false);
 
-  const {
-    formProps,
-    saveButtonProps,
-    queryResult,
-  } = useForm({
+  const { formProps, saveButtonProps, queryResult } = useForm({
     successNotification: () => ({
       message: "Cập nhật voucher thành công!",
       description: "Voucher đã được cập nhật.",
@@ -35,8 +48,11 @@ const VoucherEdit = () => {
   const record = queryResult?.data?.data?.data;
 
   useEffect(() => {
-     if (record) {
+    if (record) {
+      setVoucherScope(record.voucherScope); // ✅ giữ nguyên backend
+      console.log("record", record);
       setDiscountType(record.discountType);
+
       if (record.discountType === "fixed") {
         setFixedValue(record.discountValue);
       } else {
@@ -48,9 +64,71 @@ const VoucherEdit = () => {
         ...record,
         dateRange: [dayjs(record.startDate), dayjs(record.endDate)],
       });
+
+      // 1. Gán trước danh sách userId
+      const currentUserIds =
+        record.userIds?.map((id: any) => id.toString()) || [];
+      setUserIds(currentUserIds);
+
+      // 2. Gọi danh sách user như ở create
+      axiosInstance.get("/admin/users?isActive=true").then((res) => {
+        const users = res.data?.docs || res.data || [];
+        const mapped = users.map((u: any) => ({
+          label: `${u.fullName || u.email} (${u.email})`,
+          value: u._id,
+        }));
+
+        // 3. Nếu user đang được chọn không nằm trong danh sách này → fetch thêm
+        const currentUserIdsSet = new Set(currentUserIds);
+        const mappedIds = new Set(mapped.map((u:any) => u.value));
+        const missingIds = [...currentUserIdsSet].filter(
+          (id) => !mappedIds.has(id)
+        );
+
+        if (missingIds.length > 0) {
+          axiosInstance
+            .get("/admin/users/byIds", {
+              params: { ids: missingIds.join(",") },
+            })
+            .then((extraRes) => {
+              const extraUsers = extraRes.data || [];
+              const extraMapped = extraUsers.map((u: any) => ({
+                label: `${u.fullName || u.email} (${u.email})`,
+                value: u._id,
+              }));
+              setUserOptions([...mapped, ...extraMapped]);
+            })
+            .catch(() => {
+              setUserOptions(mapped); // fallback
+            });
+        } else {
+          setUserOptions(mapped);
+        }
+      });
     }
-  
   }, [record, formProps.form]);
+
+  // Hàm fetch user theo search
+  const fetchUser = debounce((search: string) => {
+    setFetching(true);
+    axiosInstance
+      .get(
+        `/admin/users?search=${encodeURIComponent(
+          search
+        )}&isActive=true&limit=10`
+      )
+      .then((res) => {
+        const users = res.data?.docs || res.data || [];
+        setUserOptions(
+          users.map((u: any) => ({
+            label: `${u.fullName || u.email} (${u.email})`,
+            value: u._id,
+          }))
+        );
+        setFetching(false);
+      })
+      .catch(() => setFetching(false));
+  }, 400);
 
   const handleFinish = (values: any) => {
     const [startDate, endDate] = values.dateRange || [];
@@ -60,7 +138,7 @@ const VoucherEdit = () => {
       const start = dayjs(startDate);
       const end = dayjs(endDate);
       const now = dayjs();
-    
+
       // 1. Ngày bắt đầu > ngày kết thúc
       if (start.isAfter(end)) {
         formProps.form?.setFields([
@@ -71,24 +149,25 @@ const VoucherEdit = () => {
         ]);
         return;
       }
-    
+
       // 2. Thời gian kết thúc không sau ít nhất 1 phút
       if (end.diff(start, "minute") < 1) {
         formProps.form?.setFields([
           {
             name: "dateRange",
-            errors: ["Thời gian kết thúc phải sau thời gian bắt đầu ít nhất 1 phút"],
+            errors: [
+              "Thời gian kết thúc phải sau thời gian bắt đầu ít nhất 1 phút",
+            ],
           },
         ]);
         return;
       }
-    
+
       // 3. Nếu được chỉnh ngày bắt đầu, không cho phép chỉnh về quá khứ
-      const isStartDateEditable =
-        !(
-          record?.voucherStatus === "active" ||
-          dayjs(record?.startDate).isBefore(now, "minute")
-        );
+      const isStartDateEditable = !(
+        record?.voucherStatus === "active" ||
+        dayjs(record?.startDate).isBefore(now, "minute")
+      );
       if (isStartDateEditable && start.isBefore(now)) {
         formProps.form?.setFields([
           {
@@ -99,7 +178,6 @@ const VoucherEdit = () => {
         return;
       }
     }
-    
 
     const payload = {
       ...values,
@@ -107,6 +185,14 @@ const VoucherEdit = () => {
       endDate: endDate?.toISOString(),
     };
     delete payload.dateRange;
+
+    if (voucherScope === "private") {
+      payload.userIds = userIds;
+      payload.quantity = userIds.length;
+    } else {
+      payload.userIds = [];
+    }
+    payload.voucherScope = voucherScope;
 
     formProps.onFinish?.(payload);
   };
@@ -121,68 +207,117 @@ const VoucherEdit = () => {
         >
           <Select placeholder="Chọn loại voucher">
             <Select.Option value="product">Dành cho sản phẩm</Select.Option>
-            <Select.Option value="shipping">Dành cho phí vận chuyển</Select.Option>
+            <Select.Option value="shipping">
+              Dành cho phí vận chuyển
+            </Select.Option>
           </Select>
         </Form.Item>
 
-          <Form.Item
-                  label="Mã giảm giá"
-                  name="code"
-                  rules={[
-                    { required: true, message: "Vui lòng nhập mã giảm giá" },
-                    { min: 3, message: "Mã giảm giá phải có ít nhất 3 ký tự" },
-                    {
-                      pattern: /^[A-Z0-9]+$/,
-                      message: "Mã giảm giá chỉ chứa chữ in hoa và số (Không bao gồm khoảng trắng)",
-                    },
-                  
-                    {
-                      validator: async (_, value) => {
-                        if (!value || value.trim().length === 0) {
-                          return Promise.resolve();
-                        }
-                    
-                        // Cho phép giữ nguyên nếu không thay đổi mã
-                        if (value.trim().toLowerCase() === record?.code?.trim().toLowerCase()) {
-                          return Promise.resolve();
-                        }
-                    
-                        try {
-                          const response = await axiosInstance(`/vouchers?code=${value.trim()}&isDeleted=all`);
-                          const data = response?.data?.docs || [];
-                    
-                          const duplicate = data.find(
-                            (v: any) =>
-                              v.code.trim().toLowerCase() === value.trim().toLowerCase() &&
-                              v._id !== record?._id // Không phải chính voucher đang sửa
-                          );
-                    
-                          if (duplicate) {
-                            if (duplicate.isDeleted) {
-                              return Promise.reject(
-                                "Mã giảm giá này đã từng tồn tại (hiện đang bị xóa). Vui lòng dùng mã khác hoặc khôi phục mã cũ."
-                              );
-                            }
-                            return Promise.reject("Mã giảm giá đã tồn tại");
-                          }
-                        } catch (error) {
-                          console.error("Lỗi kiểm tra mã:", error);
-                          return Promise.reject("Không thể kiểm tra mã giảm giá. Vui lòng thử lại.");
-                        }
-                    
-                        return Promise.resolve();
-                      },
+        <Form.Item
+          label="Mã giảm giá"
+          name="code"
+          rules={[
+            { required: true, message: "Vui lòng nhập mã giảm giá" },
+            { min: 3, message: "Mã giảm giá phải có ít nhất 3 ký tự" },
+            {
+              pattern: /^[A-Z0-9]+$/,
+              message:
+                "Mã giảm giá chỉ chứa chữ in hoa và số (Không bao gồm khoảng trắng)",
+            },
+
+            {
+              validator: async (_, value) => {
+                if (!value || value.trim().length === 0) {
+                  return Promise.resolve();
+                }
+
+                // Cho phép giữ nguyên nếu không thay đổi mã
+                if (
+                  value.trim().toLowerCase() ===
+                  record?.code?.trim().toLowerCase()
+                ) {
+                  return Promise.resolve();
+                }
+
+                try {
+                  const response = await axiosInstance(
+                    `/vouchers?code=${value.trim()}&isDeleted=all`
+                  );
+                  const data = response?.data?.docs || [];
+
+                  const duplicate = data.find(
+                    (v: any) =>
+                      v.code.trim().toLowerCase() ===
+                        value.trim().toLowerCase() && v._id !== record?._id // Không phải chính voucher đang sửa
+                  );
+
+                  if (duplicate) {
+                    if (duplicate.isDeleted) {
+                      return Promise.reject(
+                        "Mã giảm giá này đã từng tồn tại (hiện đang bị xóa). Vui lòng dùng mã khác hoặc khôi phục mã cũ."
+                      );
                     }
-                    
-                  ]}
-                  
-                >
-             <Input placeholder="Nhập mã giảm giá" />
+                    return Promise.reject("Mã giảm giá đã tồn tại");
+                  }
+                } catch (error) {
+                  console.error("Lỗi kiểm tra mã:", error);
+                  return Promise.reject(
+                    "Không thể kiểm tra mã giảm giá. Vui lòng thử lại."
+                  );
+                }
+
+                return Promise.resolve();
+              },
+            },
+          ]}
+        >
+          <Input placeholder="Nhập mã giảm giá" />
         </Form.Item>
 
-        <Form.Item label="Link" name="link">
-          <Input placeholder="Link sản phẩm/danh mục (không bắt buộc)" />
+        <Form.Item label="Phạm vi voucher" required>
+          <Select value={voucherScope} onChange={setVoucherScope}>
+            <Select.Option value="shared">Công khai (cho tất cả)</Select.Option>
+            <Select.Option value="private">
+              Riêng tư (cho cá nhân)
+            </Select.Option>
+          </Select>
         </Form.Item>
+        {voucherScope === "private" && (
+          <Form.Item
+            label="Danh sách người dùng"
+            name={"userIds"}
+            rules={[
+              {
+                required: voucherScope === "private", // ✅ ràng buộc chỉ khi riêng tư
+                message: "Vui lòng chọn người dùng cho voucher riêng tư",
+                type: "array", // 🟢 kiểu dữ liệu là mảng
+              },
+            ]}
+          >
+            <Select
+              mode="multiple"
+              showSearch
+              filterOption={false}
+              onSearch={fetchUser}
+              notFoundContent={
+                fetching ? "Đang tìm..." : "Không có user phù hợp"
+              }
+              options={userOptions}
+              value={userIds}
+              onChange={(value) => {
+                setUserIds(value);
+                formProps.form?.setFieldsValue({ userIds: value });
+              }}
+              placeholder="Tìm kiếm theo tên hoặc email"
+              style={{ width: "100%" }}
+            />
+            <div style={{ marginTop: 8 }}>
+              {userIds.length > 0 && (
+                <Tag color="blue">Số người dùng: {userIds.length}</Tag>
+              )}
+            </div>
+          </Form.Item>
+        )}
 
         <Form.Item
           label="Mô tả"
@@ -210,8 +345,7 @@ const VoucherEdit = () => {
           name="discountType"
           rules={[{ required: true, message: "Vui lòng chọn kiểu giảm giá" }]}
         >
-
-        <Select
+          <Select
             onChange={(value) => {
               setDiscountType(value);
               if (value === "fixed") {
@@ -264,9 +398,7 @@ const VoucherEdit = () => {
           <InputNumber
             style={{ width: "100%" }}
             placeholder={
-              discountType === "fixed"
-                ? "Nhập số tiền giảm"
-                : "Nhập % giảm"
+              discountType === "fixed" ? "Nhập số tiền giảm" : "Nhập % giảm"
             }
           />
         </Form.Item>
@@ -303,9 +435,11 @@ const VoucherEdit = () => {
             },
             {
               validator: (_, value) => {
-                const discountType = formProps.form?.getFieldValue("discountType");
-                const discountValue = formProps.form?.getFieldValue("discountValue");
-        
+                const discountType =
+                  formProps.form?.getFieldValue("discountType");
+                const discountValue =
+                  formProps.form?.getFieldValue("discountValue");
+
                 if (discountType === "fixed") {
                   if (
                     typeof value === "number" &&
@@ -317,10 +451,10 @@ const VoucherEdit = () => {
                     );
                   }
                 }
-        
+
                 return Promise.resolve();
               },
-            },    
+            },
           ]}
         >
           <InputNumber
@@ -329,45 +463,58 @@ const VoucherEdit = () => {
           />
         </Form.Item>
 
-        <Form.Item
-          label="Số lượng voucher"
-          name="quantity"
-          rules={[
-            { required: true, message: "Vui lòng nhập số lượng" },
-            {
-              type: "number",
-              min: 1,
-              message: "Số lượng voucher phải lớn hơn hoặc bằng 1",
-            },
-            {
-              validator: (_, value) => {
-                if (record?.voucherStatus === "active") {
-                  if (typeof value === "number" && value < record.quantity) {
-                    return Promise.reject(
-                      new Error(
-                        `Không thể giảm số lượng khi voucher đang hoạt động (hiện tại là ${record.quantity})`
-                      )
-                    );
-                  }
-                }
-                return Promise.resolve();
+        {/* Số lượng chỉ nhập khi dùng chung */}
+        {voucherScope === "shared" && (
+          <Form.Item
+            label="Số lượng voucher"
+            name="quantity"
+            rules={[
+              { required: true, message: "Vui lòng nhập số lượng" },
+              {
+                type: "number",
+                min: 1,
+                message: "Số lượng voucher phải lớn hơn hoặc bằng 1",
               },
-            },
-          ]}
-        >
-          <InputNumber
-            style={{ width: "100%" }}
-            placeholder="Nhập số lượng voucher"
-          />
-        </Form.Item>
+              {
+                validator: (_, value) => {
+                  if (record?.voucherStatus === "active") {
+                    if (typeof value === "number" && value < record.quantity) {
+                      return Promise.reject(
+                        new Error(
+                          `Không thể giảm số lượng khi voucher đang hoạt động (hiện tại là ${record.quantity})`
+                        )
+                      );
+                    }
+                  }
+                  return Promise.resolve();
+                },
+              },
+            ]}
+          >
+            <InputNumber
+              style={{ width: "100%" }}
+              placeholder="Nhập số lượng voucher"
+            />
+          </Form.Item>
+        )}
 
-
-                
+        {/* Nếu dùng riêng, hiển thị số lượng tự động */}
+        {voucherScope === "private" && (
+          <Form.Item label="Số lượng voucher">
+            <InputNumber
+              value={userIds.length}
+              disabled
+              style={{ width: "100%" }}
+            />
+          </Form.Item>
+        )}
 
         <Form.Item
           label="Thời gian áp dụng"
           name="dateRange"
-          rules={[{ required: true, message: "Vui lòng chọn thời gian áp dụng" }]}
+          rules={[
+            { required: true, message: "Vui lòng chọn thời gian áp dụng" },
+          ]}
         >
           <RangePicker
             showTime
@@ -399,11 +546,12 @@ const VoucherEdit = () => {
               return {};
             }}
             // Chỉ cho chỉnh ngày bắt đầu nếu voucher chưa active và ngày bắt đầu chưa qua
-            disabled={[ 
-              record?.voucherStatus === "active" || dayjs(record?.startDate).isBefore(dayjs(), "minute"), // disable startDate
-              false // endDate vẫn cho chỉnh
+            disabled={[
+              record?.voucherStatus === "active" ||
+                dayjs(record?.startDate).isBefore(dayjs(), "minute"), // disable startDate
+              false, // endDate vẫn cho chỉnh
             ]}
-        />
+          />
         </Form.Item>
       </Form>
     </Edit>

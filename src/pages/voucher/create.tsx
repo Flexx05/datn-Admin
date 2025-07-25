@@ -1,9 +1,10 @@
-import React, { useState } from "react";
-import { Form, Input, InputNumber, DatePicker, Select } from "antd";
+import React, { useState, useEffect } from "react";
+import { Form, Input, InputNumber, DatePicker, Select, Space, Tag } from "antd";
 import { HttpError } from "@refinedev/core";
 import { Create, useForm } from "@refinedev/antd";
 import dayjs from "dayjs";
 import { axiosInstance } from "../../utils/axiosInstance";
+import debounce from "lodash/debounce";
 
 const { RangePicker } = DatePicker;
 
@@ -30,6 +31,48 @@ const VoucherCreate = () => {
     undefined
   );
   const [maxDiscount, setMaxDiscount] = useState<number | undefined>(undefined);
+  const [voucherScope, setVoucherScope] = useState<"shared" | "private">(
+    "shared"
+  );
+  const [userIds, setUserIds] = useState<string[]>([]);
+  const [userOptions, setUserOptions] = useState<
+    { label: string; value: string }[]
+  >([]);
+  const [fetching, setFetching] = useState(false);
+
+  // Hàm fetch user theo search
+  const fetchUser = debounce((search: string) => {
+    setFetching(true);
+    axiosInstance
+      .get(
+        `/admin/users?search=${encodeURIComponent(
+          search
+        )}&isActive=true&limit=10`
+      )
+      .then((res) => {
+        const users = res.data?.docs || res.data || [];
+        setUserOptions(
+          users.map((u: any) => ({
+            label: `${u.fullName || u.email} (${u.email})`,
+            value: u._id,
+          }))
+        );
+        setFetching(false);
+      })
+      .catch(() => setFetching(false));
+  }, 400);
+
+  useEffect(() => {
+    axiosInstance.get("/admin/users?isActive=true").then((res) => {
+      const users = res.data?.docs || res.data || [];
+      setUserOptions(
+        users.map((u: any) => ({
+          label: `${u.fullName || u.email} (${u.email})`,
+          value: u._id,
+        }))
+      );
+    });
+  }, []);
 
   const { form } = formProps;
 
@@ -80,6 +123,14 @@ const VoucherCreate = () => {
       values.endDate = end.toISOString();
       delete values.dateRange;
 
+      if (voucherScope === "private") {
+        values.userIds = userIds;
+        values.quantity = userIds.length;
+      } else {
+        values.userIds = [];
+      }
+
+      values.voucherScope = voucherScope;
       formProps.onFinish?.(values);
     }
   };
@@ -152,9 +203,51 @@ const VoucherCreate = () => {
           <Input placeholder="Nhập mã giảm giá" />
         </Form.Item>
 
-        <Form.Item label="Link" name="link">
-          <Input placeholder="Link sản phẩm/danh mục (không bắt buộc)" />
+        <Form.Item label="Phạm vi voucher" required>
+          <Select value={voucherScope} onChange={setVoucherScope}>
+            <Select.Option value="shared">Công khai (cho tất cả)</Select.Option>
+            <Select.Option value="private">
+              Riêng tư (cho cá nhân)
+            </Select.Option>
+          </Select>
         </Form.Item>
+
+        {voucherScope === "private" && (
+          <Form.Item
+            label="Danh sách người dùng"
+            name={"userIds"}
+            rules={[
+              {
+                required: voucherScope === "private",
+                message: "Vui lòng chọn người dùng cho voucher riêng tư",
+                type: "array", 
+              },
+            ]}
+          >
+            <Select
+              mode="multiple"
+              showSearch
+              filterOption={false}
+              onSearch={fetchUser}
+              notFoundContent={
+                fetching ? "Đang tìm..." : "Không có user phù hợp"
+              }
+              options={userOptions}
+              value={userIds}
+              onChange={(value) => {
+                setUserIds(value);
+                form?.setFieldsValue({ userIds: value });
+              }}
+              placeholder="Nhập theo tên hoặc email"
+              style={{ width: "100%" }}
+            />
+            <div style={{ marginTop: 8 }}>
+              {userIds.length > 0 && (
+                <Tag color="blue">Số người dùng: {userIds.length}</Tag>
+              )}
+            </div>
+          </Form.Item>
+        )}
 
         <Form.Item
           label="Mô tả"
@@ -303,23 +396,37 @@ const VoucherCreate = () => {
           />
         </Form.Item>
 
-        <Form.Item
-          label="Số lượng voucher"
-          name="quantity"
-          rules={[
-            { required: true, message: "Vui lòng nhập số lượng" },
-            {
-              type: "number",
-              min: 1,
-              message: "Số lượng voucher phải lớn hơn hoặc bằng 1",
-            },
-          ]}
-        >
-          <InputNumber
-            style={{ width: "100%" }}
-            placeholder="Nhập số lượng voucher"
-          />
-        </Form.Item>
+        {/* Số lượng chỉ nhập khi dùng chung */}
+        {voucherScope === "shared" && (
+          <Form.Item
+            label="Số lượng voucher"
+            name="quantity"
+            rules={[
+              { required: true, message: "Vui lòng nhập số lượng" },
+              {
+                type: "number",
+                min: 1,
+                message: "Số lượng voucher phải lớn hơn hoặc bằng 1",
+              },
+            ]}
+          >
+            <InputNumber
+              style={{ width: "100%" }}
+              placeholder="Nhập số lượng voucher"
+            />
+          </Form.Item>
+        )}
+
+        {/* Nếu dùng riêng, hiển thị số lượng tự động */}
+        {voucherScope === "private" && (
+          <Form.Item label="Số lượng voucher">
+            <InputNumber
+              value={userIds.length}
+              disabled
+              style={{ width: "100%" }}
+            />
+          </Form.Item>
+        )}
 
         <Form.Item
           label="Thời gian áp dụng"
