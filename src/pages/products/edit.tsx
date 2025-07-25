@@ -3,7 +3,17 @@ import { PlusOutlined } from "@ant-design/icons";
 import { Edit, useForm, useSelect } from "@refinedev/antd";
 import { HttpError } from "@refinedev/core";
 import MDEditor from "@uiw/react-md-editor";
-import { Button, Form, Input, message, Select, Upload, UploadFile } from "antd";
+import {
+  Button,
+  Form,
+  Input,
+  InputNumber,
+  message,
+  Select,
+  Space,
+  Upload,
+  UploadFile,
+} from "antd";
 import axios from "axios";
 import { useContext, useEffect, useMemo, useState } from "react";
 import { CSSTransition, TransitionGroup } from "react-transition-group";
@@ -456,6 +466,67 @@ export const ProductEdit = () => {
             >
               Tạo sản phẩm biến thể
             </Button>
+          </Form.Item>
+
+          <Form.Item label="Áp dụng hàng loạt cho biến thể">
+            <Space.Compact style={{ display: "flex", gap: 12 }}>
+              <Form.Item name="defaultPrice" noStyle>
+                <InputNumber
+                  placeholder="Giá gốc"
+                  min={1000}
+                  style={{ width: 120 }}
+                />
+              </Form.Item>
+              <Form.Item name="defaultSalePrice" noStyle>
+                <InputNumber
+                  placeholder="Giá giảm"
+                  min={1000}
+                  style={{ width: 120 }}
+                />
+              </Form.Item>
+              <Form.Item name="defaultStock" noStyle>
+                <InputNumber
+                  placeholder="Tồn kho"
+                  min={0}
+                  style={{ width: 120 }}
+                />
+              </Form.Item>
+              <Button
+                type="primary"
+                onClick={() => {
+                  const values = formProps.form?.getFieldsValue([
+                    "defaultPrice",
+                    "defaultSalePrice",
+                    "defaultStock",
+                    "variation",
+                  ]);
+
+                  const {
+                    defaultPrice,
+                    defaultSalePrice,
+                    defaultStock,
+                    variation,
+                  } = values;
+
+                  if (!variation || variation.length === 0) {
+                    message.warning("Chưa có biến thể để áp dụng.");
+                    return;
+                  }
+
+                  const updated = variation.map((item: any) => ({
+                    ...item,
+                    regularPrice: defaultPrice ?? item.regularPrice,
+                    salePrice: defaultSalePrice ?? item.salePrice,
+                    stock: defaultStock ?? item.stock,
+                  }));
+
+                  formProps.form?.setFieldsValue({ variation: updated });
+                  message.success("✅ Đã áp dụng cho tất cả biến thể!");
+                }}
+              >
+                Áp dụng
+              </Button>
+            </Space.Compact>
           </Form.Item>
 
           <Form.List name="variation">
