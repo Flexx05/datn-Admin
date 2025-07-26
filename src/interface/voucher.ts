@@ -15,6 +15,5 @@ export interface IVoucher {
   isDeleted: boolean;
   createdAt: string;
   updatedAt: string;
-  voucherScope: "shared" | "private"; 
   userIds?: string[]; // Thêm trường này để hỗ trợ voucher dùng riêng
 }

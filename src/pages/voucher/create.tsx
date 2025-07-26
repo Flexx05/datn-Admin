@@ -9,47 +9,62 @@ import debounce from "lodash/debounce";
 const { RangePicker } = DatePicker;
 
 const VoucherCreate = () => {
-  const { formProps, saveButtonProps } = useForm({
-    successNotification: () => ({
-      message: "Tạo voucher thành công!",
-      description: "Voucher mới đã được thêm vào hệ thống.",
-      type: "success",
-    }),
-    errorNotification: (error?: HttpError) => ({
-      message: "Tạo voucher thất bại!",
-      description:
-        error?.response?.data?.message ??
-        "Có lỗi xảy ra trong quá trình xử lý.",
-      type: "error",
-    }),
-    redirect: "list",
-  });
+    const { formProps, saveButtonProps } = useForm({
+      successNotification: () => ({
+        message: "Tạo voucher thành công!",
+        description: "Voucher mới đã được thêm vào hệ thống.",
+        type: "success",
+      }),
+      errorNotification: (error?: HttpError) => ({
+        message: "Tạo voucher thất bại!",
+        description:
+          error?.response?.data?.message ??
+          "Có lỗi xảy ra trong quá trình xử lý.",
+        type: "error",
+      }),
+      redirect: "list",
+    });
 
-  const [discountType, setDiscountType] = useState("fixed");
-  const [fixedValue, setFixedValue] = useState<number | undefined>(undefined);
-  const [percentValue, setPercentValue] = useState<number | undefined>(
-    undefined
-  );
-  const [maxDiscount, setMaxDiscount] = useState<number | undefined>(undefined);
-  const [voucherScope, setVoucherScope] = useState<"shared" | "private">(
-    "shared"
-  );
-  const [userIds, setUserIds] = useState<string[]>([]);
-  const [userOptions, setUserOptions] = useState<
-    { label: string; value: string }[]
-  >([]);
-  const [fetching, setFetching] = useState(false);
+    const [discountType, setDiscountType] = useState("fixed");
+    const [fixedValue, setFixedValue] = useState<number | undefined>(undefined);
+    const [percentValue, setPercentValue] = useState<number | undefined>(
+      undefined
+    );
+    const [maxDiscount, setMaxDiscount] = useState<number | undefined>(
+      undefined
+    );
 
-  // Hàm fetch user theo search
-  const fetchUser = debounce((search: string) => {
-    setFetching(true);
-    axiosInstance
-      .get(
-        `/admin/users?search=${encodeURIComponent(
-          search
-        )}&isActive=true&limit=10`
-      )
-      .then((res) => {
+    const [userIds, setUserIds] = useState<string[]>([]);
+    const [userOptions, setUserOptions] = useState<
+      { label: string; value: string }[]
+    >([]);
+    const [fetching, setFetching] = useState(false);
+
+    // 🔥 REMOVED voucherScope state
+
+    const fetchUser = debounce((search: string) => {
+      setFetching(true);
+      axiosInstance
+        .get(
+          `/admin/users?search=${encodeURIComponent(
+            search
+          )}&isActive=true&limit=10`
+        )
+        .then((res) => {
+          const users = res.data?.docs || res.data || [];
+          setUserOptions(
+            users.map((u: any) => ({
+              label: `${u.fullName || u.email} (${u.email})`,
+              value: u._id,
+            }))
+          );
+          setFetching(false);
+        })
+        .catch(() => setFetching(false));
+    }, 400);
+
+    useEffect(() => {
+      axiosInstance.get("/admin/users?isActive=true").then((res) => {
         const users = res.data?.docs || res.data || [];
         setUserOptions(
           users.map((u: any) => ({
@@ -57,83 +72,69 @@ const VoucherCreate = () => {
             value: u._id,
           }))
         );
-        setFetching(false);
-      })
-      .catch(() => setFetching(false));
-  }, 400);
+      });
+    }, []);
 
-  useEffect(() => {
-    axiosInstance.get("/admin/users?isActive=true").then((res) => {
-      const users = res.data?.docs || res.data || [];
-      setUserOptions(
-        users.map((u: any) => ({
-          label: `${u.fullName || u.email} (${u.email})`,
-          value: u._id,
-        }))
-      );
-    });
-  }, []);
+    const { form } = formProps;
 
-  const { form } = formProps;
+    const handleFinish = (values: any) => {
+      const [startDate, endDate] = values.dateRange || [];
+      const now = dayjs();
 
-  const handleFinish = (values: any) => {
-    const [startDate, endDate] = values.dateRange || [];
-    const now = dayjs();
+      if (startDate && endDate) {
+        const start = dayjs(startDate);
+        const end = dayjs(endDate);
 
-    if (startDate && endDate) {
-      const start = dayjs(startDate);
-      const end = dayjs(endDate);
+        if (start.isAfter(end)) {
+          form?.setFields([
+            {
+              name: "dateRange",
+              errors: ["Ngày bắt đầu phải nhỏ hơn ngày kết thúc"],
+            },
+          ]);
+          return;
+        }
 
-      // ✅ Điều kiện 1: Ngày bắt đầu phải nhỏ hơn ngày kết thúc
-      if (start.isAfter(end)) {
-        form?.setFields([
-          {
-            name: "dateRange",
-            errors: ["Ngày bắt đầu phải nhỏ hơn ngày kết thúc"],
-          },
-        ]);
-        return;
-      }
+        if (end.diff(start, "minute") < 1) {
+          form?.setFields([
+            {
+              name: "dateRange",
+              errors: [
+                "Thời gian kết thúc phải sau thời gian bắt đầu ít nhất 1 phút",
+              ],
+            },
+          ]);
+          return;
+        }
 
-      // ✅ Điều kiện 2: Phải cách nhau ít nhất 1 phút
-      if (end.diff(start, "minute") < 1) {
-        form?.setFields([
-          {
-            name: "dateRange",
-            errors: [
-              "Thời gian kết thúc phải sau thời gian bắt đầu ít nhất 1 phút",
-            ],
-          },
-        ]);
-        return;
-      }
+        if (start.isBefore(now)) {
+          form?.setFields([
+            {
+              name: "dateRange",
+              errors: ["Ngày bắt đầu không được ở quá khứ"],
+            },
+          ]);
+          return;
+        }
 
-      // ✅ Điều kiện 3: Ngày bắt đầu không được ở quá khứ
-      if (start.isBefore(now)) {
-        form?.setFields([
-          {
-            name: "dateRange",
-            errors: ["Ngày bắt đầu không được ở quá khứ"],
-          },
-        ]);
-        return;
-      }
+        values.startDate = start.toISOString();
+        values.endDate = end.toISOString();
+        delete values.dateRange;
 
-      values.startDate = start.toISOString();
-      values.endDate = end.toISOString();
-      delete values.dateRange;
-
-      if (voucherScope === "private") {
         values.userIds = userIds;
-        values.quantity = userIds.length;
-      } else {
-        values.userIds = [];
-      }
+        values.quantity = userIds.length > 0 ? userIds.length : values.quantity;
 
-      values.voucherScope = voucherScope;
-      formProps.onFinish?.(values);
-    }
-  };
+        formProps.onFinish?.(values);
+      }
+    };
+    
+    useEffect(() => {
+      if (userIds.length > 0) {
+        form?.setFieldsValue({
+          quantity: userIds.length,
+        });
+      }
+    }, [userIds, form]);
 
   return (
     <Create saveButtonProps={saveButtonProps} title="Thêm mới Voucher">
@@ -203,51 +204,28 @@ const VoucherCreate = () => {
           <Input placeholder="Nhập mã giảm giá" />
         </Form.Item>
 
-        <Form.Item label="Phạm vi voucher" required>
-          <Select value={voucherScope} onChange={setVoucherScope}>
-            <Select.Option value="shared">Công khai (cho tất cả)</Select.Option>
-            <Select.Option value="private">
-              Riêng tư (cho cá nhân)
-            </Select.Option>
-          </Select>
-        </Form.Item>
-
-        {voucherScope === "private" && (
-          <Form.Item
-            label="Danh sách người dùng"
-            name={"userIds"}
-            rules={[
-              {
-                required: voucherScope === "private",
-                message: "Vui lòng chọn người dùng cho voucher riêng tư",
-                type: "array", 
-              },
-            ]}
-          >
-            <Select
-              mode="multiple"
-              showSearch
-              filterOption={false}
-              onSearch={fetchUser}
-              notFoundContent={
-                fetching ? "Đang tìm..." : "Không có user phù hợp"
-              }
-              options={userOptions}
-              value={userIds}
-              onChange={(value) => {
-                setUserIds(value);
-                form?.setFieldsValue({ userIds: value });
-              }}
-              placeholder="Nhập theo tên hoặc email"
-              style={{ width: "100%" }}
-            />
+        <Form.Item label="Danh sách người dùng" name={"userIds"}>
+          <Select
+            mode="multiple"
+            showSearch
+            filterOption={false}
+            onSearch={fetchUser}
+            notFoundContent={fetching ? "Đang tìm..." : "Không có user phù hợp"}
+            options={userOptions}
+            value={userIds}
+            onChange={(value) => {
+              setUserIds(value);
+              form?.setFieldsValue({ userIds: value });
+            }}
+            placeholder="Nhập theo tên hoặc email"
+            style={{ width: "100%" }}
+          />
+          {userIds.length > 0 && (
             <div style={{ marginTop: 8 }}>
-              {userIds.length > 0 && (
-                <Tag color="blue">Số người dùng: {userIds.length}</Tag>
-              )}
+              <Tag color="blue">Số người dùng: {userIds.length}</Tag>
             </div>
-          </Form.Item>
-        )}
+          )}
+        </Form.Item>
 
         <Form.Item
           label="Mô tả"
@@ -396,37 +374,27 @@ const VoucherCreate = () => {
           />
         </Form.Item>
 
-        {/* Số lượng chỉ nhập khi dùng chung */}
-        {voucherScope === "shared" && (
-          <Form.Item
-            label="Số lượng voucher"
-            name="quantity"
-            rules={[
-              { required: true, message: "Vui lòng nhập số lượng" },
-              {
-                type: "number",
-                min: 1,
-                message: "Số lượng voucher phải lớn hơn hoặc bằng 1",
-              },
-            ]}
-          >
-            <InputNumber
-              style={{ width: "100%" }}
-              placeholder="Nhập số lượng voucher"
-            />
-          </Form.Item>
-        )}
-
-        {/* Nếu dùng riêng, hiển thị số lượng tự động */}
-        {voucherScope === "private" && (
-          <Form.Item label="Số lượng voucher">
-            <InputNumber
-              value={userIds.length}
-              disabled
-              style={{ width: "100%" }}
-            />
-          </Form.Item>
-        )}
+        <Form.Item
+          label="Số lượng voucher"
+          name="quantity"
+          rules={[
+            {
+              required: userIds.length === 0,
+              message: "Vui lòng nhập số lượng",
+            },
+            {
+              type: "number",
+              min: 1,
+              message: "Số lượng voucher phải lớn hơn hoặc bằng 1",
+            },
+          ]}
+        >
+          <InputNumber
+            disabled={userIds.length > 0}
+            style={{ width: "100%" }}
+            placeholder="Nhập số lượng voucher"
+          />
+        </Form.Item>
 
         <Form.Item
           label="Thời gian áp dụng"

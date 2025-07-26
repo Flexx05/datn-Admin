@@ -1,7 +1,8 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { useShow } from "@refinedev/core";
 import { Descriptions, Tag, Spin, Typography, Divider } from "antd";
 import { Show } from "@refinedev/antd";
+import { axiosInstance } from "../../utils/axiosInstance";
 
 const { Title, Text } = Typography;
 
@@ -10,54 +11,85 @@ const VoucherShow = () => {
   const { data, isLoading } = queryResult;
   const voucher = data?.data?.data;
 
-  if (isLoading) return <Spin tip="Đang tải chi tiết voucher..." style={{ marginTop: 40 }} />;
-  
+  const [userList, setUserList] = useState<any[]>([]);
+
+  useEffect(() => {
+    if (voucher?.userIds && voucher.userIds.length > 0) {
+      axiosInstance
+        .get("/admin/users?isActive=true")
+        .then((res) => {
+          const allUsers = res.data?.docs || res.data || [];
+          // Lọc ra user trùng với voucher.userIds
+          const selectedUsers = allUsers.filter((u: any) =>
+            voucher.userIds.includes(u._id)
+          );
+          setUserList(selectedUsers);
+        })
+        .catch(() => setUserList([]));
+    } else {
+      setUserList([]);
+    }
+  }, [voucher?.userIds]);
+
+  if (isLoading)
+    return (
+      <Spin tip="Đang tải chi tiết voucher..." style={{ marginTop: 40 }} />
+    );
+
   return (
     <Show>
-      <Title level={4} >
-        Chi tiết Voucher
-      </Title>
+      <Title level={4}>Chi tiết Voucher</Title>
       <Divider />
-      <Descriptions   bordered
+      <Descriptions
+        bordered
         column={1}
         size="middle"
         labelStyle={{ fontWeight: 600, width: "250px" }}
-        contentStyle={{ whiteSpace: "pre-wrap" }}>
-
+        contentStyle={{ whiteSpace: "pre-wrap" }}
+      >
         <Descriptions.Item label="Mã giảm giá">
           <strong>{voucher?.code}</strong>
         </Descriptions.Item>
 
-        <Descriptions.Item label="Link áp dụng">
-          {voucher?.link && voucher.link.trim() !== "" ? (
-            <a href={voucher.link} target="_blank" rel="noopener noreferrer">
-              {voucher.link}
-            </a>
+        <Descriptions.Item label="Người dùng áp dụng">
+          {userList.length > 0 ? (
+            userList.map((u) => (
+              <Tag color="orange" key={u._id}>
+                {u.fullName || u.email} ({u.email})
+              </Tag>
+            ))
           ) : (
-            <i style={{ color: "gray" }}>Không có link áp dụng</i>
+            <i style={{ color: "gray" }}>Không có người dùng cụ thể</i>
           )}
         </Descriptions.Item>
-
         <Descriptions.Item label="Mô tả">
           {voucher?.description}
         </Descriptions.Item>
 
         <Descriptions.Item label="Loại voucher">
-          {voucher?.voucherType === "product" && <Tag color="purple">Dành cho sản phẩm</Tag>}
-          {voucher?.voucherType === "shipping" && <Tag color="blue">Dành cho phí vận chuyển</Tag>}
+          {voucher?.voucherType === "product" && (
+            <Tag color="purple">Dành cho sản phẩm</Tag>
+          )}
+          {voucher?.voucherType === "shipping" && (
+            <Tag color="blue">Dành cho phí vận chuyển</Tag>
+          )}
         </Descriptions.Item>
 
         <Descriptions.Item label="Kiểu giảm giá">
-          {voucher?.discountType === "fixed" && <Tag color="geekblue">Giảm cố định</Tag>}
-          {voucher?.discountType === "percent" && <Tag color="volcano">Giảm phần trăm</Tag>}
+          {voucher?.discountType === "fixed" && (
+            <Tag color="geekblue">Giảm cố định</Tag>
+          )}
+          {voucher?.discountType === "percent" && (
+            <Tag color="volcano">Giảm phần trăm</Tag>
+          )}
         </Descriptions.Item>
 
         <Descriptions.Item label="Giá trị giảm">
           {voucher?.discountType === "fixed"
             ? `${voucher?.discountValue?.toLocaleString()}đ`
             : voucher?.discountType === "percent"
-              ? `${voucher?.discountValue}%`
-              : ""}
+            ? `${voucher?.discountValue}%`
+            : ""}
         </Descriptions.Item>
 
         <Descriptions.Item label="Đơn tối thiểu">
@@ -78,9 +110,15 @@ const VoucherShow = () => {
         </Descriptions.Item>
 
         <Descriptions.Item label="Trạng thái">
-          {voucher?.voucherStatus === "active" && <Tag color="green">Có hiệu lực</Tag>}
-          {voucher?.voucherStatus === "inactive" && <Tag color="yellow">Không có hiệu lực</Tag>}
-          {voucher?.voucherStatus === "expired" && <Tag color="red">Hết hạn</Tag>}
+          {voucher?.voucherStatus === "active" && (
+            <Tag color="green">Có hiệu lực</Tag>
+          )}
+          {voucher?.voucherStatus === "inactive" && (
+            <Tag color="yellow">Không có hiệu lực</Tag>
+          )}
+          {voucher?.voucherStatus === "expired" && (
+            <Tag color="red">Hết hạn</Tag>
+          )}
         </Descriptions.Item>
 
         <Descriptions.Item label="Ngày bắt đầu">
@@ -90,7 +128,7 @@ const VoucherShow = () => {
         <Descriptions.Item label="Ngày kết thúc">
           {voucher?.endDate && new Date(voucher.endDate).toLocaleString()}
         </Descriptions.Item>
-        
+
         <Descriptions.Item label="Ngày tạo">
           {voucher?.createdAt && new Date(voucher.createdAt).toLocaleString()}
         </Descriptions.Item>
@@ -98,7 +136,6 @@ const VoucherShow = () => {
         <Descriptions.Item label="Ngày cập nhật">
           {voucher?.updatedAt && new Date(voucher.updatedAt).toLocaleString()}
         </Descriptions.Item>
-
       </Descriptions>
     </Show>
   );
