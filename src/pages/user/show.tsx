@@ -1,10 +1,11 @@
 import { Show } from "@refinedev/antd";
 import { useShow } from "@refinedev/core";
-import { Card, Col, Row, Tag, Typography } from "antd";
+import { Card, Col, Row, Spin, Tag, Typography } from "antd";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
 import timezone from "dayjs/plugin/timezone";
 import { IUser } from "../../interface/user";
+import Loader from "../../utils/loading";
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -19,47 +20,49 @@ export const UserShow = () => {
   const record = data?.data;
 
   return (
-    <Show isLoading={isLoading} title="Chi tiết người dùng" canEdit={false}>
-      <Card bordered style={{ maxWidth: 600, margin: "0 auto" }}>
-        <Row gutter={[16, 16]}>
-          <Col span={24}>
-            <Title level={5}>Tên người dùng</Title>
-            <Text>{record?.fullName}</Text>
-          </Col>
-          <Col span={24}>
-            <Title level={5}>Email</Title>
-            <Text>{record?.email}</Text>
-          </Col>
-          <Col span={24}>
-            <Title level={5}>Số điện thoại</Title>
-            <Text>
-              {record?.phone || <Tag color={"default"}>Chưa cập nhật</Tag>}
-            </Text>
-          </Col>
-          <Col span={24}>
-            <Title level={5}>Địa chỉ</Title>
-            <Text>
-              {record?.address || <Tag color={"default"}>Chưa cập nhật</Tag>}
-            </Text>
-          </Col>
-          <Col span={24}>
-            <Title level={5}>Trạng thái</Title>
-            <Tag color={record?.isActive ? "green" : "red"}>
-              {record?.isActive ? "Hoạt động" : "Khoá"}
-            </Tag>
-          </Col>
-          <Col span={24}>
-            <Title level={5}>Ngày Đăng ký</Title>
-            <Text>
-              {record?.createdAt
-                ? dayjs(record.createdAt)
-                    .tz("Asia/Ho_Chi_Minh")
-                    .format("DD/MM/YYYY HH:mm")
-                : ""}
-            </Text>
-          </Col>
-        </Row>
-      </Card>
+    <Show isLoading={false} title="Chi tiết người dùng" canEdit={false}>
+      <Spin spinning={isLoading} indicator={<Loader />}>
+        <Card bordered style={{ maxWidth: 600, margin: "0 auto" }}>
+          <Row gutter={[16, 16]}>
+            <Col span={24}>
+              <Title level={5}>Tên người dùng</Title>
+              <Text>{record?.fullName}</Text>
+            </Col>
+            <Col span={24}>
+              <Title level={5}>Email</Title>
+              <Text>{record?.email}</Text>
+            </Col>
+            <Col span={24}>
+              <Title level={5}>Số điện thoại</Title>
+              <Text>
+                {record?.phone || <Tag color={"default"}>Chưa cập nhật</Tag>}
+              </Text>
+            </Col>
+            <Col span={24}>
+              <Title level={5}>Địa chỉ</Title>
+              <Text>
+                {record?.address || <Tag color={"default"}>Chưa cập nhật</Tag>}
+              </Text>
+            </Col>
+            <Col span={24}>
+              <Title level={5}>Trạng thái</Title>
+              <Tag color={record?.isActive ? "green" : "red"}>
+                {record?.isActive ? "Hoạt động" : "Khoá"}
+              </Tag>
+            </Col>
+            <Col span={24}>
+              <Title level={5}>Ngày Đăng ký</Title>
+              <Text>
+                {record?.createdAt
+                  ? dayjs(record.createdAt)
+                      .tz("Asia/Ho_Chi_Minh")
+                      .format("DD/MM/YYYY HH:mm")
+                  : ""}
+              </Text>
+            </Col>
+          </Row>
+        </Card>
+      </Spin>
     </Show>
   );
 };
