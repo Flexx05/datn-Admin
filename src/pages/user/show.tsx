@@ -1,9 +1,10 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Show } from "@refinedev/antd";
 import { useShow } from "@refinedev/core";
 import { Card, Col, Row, Spin, Tag, Typography } from "antd";
 import dayjs from "dayjs";
-import utc from "dayjs/plugin/utc";
 import timezone from "dayjs/plugin/timezone";
+import utc from "dayjs/plugin/utc";
 import { IUser } from "../../interface/user";
 import Loader from "../../utils/loading";
 
@@ -15,6 +16,13 @@ const { Title, Text } = Typography;
 export const UserShow = () => {
   const { queryResult } = useShow<IUser>({
     resource: "admin/users",
+    errorNotification: (error: any) => ({
+      message:
+        "❌ Lỗi hệ thống " +
+        (error.response?.data?.message || error.response?.data?.error),
+      description: "Có lỗi xảy ra trong quá trình xử lý.",
+      type: "error",
+    }),
   });
   const { data, isLoading } = queryResult;
   const record = data?.data;

@@ -49,7 +49,8 @@ export const OrderShow = () => {
     id: id,
     errorNotification: (error: any) => ({
       message:
-        "❌ Lỗi hệ thống " + (error.response?.data?.message || error.message),
+        "❌ Lỗi hệ thống " +
+        (error.response?.data?.message || error.response?.data?.error),
       description: "Không thể tải thông tin đơn hàng.",
       type: "error",
     }),

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 import { Descriptions, Modal, Spin } from "antd";
 import { useShow } from "@refinedev/core";
@@ -31,6 +32,13 @@ export const QuickChatShow: React.FC<QuickChatModalShowProps> = ({
     queryOptions: {
       enabled: !!recordId,
     },
+    errorNotification: (error: any) => ({
+      message:
+        "❌ Lỗi hệ thống " +
+        (error.response?.data?.message || error.response?.data?.error),
+      description: "Có lỗi xảy ra trong quá trình xử lý",
+      type: "error",
+    }),
   });
 
   const { data, isLoading } = queryResult;
