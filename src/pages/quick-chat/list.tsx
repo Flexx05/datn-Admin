@@ -6,6 +6,7 @@ import dayjs from "dayjs";
 import { useState } from "react";
 import { IQuickChat } from "../../interface/conversation";
 import { QuickChatShow } from "./show";
+import Loader from "../../utils/loading";
 
 const QuickChatList = () => {
   const { tableProps, setFilters } = useTable<IQuickChat>({
@@ -19,7 +20,8 @@ const QuickChatList = () => {
     ],
     errorNotification: (error: any) => ({
       message:
-        "❌ Lỗi hệ thống " + (error.response?.data?.message | error.message),
+        "❌ Lỗi hệ thống " +
+        (error.response?.data?.message || error.response?.data?.error),
       description: "Có lỗi xảy ra trong quá trình xử lý.",
       type: "error" as const,
     }),
@@ -59,7 +61,11 @@ const QuickChatList = () => {
           }}
           style={{ marginBottom: 16, maxWidth: 300 }}
         />
-        <Table {...tableProps} rowKey={"_id"}>
+        <Table
+          {...tableProps}
+          rowKey={"_id"}
+          loading={tableProps.loading ? { indicator: <Loader /> } : false}
+        >
           <Table.Column
             dataIndex={"stt"}
             title="STT"

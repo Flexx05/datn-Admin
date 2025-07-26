@@ -1,7 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { Create, useForm } from "@refinedev/antd";
-import { Form, Input, message, Select } from "antd";
+import { Form, Input, message, Select, Spin } from "antd";
 import { IQuickChat } from "../../interface/conversation";
+import Loader from "../../utils/loading";
 
 const QuickChatCreate = () => {
   const { formProps, saveButtonProps, formLoading } = useForm<IQuickChat>({
@@ -11,7 +12,9 @@ const QuickChatCreate = () => {
       type: "success" as const,
     }),
     errorNotification: (error: any) => ({
-      message: "❌ Cập nhật thất bại! " + error.response?.data?.message,
+      message:
+        "❌ Cập nhật thất bại! " + error.response?.data?.message ||
+        error.response?.data?.error,
       description: "Có lỗi xảy ra trong quá trình xử lý.",
       type: "error" as const,
     }),
@@ -30,42 +33,44 @@ const QuickChatCreate = () => {
     <Create
       title="Tạo tin nhắn nhanh"
       saveButtonProps={saveButtonProps}
-      isLoading={formLoading}
+      isLoading={false}
     >
-      <Form
-        {...formProps}
-        layout="vertical"
-        onFinish={async (values: any) => {
-          try {
-            if (values.content && typeof values.content === "string") {
-              values.content = values.content.trim();
+      <Spin spinning={formLoading} indicator={<Loader />}>
+        <Form
+          {...formProps}
+          layout="vertical"
+          onFinish={async (values: any) => {
+            try {
+              if (values.content && typeof values.content === "string") {
+                values.content = values.content.trim();
+              }
+              await formProps.onFinish?.(values);
+            } catch (error: any) {
+              console.error(error.messge);
+              message.error("Có lỗi xảy ra trong quá trình xử lý");
             }
-            await formProps.onFinish?.(values);
-          } catch (error: any) {
-            console.error(error.messge);
-            message.error("Có lỗi xảy ra trong quá trình xử lý");
-          }
-        }}
-      >
-        <Form.Item
-          label="Nội dung tin nhắn"
-          name={["content"]}
-          rules={[
-            { required: true, message: "Vui lòng nhập nội dung tin nhắn" },
-            { min: 3, message: "Nội dung phải có ít nhất 3 ký tự" },
-            { max: 500, message: "Nội dung không vượt quá 200 ký tự" },
-          ]}
+          }}
         >
-          <Input.TextArea />
-        </Form.Item>
-        <Form.Item
-          label="Danh mục"
-          name={["category"]}
-          rules={[{ required: true, message: "Vui lòng chọn danh mục" }]}
-        >
-          <Select options={categoryOption} />
-        </Form.Item>
-      </Form>
+          <Form.Item
+            label="Nội dung tin nhắn"
+            name={["content"]}
+            rules={[
+              { required: true, message: "Vui lòng nhập nội dung tin nhắn" },
+              { min: 3, message: "Nội dung phải có ít nhất 3 ký tự" },
+              { max: 500, message: "Nội dung không vượt quá 200 ký tự" },
+            ]}
+          >
+            <Input.TextArea />
+          </Form.Item>
+          <Form.Item
+            label="Danh mục"
+            name={["category"]}
+            rules={[{ required: true, message: "Vui lòng chọn danh mục" }]}
+          >
+            <Select options={categoryOption} />
+          </Form.Item>
+        </Form>
+      </Spin>
     </Create>
   );
 };
