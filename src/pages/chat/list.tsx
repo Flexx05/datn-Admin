@@ -27,7 +27,7 @@ import {
 } from "../../interface/conversation";
 import { socket } from "../../socket";
 import { axiosInstance } from "../../utils/axiosInstance";
-import LoadingShoes from "../../utils/loading";
+import Loader from "../../utils/loading";
 
 const { Text, Title } = Typography;
 const { useBreakpoint } = Grid;
@@ -170,7 +170,7 @@ const ChatList = () => {
     </div>
   );
 
-  if (isLoading) return <LoadingShoes />;
+  if (isLoading) return <Loader />;
 
   return (
     <Layout style={{ minHeight: "90vh", height: "90vh" }}>

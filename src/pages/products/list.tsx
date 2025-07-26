@@ -28,7 +28,7 @@ import {
 import { axiosInstance } from "../../utils/axiosInstance";
 import { ColorDots } from "./ColorDots";
 import { VariationTable } from "./VariationTable";
-import LoadingShoes from "../../utils/loading";
+import Loader from "../../utils/loading";
 
 export const ProductList = () => {
   const [filterActive, setFilterActive] = useState<boolean>(true);
@@ -192,7 +192,7 @@ export const ProductList = () => {
         loading={
           tableProps.loading
             ? {
-                indicator: <LoadingShoes />,
+                indicator: <Loader />,
               }
             : false
         }

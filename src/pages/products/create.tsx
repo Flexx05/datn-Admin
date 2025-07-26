@@ -24,10 +24,10 @@ import { IAttribute } from "../../interface/attribute";
 import { IBrand } from "../../interface/brand";
 import { ICategory } from "../../interface/category";
 import { axiosInstance } from "../../utils/axiosInstance";
-import LoadingShoes from "../../utils/loading";
 import { AttributeItem } from "./AttributeItem";
 import { VariationItem } from "./VariationItem";
 import "./variation-animations.css";
+import Loader from "../../utils/loading";
 
 export const ProductCreate = () => {
   const { formProps, saveButtonProps, formLoading } = useForm({
@@ -269,7 +269,7 @@ export const ProductCreate = () => {
           brand?.isLoading ||
           attribute?.isLoading
         }
-        indicator={<LoadingShoes />}
+        indicator={<Loader />}
       >
         <Form {...formProps} layout="vertical" onFinish={handleFinish}>
           <Form.Item

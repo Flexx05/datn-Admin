@@ -28,7 +28,7 @@ import { axiosInstance } from "../../utils/axiosInstance";
 import { AttributeItem } from "./AttributeItem";
 import "./variation-animations.css";
 import { VariationItem } from "./VariationItem";
-import LoadingShoes from "../../utils/loading";
+import Loader from "../../utils/loading";
 
 export const ProductEdit = () => {
   const { formProps, saveButtonProps, queryResult, formLoading } = useForm({
@@ -336,7 +336,7 @@ export const ProductEdit = () => {
           brand?.isLoading ||
           attribute?.isLoading
         }
-        indicator={<LoadingShoes />}
+        indicator={<Loader />}
       >
         <Form {...formProps} layout="vertical" onFinish={handleFinish}>
           <Form.Item
