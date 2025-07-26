@@ -31,6 +31,7 @@ import {
 } from "antd";
 import { Order } from "../../interface/order";
 import { statusMap } from "../dashboard/statusMap";
+import Loader from "../../utils/loading";
 
 const paymentStatusMap: Record<number, { text: string; color: string }> = {
   0: { text: "Chưa thanh toán", color: "orange" },
@@ -260,7 +261,7 @@ export const OrderList = () => {
         {...tableProps}
         dataSource={filteredData}
         rowKey="_id"
-        loading={tableProps.loading}
+        loading={tableProps.loading ? { indicator: <Loader /> } : false}
         scroll={{ x: 1200 }}
       >
         <Table.Column
