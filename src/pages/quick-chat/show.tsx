@@ -1,8 +1,10 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 import { Descriptions, Modal, Spin } from "antd";
 import { useShow } from "@refinedev/core";
 import { IQuickChat } from "../../interface/conversation";
 import dayjs from "dayjs";
+import Loader from "../../utils/loading";
 
 interface QuickChatModalShowProps {
   open: boolean;
@@ -30,6 +32,13 @@ export const QuickChatShow: React.FC<QuickChatModalShowProps> = ({
     queryOptions: {
       enabled: !!recordId,
     },
+    errorNotification: (error: any) => ({
+      message:
+        "❌ Lỗi hệ thống " +
+        (error.response?.data?.message || error.response?.data?.error),
+      description: "Có lỗi xảy ra trong quá trình xử lý",
+      type: "error",
+    }),
   });
 
   const { data, isLoading } = queryResult;
@@ -42,9 +51,7 @@ export const QuickChatShow: React.FC<QuickChatModalShowProps> = ({
       footer={null}
       title="Chi tiết tin nhắn"
     >
-      {isLoading || !record ? (
-        <Spin />
-      ) : (
+      <Spin spinning={isLoading} indicator={<Loader />}>
         <Descriptions column={1} bordered>
           <Descriptions.Item label="Nội dung">
             {record?.content || "Không có"}
@@ -71,7 +78,7 @@ export const QuickChatShow: React.FC<QuickChatModalShowProps> = ({
               : "Không có"}
           </Descriptions.Item>
         </Descriptions>
-      )}
+      </Spin>
     </Modal>
   );
 };

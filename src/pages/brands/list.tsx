@@ -23,6 +23,7 @@ import dayjs from "dayjs";
 import { useCallback, useState } from "react";
 import { IBrand } from "../../interface/brand";
 import { axiosInstance } from "../../utils/axiosInstance";
+import Loader from "../../utils/loading";
 
 export const BrandList = () => {
   const [filterActive, setFilterActive] = useState<boolean>(true);
@@ -44,7 +45,8 @@ export const BrandList = () => {
     ],
     errorNotification: (error: any) => ({
       message:
-        "❌ Lỗi hệ thống " + (error.response?.data?.message | error.message),
+        "❌ Lỗi hệ thống " +
+        (error.response?.data?.message || error.response?.data.error),
       description: "Có lỗi xảy ra trong quá trình xử lý.",
       type: "error" as const,
     }),
@@ -139,7 +141,11 @@ export const BrandList = () => {
         onSearch={handleSearch}
         style={{ marginBottom: 16, maxWidth: 300 }}
       />
-      <Table {...tableProps} rowKey="_id" loading={tableProps.loading}>
+      <Table
+        {...tableProps}
+        rowKey="_id"
+        loading={tableProps.loading ? { indicator: <Loader /> } : false}
+      >
         <Table.Column
           dataIndex="stt"
           title={"STT"}

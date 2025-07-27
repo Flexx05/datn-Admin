@@ -1,8 +1,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { Edit, useForm, useSelect } from "@refinedev/antd";
-import { Form, Input, Select, message } from "antd";
+import { Form, Input, Select, Spin, message } from "antd";
 import { useMemo } from "react";
 import { ICategory } from "../../interface/category";
+import Loader from "../../utils/loading";
 
 export const CategoryEdit = () => {
   const {
@@ -18,7 +19,8 @@ export const CategoryEdit = () => {
     }),
     errorNotification: (error: any) => ({
       message:
-        "❌ Cập nhật danh mục thất bại! " + error.response?.data?.message,
+        "❌ Cập nhật danh mục thất bại! " + error.response?.data?.message ||
+        error.response?.data?.error,
       description: "Có lỗi xảy ra trong quá trình xử lý.",
       type: "error",
     }),
@@ -86,52 +88,53 @@ export const CategoryEdit = () => {
       saveButtonProps={saveButtonProps}
       title="Cập nhật danh mục"
       canDelete={false}
-      isLoading={formLoading}
-      // Note: Thêm loading cho các trang edit khác
+      isLoading={false}
     >
-      <Form {...formProps} layout="vertical" onFinish={handleFinish}>
-        <Form.Item
-          label="Tên danh mục"
-          name={["name"]}
-          rules={[
-            { required: true, message: "Vui lòng nhập tên danh mục" },
-            { max: 30, message: "Tên danh mục không được quá 30 ký tự" },
-            { min: 3, message: "Tên danh mục phải có ít nhất 3 ký tự" },
-            {
-              pattern: /^[\p{L}0-9\s&]+$/u,
-              message: "Tên danh mục không được chứa ký tự đặc biệt",
-            },
-          ]}
-        >
-          <Input />
-        </Form.Item>
-
-        <Form.Item label="Mô tả" name={["description"]}>
-          <Input />
-        </Form.Item>
-
-        <Form.Item
-          label="Danh mục cha"
-          name={["parentId"]}
-          normalize={(value) =>
-            value === "" || value === undefined ? null : value
-          }
-        >
-          <Select
-            loading={queryResult?.isLoading}
-            placeholder="Chọn danh mục cha"
-            disabled={isParentCategory} // ❗ Disable nếu đang là danh mục cha
-            allowClear
+      <Spin spinning={formLoading} indicator={<Loader />}>
+        <Form {...formProps} layout="vertical" onFinish={handleFinish}>
+          <Form.Item
+            label="Tên danh mục"
+            name={["name"]}
+            rules={[
+              { required: true, message: "Vui lòng nhập tên danh mục" },
+              { max: 30, message: "Tên danh mục không được quá 30 ký tự" },
+              { min: 3, message: "Tên danh mục phải có ít nhất 3 ký tự" },
+              {
+                pattern: /^[\p{L}0-9\s&]+$/u,
+                message: "Tên danh mục không được chứa ký tự đặc biệt",
+              },
+            ]}
           >
-            <Select.Option value={null}>Không có</Select.Option>
-            {filteredOptions.map((option) => (
-              <Select.Option key={option.value} value={option.value}>
-                {option.label}
-              </Select.Option>
-            ))}
-          </Select>
-        </Form.Item>
-      </Form>
+            <Input />
+          </Form.Item>
+
+          <Form.Item label="Mô tả" name={["description"]}>
+            <Input />
+          </Form.Item>
+
+          <Form.Item
+            label="Danh mục cha"
+            name={["parentId"]}
+            normalize={(value) =>
+              value === "" || value === undefined ? null : value
+            }
+          >
+            <Select
+              loading={queryResult?.isLoading}
+              placeholder="Chọn danh mục cha"
+              disabled={isParentCategory} // ❗ Disable nếu đang là danh mục cha
+              allowClear
+            >
+              <Select.Option value={null}>Không có</Select.Option>
+              {filteredOptions.map((option) => (
+                <Select.Option key={option.value} value={option.value}>
+                  {option.label}
+                </Select.Option>
+              ))}
+            </Select>
+          </Form.Item>
+        </Form>
+      </Spin>
     </Edit>
   );
 };

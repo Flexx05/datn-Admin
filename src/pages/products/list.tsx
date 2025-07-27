@@ -28,6 +28,7 @@ import {
 import { axiosInstance } from "../../utils/axiosInstance";
 import { ColorDots } from "./ColorDots";
 import { VariationTable } from "./VariationTable";
+import Loader from "../../utils/loading";
 
 export const ProductList = () => {
   const [filterActive, setFilterActive] = useState<boolean>(true);
@@ -49,7 +50,8 @@ export const ProductList = () => {
     ],
     errorNotification: (error: any) => ({
       message:
-        "❌ Lỗi hệ thống " + (error.response?.data?.message || error.message),
+        "❌ Lỗi hệ thống " +
+        (error.response?.data?.message || error.response?.data?.error),
       description: "Có lỗi xảy ra trong quá trình xử lý.",
       type: "error",
     }),
@@ -188,7 +190,13 @@ export const ProductList = () => {
       <Table
         {...tableProps}
         rowKey="_id"
-        loading={tableProps.loading}
+        loading={
+          tableProps.loading
+            ? {
+                indicator: <Loader />,
+              }
+            : false
+        }
         rowSelection={{
           type: "checkbox",
           selectedRowKeys,

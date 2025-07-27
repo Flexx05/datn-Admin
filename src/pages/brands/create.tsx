@@ -1,11 +1,12 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { PlusOutlined } from "@ant-design/icons";
 import { Create, useForm } from "@refinedev/antd";
-import { Form, Image, Input, message, Upload } from "antd";
+import { Form, Image, Input, message, Spin, Upload } from "antd";
 import type { UploadFile } from "antd/es/upload/interface";
 import axios from "axios";
 import { useState } from "react";
 import { CLOUDINARY_URL } from "../../config/dataProvider";
+import Loader from "../../utils/loading";
 
 export const BrandCreate = () => {
   const { formProps, saveButtonProps, formLoading } = useForm({
@@ -15,7 +16,9 @@ export const BrandCreate = () => {
       type: "success" as const,
     }),
     errorNotification: (error: any) => ({
-      message: "❌ Thêm mới thất bại! " + error.response?.data?.message,
+      message:
+        "❌ Thêm mới thất bại! " + error.response?.data?.message ||
+        error.response?.data?.error,
       description: "Có lỗi xảy ra trong quá trình xử lý.",
       type: "error" as const,
     }),
@@ -24,16 +27,14 @@ export const BrandCreate = () => {
   const [previewImage, setPreviewImage] = useState<string>();
   const [uploadedImageUrl, setUploadedImageUrl] = useState<string>();
 
-  const normFile = (e: any) => e?.fileList?.slice(-1); // Chỉ giữ 1 ảnh
-
-  const handleChange = async ({ fileList }: { fileList: UploadFile[] }) => {
+  const handleChange = async (fileList: UploadFile[]) => {
     const latestFile = fileList.slice(-1);
     setFileList(latestFile);
 
     // Upload lên Cloudinary
     const file = latestFile?.[0]?.originFileObj as File;
-    if (file.type !== "image/jpeg" && file.type !== "image/png") {
-      message.error("Vui lòng chỉ tải lên ảnh định dạng JPEG hoặc PNG.");
+    if (!file.type.startsWith("image")) {
+      message.error("Vui lòng chỉ tải lên ảnh.");
       return;
     }
 
@@ -69,83 +70,83 @@ export const BrandCreate = () => {
     <Create
       saveButtonProps={saveButtonProps}
       title="Tạo thương hiệu"
-      isLoading={formLoading}
+      isLoading={false}
     >
-      <Form
-        {...formProps}
-        layout="vertical"
-        onFinish={async (values: any) => {
-          try {
-            if (!uploadedImageUrl) {
-              message.error("Bạn chưa tải ảnh hoặc ảnh chưa upload xong.");
-              return;
+      <Spin spinning={formLoading} indicator={<Loader />}>
+        <Form
+          {...formProps}
+          layout="vertical"
+          onFinish={async (values: any) => {
+            try {
+              if (!uploadedImageUrl) {
+                message.error("Bạn chưa tải ảnh hoặc ảnh chưa upload xong.");
+                return;
+              }
+
+              if (values.name && typeof values.name === "string") {
+                values.name = values.name.trim();
+              }
+
+              const payload = {
+                name: values.name,
+                logoUrl: uploadedImageUrl, // ✅ dùng URL từ Cloudinary
+              };
+
+              // Gửi dữ liệu qua API Refine hoặc custom
+              await formProps?.onFinish?.(payload);
+            } catch (error) {
+              message.error("Lỗi khi tạo thương hiệu!");
+              console.error(error);
             }
-
-            if (values.name && typeof values.name === "string") {
-              values.name = values.name.trim();
-            }
-
-            const payload = {
-              name: values.name,
-              logoUrl: uploadedImageUrl, // ✅ dùng URL từ Cloudinary
-            };
-
-            // Gửi dữ liệu qua API Refine hoặc custom
-            await formProps?.onFinish?.(payload);
-          } catch (error) {
-            message.error("Lỗi khi tạo thương hiệu!");
-            console.error(error);
-          }
-        }}
-      >
-        <Form.Item
-          label="Tên thương hiệu"
-          name={["name"]}
-          rules={[
-            { required: true, message: "Vui lòng nhập tên thương hiệu" },
-            { max: 30, message: "Tên thương hiệu không được quá 30 ký tự" },
-            { min: 2, message: "Tên thương hiệu phải có ít nhất 2 ký tự" },
-            {
-              pattern: /^[\p{L}0-9\s-]+$/u,
-              message: "Tên thương hiệu không được chứa ký tự đặc biệt",
-            },
-          ]}
+          }}
         >
-          <Input />
-        </Form.Item>
-
-        <Form.Item
-          label="Hình ảnh"
-          name={["logoUrl"]}
-          valuePropName="fileList"
-          rules={[
-            { required: true, message: "Vui lòng tải ảnh cho thương hiệu" },
-          ]}
-          getValueFromEvent={normFile}
-        >
-          <Upload
-            listType="picture-card"
-            fileList={fileList}
-            onChange={handleChange}
-            maxCount={1}
-            beforeUpload={() => false} // Không upload tự động
+          <Form.Item
+            label="Tên thương hiệu"
+            name={["name"]}
+            rules={[
+              { required: true, message: "Vui lòng nhập tên thương hiệu" },
+              { max: 30, message: "Tên thương hiệu không được quá 30 ký tự" },
+              { min: 2, message: "Tên thương hiệu phải có ít nhất 2 ký tự" },
+              {
+                pattern: /^[\p{L}0-9\s-]+$/u,
+                message: "Tên thương hiệu không được chứa ký tự đặc biệt",
+              },
+            ]}
           >
-            {fileList.length >= 1 ? null : (
-              <div>
-                <PlusOutlined />
-                <div style={{ marginTop: 8 }}>Tải ảnh</div>
-              </div>
+            <Input />
+          </Form.Item>
+
+          <Form.Item
+            label="Hình ảnh"
+            name={["logoUrl"]}
+            rules={[
+              { required: true, message: "Vui lòng tải ảnh cho thương hiệu" },
+            ]}
+          >
+            <Upload
+              listType="picture-card"
+              fileList={fileList}
+              onChange={(e) => handleChange(e.fileList)}
+              maxCount={1}
+              beforeUpload={() => false} // Không upload tự động
+            >
+              {fileList.length >= 1 ? null : (
+                <div>
+                  <PlusOutlined />
+                  <div style={{ marginTop: 8 }}>Tải ảnh</div>
+                </div>
+              )}
+            </Upload>
+            {previewImage && (
+              <Image
+                src={previewImage}
+                alt="Preview"
+                style={{ marginTop: 16, maxWidth: 300 }}
+              />
             )}
-          </Upload>
-          {previewImage && (
-            <Image
-              src={previewImage}
-              alt="Preview"
-              style={{ marginTop: 16, maxWidth: 300 }}
-            />
-          )}
-        </Form.Item>
-      </Form>
+          </Form.Item>
+        </Form>
+      </Spin>
     </Create>
   );
 };

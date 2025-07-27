@@ -20,6 +20,7 @@ import dayjs from "dayjs";
 import { useCallback, useState } from "react";
 import { API_URL } from "../../config/dataProvider";
 import { IUser } from "../../interface/user";
+import Loader from "../../utils/loading";
 
 export const UserList = () => {
   const [filterActive, setFilterActive] = useState<boolean>(true);
@@ -35,7 +36,8 @@ export const UserList = () => {
     resource: "admin/users",
     errorNotification: (error: any) => ({
       message:
-        "❌ Lỗi hệ thống " + (error.response?.data?.message || error.message),
+        "❌ Lỗi hệ thống " +
+        (error.response?.data?.message || error.response?.data?.error),
       description: "Có lỗi xảy ra trong quá trình xử lý.",
       type: "error",
     }),
@@ -172,7 +174,7 @@ export const UserList = () => {
       />
       <Table
         {...tableProps}
-        loading={tableProps.loading}
+        loading={tableProps.loading ? { indicator: <Loader /> } : false}
         rowKey="_id"
         onChange={(pagination, filters, sorter, extra) => {
           tableProps.onChange?.(pagination, filters, sorter, extra);

@@ -24,6 +24,7 @@ import { useCallback, useState } from "react";
 import { API_URL } from "../../config/dataProvider";
 import { IAttribute } from "../../interface/attribute";
 import { ColorDots } from "../products/ColorDots";
+import Loader from "../../utils/loading";
 
 export const AttributeList = () => {
   const [filterActive, setFilterActive] = useState<boolean>(true);
@@ -45,7 +46,8 @@ export const AttributeList = () => {
     ],
     errorNotification: (error: any) => ({
       message:
-        "❌ Lỗi hệ thống " + (error.response?.data?.message | error.message),
+        "❌ Lỗi hệ thống " +
+        (error.response?.data?.message || error.response?.data?.error),
       description: "Có lỗi xảy ra trong quá trình xử lý.",
       type: "error" as const,
     }),
@@ -175,7 +177,7 @@ export const AttributeList = () => {
       <Table
         {...tableProps}
         rowKey="_id"
-        loading={tableProps.loading}
+        loading={tableProps.loading ? { indicator: <Loader /> } : false}
         rowSelection={{
           type: "checkbox",
           selectedRowKeys,

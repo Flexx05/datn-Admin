@@ -16,6 +16,7 @@ import {
 } from "antd";
 import { useState } from "react";
 import { IComment } from "../../interface/comment";
+import Loader from "../../utils/loading";
 
 const { RangePicker } = DatePicker;
 
@@ -105,7 +106,11 @@ export const CommentList = () => {
         </Form.Item>
       </Form>
 
-      <Table {...tableProps} rowKey="_id" loading={tableProps.loading}>
+      <Table
+        {...tableProps}
+        rowKey="_id"
+        loading={tableProps.loading ? { indicator: <Loader /> } : false}
+      >
         <Table.Column
           dataIndex="_id"
           title="STT"

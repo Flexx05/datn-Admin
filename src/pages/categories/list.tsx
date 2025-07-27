@@ -23,6 +23,7 @@ import dayjs from "dayjs";
 import { useCallback, useState } from "react";
 import { API_URL } from "../../config/dataProvider";
 import { ICategory } from "../../interface/category";
+import Loader from "../../utils/loading";
 
 export const CategoryList = () => {
   const [filterActive, setFilterActive] = useState<boolean>(true);
@@ -228,7 +229,7 @@ export const CategoryList = () => {
       />
       <Table
         {...tableProps}
-        loading={tableProps.loading}
+        loading={tableProps.loading ? { indicator: <Loader /> } : undefined}
         rowKey="_id"
         columns={columns}
         expandable={{

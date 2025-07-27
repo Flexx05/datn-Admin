@@ -18,6 +18,7 @@ import {
   Popconfirm,
   Row,
   Space,
+  Spin,
   Steps,
   Table,
   Tag,
@@ -29,6 +30,7 @@ import { useParams } from "react-router";
 import { API_URL } from "../../config/dataProvider";
 import { IOrderDetail, Order } from "../../interface/order";
 import { formatCurrency } from "./formatCurrency";
+import Loader from "../../utils/loading";
 
 const { Text } = Typography;
 
@@ -46,7 +48,8 @@ export const OrderShow = () => {
     id: id,
     errorNotification: (error: any) => ({
       message:
-        "❌ Lỗi hệ thống " + (error.response?.data?.message || error.message),
+        "❌ Lỗi hệ thống " +
+        (error.response?.data?.message || error.response?.data?.error),
       description: "Không thể tải thông tin đơn hàng.",
       type: "error",
     }),
@@ -295,7 +298,7 @@ export const OrderShow = () => {
 
   return (
     <Show
-      isLoading={isLoading}
+      isLoading={false}
       title={`Chi tiết đơn hàng ${orderData?.orderCode}`}
       headerButtons={() => (
         <Space>
@@ -305,317 +308,330 @@ export const OrderShow = () => {
         </Space>
       )}
     >
-      <Row gutter={[24, 24]}>
-        {/* Quy trình giao hàng */}
-        <Col span={24}>
-          <Card title="Quy trình giao hàng" size="small">
-            {orderData?.status === 5 ? (
-              <>
-                <Tag color="red">Đơn hàng đã bị hủy</Tag>
-                <p
-                  style={{
-                    marginTop: 8,
-                    color: "#ff4d4f",
-                    fontStyle: "italic",
-                  }}
-                >
-                  Lý do hủy:{" "}
-                  {orderData?.cancelReason || "Không có lý do cụ thể"}
-                </p>
-              </>
-            ) : (
-              <Steps
-                current={getCurrentStep(orderData?.status)}
-                items={deliverySteps}
-                style={{ marginTop: 16 }}
-              />
-            )}
-          </Card>
-        </Col>
+      <Spin spinning={isLoading} indicator={<Loader />}>
+        <Row gutter={[24, 24]}>
+          {/* Quy trình giao hàng */}
+          <Col span={24}>
+            <Card title="Quy trình giao hàng" size="small">
+              {orderData?.status === 5 ? (
+                <>
+                  <Tag color="red">Đơn hàng đã bị hủy</Tag>
+                  <p
+                    style={{
+                      marginTop: 8,
+                      color: "#ff4d4f",
+                      fontStyle: "italic",
+                    }}
+                  >
+                    Lý do hủy:{" "}
+                    {orderData?.cancelReason || "Không có lý do cụ thể"}
+                  </p>
+                </>
+              ) : (
+                <Steps
+                  current={getCurrentStep(orderData?.status)}
+                  items={deliverySteps}
+                  style={{ marginTop: 16 }}
+                />
+              )}
+            </Card>
+          </Col>
 
-        {/* Thông tin tổng quan */}
-        <Col span={24}>
-          <Card title="Thông tin đơn hàng" size="small">
-            <Row gutter={[16, 16]}>
-              <Col span={12}>
-                <Descriptions column={1} size="small">
-                  <Descriptions.Item label="Mã đơn hàng">
-                    <Text strong style={{ color: "#1890ff", fontSize: "16px" }}>
-                      {orderData?.orderCode}
-                    </Text>
-                  </Descriptions.Item>
-                  <Descriptions.Item label="Ngày đặt hàng">
-                    <Space>
-                      <CalendarOutlined />
-                      {formatDate(orderData?.createdAt)}
-                    </Space>
-                  </Descriptions.Item>
-                  <Descriptions.Item label="Ngày giao hàng">
-                    <Text>
-                      {orderData?.status === 4 && orderData?.updatedAt
-                        ? formatDate(orderData?.updatedAt)
-                        : "Chưa xác định"}
-                    </Text>
-                  </Descriptions.Item>
-                </Descriptions>
-              </Col>
-              <Col span={12}>
-                <Descriptions column={1} size="small">
-                  <Descriptions.Item label="Trạng thái đơn hàng">
-                    <Tag
-                      color={getStatusColor(orderData?.status)}
-                      style={{ fontSize: "14px" }}
-                    >
-                      {getStatusDisplayText(orderData?.status)}
-                    </Tag>
-                  </Descriptions.Item>
-                  <Descriptions.Item label="Tổng tiền">
-                    <Text strong style={{ color: "#f5222d", fontSize: "18px" }}>
-                      {formatCurrency(orderData?.totalAmount)}
-                    </Text>
-                  </Descriptions.Item>
-                  <Descriptions.Item label="Cập nhật lần cuối">
-                    <Text>{formatDate(orderData?.updatedAt)}</Text>
-                  </Descriptions.Item>
-                </Descriptions>
-              </Col>
-            </Row>
-          </Card>
-        </Col>
-
-        {/* Địa chỉ giao hàng */}
-        <Col span={12}>
-          <Card title="Địa chỉ giao hàng" size="small">
-            <Space direction="vertical" style={{ width: "100%" }}>
-              <div>
-                <EnvironmentOutlined /> {orderData?.recipientInfo.name} (
-                {orderData?.recipientInfo.phone})
-              </div>
-              <div>
-                <strong>{orderData?.shippingAddress}</strong>
-              </div>
-            </Space>
-          </Card>
-        </Col>
-
-        {/* Thông tin thanh toán */}
-        <Col span={12}>
-          <Card title="Thông tin thanh toán" size="small">
-            <Descriptions column={1} size="small">
-              <Descriptions.Item label="Phương thức thanh toán">
-                {getPaymentMethodText(orderData?.paymentMethod)}
-              </Descriptions.Item>
-              <Descriptions.Item label="Trạng thái thanh toán">
-                <Tag color={getPaymentStatusColor(orderData?.paymentStatus)}>
-                  {getPaymentStatusDisplayText(orderData?.paymentStatus)}
-                </Tag>
-              </Descriptions.Item>
-            </Descriptions>
-          </Card>
-        </Col>
-
-        {/* Danh sách sản phẩm */}
-        <Col span={24}>
-          <Card title="Danh sách sản phẩm" size="small">
-            <Table
-              dataSource={orderData?.items}
-              columns={productColumns}
-              rowKey="_id"
-              pagination={false}
-              summary={() => (
-                <Table.Summary>
-                  <Table.Summary.Row>
-                    <Table.Summary.Cell index={0} colSpan={4}>
-                      <Text strong>Tạm tính:</Text>
-                    </Table.Summary.Cell>
-                    <Table.Summary.Cell index={1}>
-                      <Text strong>{formatCurrency(orderData?.subtotal)}</Text>
-                    </Table.Summary.Cell>
-                  </Table.Summary.Row>
-                  <Table.Summary.Row>
-                    <Table.Summary.Cell index={0} colSpan={4}>
-                      <Text>Phí vận chuyển:</Text>
-                    </Table.Summary.Cell>
-                    <Table.Summary.Cell index={1}>
-                      <Text>{formatCurrency(orderData?.shippingFee)}</Text>
-                    </Table.Summary.Cell>
-                  </Table.Summary.Row>
-                  {orderData?.discountAmount > 0 && (
-                    <Table.Summary.Row>
-                      <Table.Summary.Cell index={0} colSpan={4}>
-                        <Text>Giảm giá:</Text>
-                      </Table.Summary.Cell>
-                      <Table.Summary.Cell index={1}>
-                        <Text style={{ color: "#52c41a" }}>
-                          -{formatCurrency(orderData?.discountAmount)}
-                        </Text>
-                      </Table.Summary.Cell>
-                    </Table.Summary.Row>
-                  )}
-                  <Table.Summary.Row>
-                    <Table.Summary.Cell index={0} colSpan={4}>
-                      <Text strong style={{ fontSize: "16px" }}>
-                        Tổng cộng:
-                      </Text>
-                    </Table.Summary.Cell>
-                    <Table.Summary.Cell index={1}>
+          {/* Thông tin tổng quan */}
+          <Col span={24}>
+            <Card title="Thông tin đơn hàng" size="small">
+              <Row gutter={[16, 16]}>
+                <Col span={12}>
+                  <Descriptions column={1} size="small">
+                    <Descriptions.Item label="Mã đơn hàng">
                       <Text
                         strong
-                        style={{ fontSize: "16px", color: "#f5222d" }}
+                        style={{ color: "#1890ff", fontSize: "16px" }}
+                      >
+                        {orderData?.orderCode}
+                      </Text>
+                    </Descriptions.Item>
+                    <Descriptions.Item label="Ngày đặt hàng">
+                      <Space>
+                        <CalendarOutlined />
+                        {formatDate(orderData?.createdAt)}
+                      </Space>
+                    </Descriptions.Item>
+                    <Descriptions.Item label="Ngày giao hàng">
+                      <Text>
+                        {orderData?.status === 4 && orderData?.updatedAt
+                          ? formatDate(orderData?.updatedAt)
+                          : "Chưa xác định"}
+                      </Text>
+                    </Descriptions.Item>
+                  </Descriptions>
+                </Col>
+                <Col span={12}>
+                  <Descriptions column={1} size="small">
+                    <Descriptions.Item label="Trạng thái đơn hàng">
+                      <Tag
+                        color={getStatusColor(orderData?.status)}
+                        style={{ fontSize: "14px" }}
+                      >
+                        {getStatusDisplayText(orderData?.status)}
+                      </Tag>
+                    </Descriptions.Item>
+                    <Descriptions.Item label="Tổng tiền">
+                      <Text
+                        strong
+                        style={{ color: "#f5222d", fontSize: "18px" }}
                       >
                         {formatCurrency(orderData?.totalAmount)}
                       </Text>
-                    </Table.Summary.Cell>
-                  </Table.Summary.Row>
-                </Table.Summary>
-              )}
-            />
-          </Card>
-        </Col>
+                    </Descriptions.Item>
+                    <Descriptions.Item label="Cập nhật lần cuối">
+                      <Text>{formatDate(orderData?.updatedAt)}</Text>
+                    </Descriptions.Item>
+                  </Descriptions>
+                </Col>
+              </Row>
+            </Card>
+          </Col>
 
-        {/* Voucher (nếu có) */}
-        {orderData?.voucherId && orderData?.voucherId.length > 0 && (
-          <Col span={24}>
-            <Card title="Voucher sử dụng" size="small">
-              <Space wrap>
-                {orderData?.voucherId.map((voucherId: any, index: number) => (
-                  <Tag key={index} color="green">
-                    {voucherId}
-                  </Tag>
-                ))}
+          {/* Địa chỉ giao hàng */}
+          <Col span={12}>
+            <Card title="Địa chỉ giao hàng" size="small">
+              <Space direction="vertical" style={{ width: "100%" }}>
+                <div>
+                  <EnvironmentOutlined /> {orderData?.recipientInfo.name} (
+                  {orderData?.recipientInfo.phone})
+                </div>
+                <div>
+                  <strong>{orderData?.shippingAddress}</strong>
+                </div>
               </Space>
             </Card>
           </Col>
-        )}
 
-        {/* Hành động */}
-        <Col span={24}>
-          <Card title="Hành động" size="small">
-            <Space>
-              {orderData?.status === 0 && (
-                <>
+          {/* Thông tin thanh toán */}
+          <Col span={12}>
+            <Card title="Thông tin thanh toán" size="small">
+              <Descriptions column={1} size="small">
+                <Descriptions.Item label="Phương thức thanh toán">
+                  {getPaymentMethodText(orderData?.paymentMethod)}
+                </Descriptions.Item>
+                <Descriptions.Item label="Trạng thái thanh toán">
+                  <Tag color={getPaymentStatusColor(orderData?.paymentStatus)}>
+                    {getPaymentStatusDisplayText(orderData?.paymentStatus)}
+                  </Tag>
+                </Descriptions.Item>
+              </Descriptions>
+            </Card>
+          </Col>
+
+          {/* Danh sách sản phẩm */}
+          <Col span={24}>
+            <Card title="Danh sách sản phẩm" size="small">
+              <Table
+                dataSource={orderData?.items}
+                columns={productColumns}
+                rowKey="_id"
+                pagination={false}
+                summary={() => (
+                  <Table.Summary>
+                    <Table.Summary.Row>
+                      <Table.Summary.Cell index={0} colSpan={4}>
+                        <Text strong>Tạm tính:</Text>
+                      </Table.Summary.Cell>
+                      <Table.Summary.Cell index={1}>
+                        <Text strong>
+                          {formatCurrency(orderData?.subtotal)}
+                        </Text>
+                      </Table.Summary.Cell>
+                    </Table.Summary.Row>
+                    <Table.Summary.Row>
+                      <Table.Summary.Cell index={0} colSpan={4}>
+                        <Text>Phí vận chuyển:</Text>
+                      </Table.Summary.Cell>
+                      <Table.Summary.Cell index={1}>
+                        <Text>{formatCurrency(orderData?.shippingFee)}</Text>
+                      </Table.Summary.Cell>
+                    </Table.Summary.Row>
+                    {orderData?.discountAmount > 0 && (
+                      <Table.Summary.Row>
+                        <Table.Summary.Cell index={0} colSpan={4}>
+                          <Text>Giảm giá:</Text>
+                        </Table.Summary.Cell>
+                        <Table.Summary.Cell index={1}>
+                          <Text style={{ color: "#52c41a" }}>
+                            -{formatCurrency(orderData?.discountAmount)}
+                          </Text>
+                        </Table.Summary.Cell>
+                      </Table.Summary.Row>
+                    )}
+                    <Table.Summary.Row>
+                      <Table.Summary.Cell index={0} colSpan={4}>
+                        <Text strong style={{ fontSize: "16px" }}>
+                          Tổng cộng:
+                        </Text>
+                      </Table.Summary.Cell>
+                      <Table.Summary.Cell index={1}>
+                        <Text
+                          strong
+                          style={{ fontSize: "16px", color: "#f5222d" }}
+                        >
+                          {formatCurrency(orderData?.totalAmount)}
+                        </Text>
+                      </Table.Summary.Cell>
+                    </Table.Summary.Row>
+                  </Table.Summary>
+                )}
+              />
+            </Card>
+          </Col>
+
+          {/* Voucher (nếu có) */}
+          {orderData?.voucherId && orderData?.voucherId.length > 0 && (
+            <Col span={24}>
+              <Card title="Voucher sử dụng" size="small">
+                <Space wrap>
+                  {orderData?.voucherId.map((voucherId: any, index: number) => (
+                    <Tag key={index} color="green">
+                      {voucherId}
+                    </Tag>
+                  ))}
+                </Space>
+              </Card>
+            </Col>
+          )}
+
+          {/* Hành động */}
+          <Col span={24}>
+            <Card title="Hành động" size="small">
+              <Space>
+                {orderData?.status === 0 && (
+                  <>
+                    <Popconfirm
+                      title="Xác nhận đơn hàng này?"
+                      onConfirm={() => handleUpdateStatus(1)}
+                      okText="Xác nhận"
+                      cancelText="Huỷ"
+                    >
+                      <Button type="primary" loading={loadingAction === 1}>
+                        Xác nhận đơn hàng
+                      </Button>
+                    </Popconfirm>
+                    <Popconfirm
+                      title="Huỷ đơn hàng này?"
+                      onConfirm={showCancelModal}
+                      okText="Huỷ đơn"
+                      cancelText="Không"
+                    >
+                      <Button danger loading={loadingAction === 5}>
+                        Huỷ đơn hàng
+                      </Button>
+                    </Popconfirm>
+                  </>
+                )}
+                {orderData?.status === 1 && (
+                  <>
+                    <Popconfirm
+                      title="Chuyển đơn hàng sang trạng thái đang giao?"
+                      onConfirm={() => handleUpdateStatus(2)}
+                      okText="Giao hàng"
+                      cancelText="Huỷ"
+                    >
+                      <Button type="primary" loading={loadingAction === 2}>
+                        Bắt đầu giao hàng
+                      </Button>
+                    </Popconfirm>
+                    <Popconfirm
+                      title="Huỷ đơn hàng này?"
+                      onConfirm={showCancelModal}
+                      okText="Huỷ đơn"
+                      cancelText="Không"
+                    >
+                      <Button danger loading={loadingAction === 5}>
+                        Huỷ đơn hàng
+                      </Button>
+                    </Popconfirm>
+                  </>
+                )}
+                {orderData?.status === 2 && (
                   <Popconfirm
-                    title="Xác nhận đơn hàng này?"
-                    onConfirm={() => handleUpdateStatus(1)}
-                    okText="Xác nhận"
+                    title="Xác nhận đã giao hàng thành công?"
+                    onConfirm={() => handleUpdateStatus(3)}
+                    okText="Đã giao"
                     cancelText="Huỷ"
                   >
-                    <Button type="primary" loading={loadingAction === 1}>
-                      Xác nhận đơn hàng
+                    <Button type="primary" loading={loadingAction === 3}>
+                      Xác nhận đã giao
                     </Button>
                   </Popconfirm>
-                  <Popconfirm
-                    title="Huỷ đơn hàng này?"
-                    onConfirm={showCancelModal}
-                    okText="Huỷ đơn"
-                    cancelText="Không"
+                )}
+              </Space>
+            </Card>
+          </Col>
+
+          <Modal
+            title="Hủy đơn hàng"
+            visible={isModalVisible}
+            onCancel={handleModalCancel}
+            footer={null}
+            className="rounded-lg"
+          >
+            <Form form={form} onFinish={handleCancelOrder} layout="vertical">
+              <Form.Item
+                name="reason"
+                label="Lý do hủy"
+                rules={[{ required: true, message: "Vui lòng chọn lý do hủy" }]}
+              >
+                <AntSelect placeholder="Chọn lý do">
+                  {cancelReasons.map((reason) => (
+                    <AntSelect.Option key={reason} value={reason}>
+                      {reason}
+                    </AntSelect.Option>
+                  ))}
+                </AntSelect>
+              </Form.Item>
+              <Form.Item
+                noStyle
+                shouldUpdate={(prevValues, currentValues) =>
+                  prevValues.reason !== currentValues.reason
+                }
+              >
+                {({ getFieldValue }) =>
+                  getFieldValue("reason") === "Khác" ? (
+                    <Form.Item
+                      name="customReason"
+                      label="Lý do cụ thể"
+                      rules={[
+                        {
+                          required: true,
+                          message: "Vui lòng nhập lý do cụ thể",
+                        },
+                      ]}
+                    >
+                      <AntInput.TextArea
+                        rows={3}
+                        placeholder="Nhập lý do hủy đơn hàng"
+                      />
+                    </Form.Item>
+                  ) : null
+                }
+              </Form.Item>
+              <Form.Item>
+                <div className="flex gap-2 justify-end">
+                  <Button
+                    onClick={handleModalCancel}
+                    style={{ marginRight: "16px" }}
                   >
-                    <Button danger loading={loadingAction === 5}>
-                      Huỷ đơn hàng
-                    </Button>
-                  </Popconfirm>
-                </>
-              )}
-              {orderData?.status === 1 && (
-                <>
-                  <Popconfirm
-                    title="Chuyển đơn hàng sang trạng thái đang giao?"
-                    onConfirm={() => handleUpdateStatus(2)}
-                    okText="Giao hàng"
-                    cancelText="Huỷ"
-                  >
-                    <Button type="primary" loading={loadingAction === 2}>
-                      Bắt đầu giao hàng
-                    </Button>
-                  </Popconfirm>
-                  <Popconfirm
-                    title="Huỷ đơn hàng này?"
-                    onConfirm={showCancelModal}
-                    okText="Huỷ đơn"
-                    cancelText="Không"
-                  >
-                    <Button danger loading={loadingAction === 5}>
-                      Huỷ đơn hàng
-                    </Button>
-                  </Popconfirm>
-                </>
-              )}
-              {orderData?.status === 2 && (
-                <Popconfirm
-                  title="Xác nhận đã giao hàng thành công?"
-                  onConfirm={() => handleUpdateStatus(3)}
-                  okText="Đã giao"
-                  cancelText="Huỷ"
-                >
-                  <Button type="primary" loading={loadingAction === 3}>
-                    Xác nhận đã giao
+                    Hủy bỏ
                   </Button>
-                </Popconfirm>
-              )}
-            </Space>
-          </Card>
-        </Col>
-
-        <Modal
-          title="Hủy đơn hàng"
-          visible={isModalVisible}
-          onCancel={handleModalCancel}
-          footer={null}
-          className="rounded-lg"
-        >
-          <Form form={form} onFinish={handleCancelOrder} layout="vertical">
-            <Form.Item
-              name="reason"
-              label="Lý do hủy"
-              rules={[{ required: true, message: "Vui lòng chọn lý do hủy" }]}
-            >
-              <AntSelect placeholder="Chọn lý do">
-                {cancelReasons.map((reason) => (
-                  <AntSelect.Option key={reason} value={reason}>
-                    {reason}
-                  </AntSelect.Option>
-                ))}
-              </AntSelect>
-            </Form.Item>
-            <Form.Item
-              noStyle
-              shouldUpdate={(prevValues, currentValues) =>
-                prevValues.reason !== currentValues.reason
-              }
-            >
-              {({ getFieldValue }) =>
-                getFieldValue("reason") === "Khác" ? (
-                  <Form.Item
-                    name="customReason"
-                    label="Lý do cụ thể"
-                    rules={[
-                      { required: true, message: "Vui lòng nhập lý do cụ thể" },
-                    ]}
-                  >
-                    <AntInput.TextArea
-                      rows={3}
-                      placeholder="Nhập lý do hủy đơn hàng"
-                    />
-                  </Form.Item>
-                ) : null
-              }
-            </Form.Item>
-            <Form.Item>
-              <div className="flex gap-2 justify-end">
-                <Button
-                  onClick={handleModalCancel}
-                  style={{ marginRight: "16px" }}
-                >
-                  Hủy bỏ
-                </Button>
-                <Button type="primary" htmlType="submit" danger>
-                  Xác nhận hủy
-                </Button>
-              </div>
-            </Form.Item>
-          </Form>
-        </Modal>
-      </Row>
+                  <Button type="primary" htmlType="submit" danger>
+                    Xác nhận hủy
+                  </Button>
+                </div>
+              </Form.Item>
+            </Form>
+          </Modal>
+        </Row>
+      </Spin>
     </Show>
   );
 };

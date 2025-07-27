@@ -17,6 +17,7 @@ export interface IParticipant {
     role: string;
     avatar: string | null;
     isActive: boolean;
+    activeStatus: boolean;
   };
   joinedAt: string;
 }
@@ -25,6 +26,7 @@ export interface IMessage {
   senderId: string;
   senderRole: string;
   content: string;
+  files: string[];
   readBy: string[];
   _id: string;
   createdAt: string;

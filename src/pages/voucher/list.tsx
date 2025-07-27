@@ -18,6 +18,7 @@ import { useCallback, useEffect, useState } from "react";
 import dayjs from "dayjs";
 import { axiosInstance } from "../../utils/axiosInstance";
 import { io } from "socket.io-client";
+import Loader from "../../utils/loading";
 
 const VoucherList = () => {
   const [filterIsDeleted, setFilterIsDeleted] = useState<boolean>(true);
@@ -190,7 +191,11 @@ const VoucherList = () => {
         style={{ marginBottom: 16, maxWidth: 300 }}
       />
 
-      <Table {...tableProps} rowKey="_id" loading={tableProps.loading}>
+      <Table
+        {...tableProps}
+        rowKey="_id"
+        loading={tableProps.loading ? { indicator: <Loader /> } : false}
+      >
         <Table.Column title="STT" render={(_, __, index) => index + 1} />
         <Table.Column title="Mã giảm giá" dataIndex="code" />
 

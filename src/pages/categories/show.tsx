@@ -1,12 +1,13 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { Show } from "@refinedev/antd";
 import { useShow } from "@refinedev/core";
-import { Card, Col, Divider, message, Row, Tag, Typography } from "antd";
+import { Card, Col, Divider, message, Row, Spin, Tag, Typography } from "antd";
 import axios from "axios";
 import dayjs from "dayjs";
 import { useEffect, useRef, useState } from "react";
 import { API_URL } from "../../config/dataProvider";
 import { ICategory } from "../../interface/category";
+import Loader from "../../utils/loading";
 
 const { Title, Text } = Typography;
 
@@ -77,97 +78,99 @@ export const CategoryShow = () => {
   }, [record?.parentId]);
 
   return (
-    <Show isLoading={isLoading} canDelete={false} title="Chi tiết danh mục">
-      <Card bordered style={{ maxWidth: 700, margin: "0 auto" }}>
-        <Row gutter={[16, 16]}>
-          <Col span={24}>
-            <Title level={5}>Tên danh mục</Title>
-            <Text>{record?.name || "Không rõ"}</Text>
-          </Col>
-          <Col span={24}>
-            <Title level={5}>Mô tả</Title>
-            <Text>
-              {record?.description || (
-                <Text type="secondary">Không có mô tả</Text>
-              )}
-            </Text>
-          </Col>
-          <Col span={24}>
-            <Title level={5}>Đường dẫn: </Title>
-            <Text>{record?.slug || "Không rõ"}</Text>
-          </Col>
-
-          {/* Loại danh mục */}
-          <Col span={24}>
-            <Title level={5}>Loại danh mục</Title>
-            <Tag color={record?.parentId === null ? "blue" : "purple"}>
-              {record?.parentId === null ? "Danh mục cha" : "Danh mục con"}
-            </Tag>
-          </Col>
-
-          {/* Trạng thái hiệu lực */}
-          <Col span={24}>
-            <Title level={5}>Trạng thái hiệu lực</Title>
-            <Tag color={record?.isActive ? "green" : "red"}>
-              {record?.isActive ? "Có hiệu lực" : "Không hiệu lực"}
-            </Tag>
-          </Col>
-
-          {/* Ngày tạo */}
-          <Col span={24}>
-            <Title level={5}>Ngày tạo</Title>
-            <Text>
-              {record?.createdAt
-                ? dayjs(record.createdAt).format("DD/MM/YYYY HH:mm")
-                : "Không rõ"}
-            </Text>
-          </Col>
-
-          {/* Ngày cập nhật */}
-          <Col span={24}>
-            <Title level={5}>Ngày cập nhật</Title>
-            <Text>
-              {record?.updatedAt
-                ? dayjs(record.updatedAt).format("DD/MM/YYYY HH:mm")
-                : "Không rõ"}
-            </Text>
-          </Col>
-
-          {/* Danh mục con nếu là cha */}
-          {record?.parentId === null && (
+    <Show isLoading={false} canDelete={false} title="Chi tiết danh mục">
+      <Spin spinning={isLoading} indicator={<Loader />}>
+        <Card bordered style={{ maxWidth: 700, margin: "0 auto" }}>
+          <Row gutter={[16, 16]}>
             <Col span={24}>
-              <Divider />
-              <Title level={5}>Danh mục con</Title>
-              {record?.subCategories?.length ? (
-                <Row gutter={[8, 8]}>
-                  {record.subCategories.map((item: ICategory) => (
-                    <Col key={item._id}>
-                      <Tag color="green">{item.name}</Tag>
-                    </Col>
-                  ))}
-                </Row>
-              ) : (
-                <Text type="secondary">Chưa có danh mục con</Text>
-              )}
+              <Title level={5}>Tên danh mục</Title>
+              <Text>{record?.name || "Không rõ"}</Text>
             </Col>
-          )}
-
-          {/* Danh mục cha nếu là con */}
-          {record?.parentId && (
             <Col span={24}>
-              <Divider />
-              <Title level={5}>Danh mục cha</Title>
-              {parentLoading ? (
-                <Text>Đang tải...</Text>
-              ) : parentName ? (
-                <Tag color="blue">{parentName}</Tag>
-              ) : (
-                <Text type="secondary">Không tìm thấy</Text>
-              )}
+              <Title level={5}>Mô tả</Title>
+              <Text>
+                {record?.description || (
+                  <Text type="secondary">Không có mô tả</Text>
+                )}
+              </Text>
             </Col>
-          )}
-        </Row>
-      </Card>
+            <Col span={24}>
+              <Title level={5}>Đường dẫn: </Title>
+              <Text>{record?.slug || "Không rõ"}</Text>
+            </Col>
+
+            {/* Loại danh mục */}
+            <Col span={24}>
+              <Title level={5}>Loại danh mục</Title>
+              <Tag color={record?.parentId === null ? "blue" : "purple"}>
+                {record?.parentId === null ? "Danh mục cha" : "Danh mục con"}
+              </Tag>
+            </Col>
+
+            {/* Trạng thái hiệu lực */}
+            <Col span={24}>
+              <Title level={5}>Trạng thái hiệu lực</Title>
+              <Tag color={record?.isActive ? "green" : "red"}>
+                {record?.isActive ? "Có hiệu lực" : "Không hiệu lực"}
+              </Tag>
+            </Col>
+
+            {/* Ngày tạo */}
+            <Col span={24}>
+              <Title level={5}>Ngày tạo</Title>
+              <Text>
+                {record?.createdAt
+                  ? dayjs(record.createdAt).format("DD/MM/YYYY HH:mm")
+                  : "Không rõ"}
+              </Text>
+            </Col>
+
+            {/* Ngày cập nhật */}
+            <Col span={24}>
+              <Title level={5}>Ngày cập nhật</Title>
+              <Text>
+                {record?.updatedAt
+                  ? dayjs(record.updatedAt).format("DD/MM/YYYY HH:mm")
+                  : "Không rõ"}
+              </Text>
+            </Col>
+
+            {/* Danh mục con nếu là cha */}
+            {record?.parentId === null && (
+              <Col span={24}>
+                <Divider />
+                <Title level={5}>Danh mục con</Title>
+                {record?.subCategories?.length ? (
+                  <Row gutter={[8, 8]}>
+                    {record.subCategories.map((item: ICategory) => (
+                      <Col key={item._id}>
+                        <Tag color="green">{item.name}</Tag>
+                      </Col>
+                    ))}
+                  </Row>
+                ) : (
+                  <Text type="secondary">Chưa có danh mục con</Text>
+                )}
+              </Col>
+            )}
+
+            {/* Danh mục cha nếu là con */}
+            {record?.parentId && (
+              <Col span={24}>
+                <Divider />
+                <Title level={5}>Danh mục cha</Title>
+                {parentLoading ? (
+                  <Text>Đang tải...</Text>
+                ) : parentName ? (
+                  <Tag color="blue">{parentName}</Tag>
+                ) : (
+                  <Text type="secondary">Không tìm thấy</Text>
+                )}
+              </Col>
+            )}
+          </Row>
+        </Card>
+      </Spin>
     </Show>
   );
 };
