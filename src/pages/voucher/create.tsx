@@ -159,9 +159,9 @@ const VoucherCreate = () => {
             { required: true, message: "Vui lòng nhập mã giảm giá" },
             { min: 3, message: "Mã giảm giá phải có ít nhất 3 ký tự" },
             {
-              pattern: /^[A-Z0-9]+$/,
+              pattern: /^[A-Z0-9\-_]+$/,
               message:
-                "Mã giảm giá chỉ chứa chữ in hoa và số (Không bao gồm khoảng trắng)",
+                "Mã giảm giá chỉ gồm chữ in hoa, số, dấu gạch ngang (-), và gạch dưới (_)",
             },
 
             {

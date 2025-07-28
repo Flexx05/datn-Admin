@@ -19,10 +19,13 @@ const VoucherShow = () => {
         .get("/admin/users?isActive=true")
         .then((res) => {
           const allUsers = res.data?.docs || res.data || [];
-          // Lọc ra user trùng với voucher.userIds
-          const selectedUsers = allUsers.filter((u: any) =>
-            voucher.userIds.includes(u._id)
+          const voucherUserIds = voucher.userIds.map((id: any) =>
+            id.toString()
           );
+          const selectedUsers = allUsers.filter((u: any) =>
+            voucherUserIds.includes(u._id)
+          );
+
           setUserList(selectedUsers);
         })
         .catch(() => setUserList([]));
@@ -53,15 +56,28 @@ const VoucherShow = () => {
 
         <Descriptions.Item label="Người dùng áp dụng">
           {userList.length > 0 ? (
-            userList.map((u) => (
-              <Tag color="orange" key={u._id}>
-                {u.fullName || u.email} ({u.email})
+            userList.map((u) => {
+              const label =
+                (u.fullName || "").trim() || (u.email || "").trim()
+                  ? `${u.fullName || u.email} (${u.email || "no-email"})`
+                  : u._id;
+              return (
+                <Tag color="orange" key={u._id}>
+                  {label}
+                </Tag>
+              );
+            })
+          ) : voucher?.userIds?.length > 0 ? (
+            voucher.userIds.map((id: any) => (
+              <Tag color="orange" key={id}>
+                {id}
               </Tag>
             ))
           ) : (
             <i style={{ color: "gray" }}>Không có người dùng cụ thể</i>
           )}
         </Descriptions.Item>
+
         <Descriptions.Item label="Mô tả">
           {voucher?.description}
         </Descriptions.Item>
