@@ -4,10 +4,15 @@ import { axiosInstance } from "../../utils/axiosInstance";
 
 type Props = {
   conversationId: string;
-  hiddenStatus: boolean;
+  disableStatus?: boolean;
+  buttonType?: "link" | "text" | "default" | "primary" | "dashed";
 };
 
-const CloseConversation = ({ conversationId, hiddenStatus }: Props) => {
+const CloseConversation = ({
+  conversationId,
+  buttonType,
+  disableStatus,
+}: Props) => {
   const invalidate = useInvalidate();
   const handleCloseConversation = async () => {
     try {
@@ -31,7 +36,7 @@ const CloseConversation = ({ conversationId, hiddenStatus }: Props) => {
         okText="Kết thúc"
         cancelText="Hủy"
       >
-        <Button danger hidden={hiddenStatus}>
+        <Button type={buttonType} danger disabled={disableStatus}>
           Kết thúc
         </Button>
       </Popconfirm>
