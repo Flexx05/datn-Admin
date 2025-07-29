@@ -40,6 +40,7 @@ import VoucherCreate from "../pages/voucher/create";
 import VoucherEdit from "../pages/voucher/edit";
 import VoucherList from "../pages/voucher/list";
 import VoucherShow from "../pages/voucher/show";
+import { ReturnRequestDetail } from "../pages/order/returnRequestDetail";
 
 const AppRoutes = () => {
   return (
@@ -104,6 +105,7 @@ const AppRoutes = () => {
           <Route path="/orders">
             <Route index element={<OrderList />} />
             <Route path="show/:id" element={<OrderShow />} />
+            <Route path="return-requests/show/:id" element={<ReturnRequestDetail />} />
           </Route>
           <Route path="/vouchers">
             <Route index element={<VoucherList />} />
