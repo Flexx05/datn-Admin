@@ -18,7 +18,7 @@ const UnAssignConversation = ({ conversationId }: Props) => {
       });
       message.success("Hủy đăng ký thành công");
     } catch (error: any) {
-      message.error("Lỗi khi hủy đăng ký");
+      message.error("Lỗi khi hủy đăng ký\n" + error.response?.data?.error);
     }
   };
   return (

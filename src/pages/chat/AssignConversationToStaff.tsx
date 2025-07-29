@@ -8,12 +8,19 @@ type Props = {
   conversationId: string;
   disabledStatus: boolean;
   buttonType?: "link" | "text" | "default" | "primary" | "dashed";
+  placeMent?:
+    | "topLeft"
+    | "topRight"
+    | "bottomLeft"
+    | "bottomRight"
+    | "rightTop";
 };
 
 const AssignConversationToStaff = ({
   conversationId,
   disabledStatus,
   buttonType,
+  placeMent,
 }: Props) => {
   const invalidate = useInvalidate();
   const { data } = useList<IUser>({
@@ -46,9 +53,9 @@ const AssignConversationToStaff = ({
       });
       message.success("Đăng ký thành công");
     } catch (error: any) {
-      console.error(error);
-
-      message.error("Lỗi khi đăng ký đoạn chat");
+      message.error(
+        "Lỗi khi đăng ký đoạn chat\n" + error.response?.data?.error
+      );
     }
   };
 
@@ -68,7 +75,11 @@ const AssignConversationToStaff = ({
   );
   return (
     <>
-      <Popover content={getPopoverContent} trigger="click">
+      <Popover
+        content={getPopoverContent}
+        trigger="click"
+        placement={placeMent}
+      >
         <Button type={buttonType} disabled={disabledStatus}>
           Đăng ký
         </Button>

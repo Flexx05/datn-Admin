@@ -39,7 +39,11 @@ export interface IMessage {
 
 export interface IStatusLog {
   status: string;
-  updateBy: string;
+  updateBy: {
+    _id: string;
+    fulLName: string;
+    email: string;
+  };
   updatedAt: string;
   _id: string;
 }

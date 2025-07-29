@@ -14,9 +14,7 @@ export const CategoryCreate = () => {
       type: "success",
     }),
     errorNotification: (error?: HttpError) => ({
-      message:
-        "❌ Tạo danh mục thất bại! " +
-        (error?.response?.data?.message || error?.response?.data?.error),
+      message: "❌ Tạo danh mục thất bại! " + error?.response?.data?.error,
       description: "Có lỗi xảy ra trong quá trình xử lý.",
       type: "error",
     }),

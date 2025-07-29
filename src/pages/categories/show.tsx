@@ -14,8 +14,7 @@ const { Title, Text } = Typography;
 export const CategoryShow = () => {
   const { queryResult } = useShow({
     errorNotification: (error: any) => ({
-      message:
-        "❌ Lỗi hệ thống " + (error.response?.data?.message | error.message),
+      message: "❌ Lỗi hệ thống " + error.response?.data?.error,
       description: "Có lỗi xảy ra trong quá trình xử lý.",
       type: "error" as const,
     }),

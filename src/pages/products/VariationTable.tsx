@@ -49,7 +49,7 @@ export const VariationTable = ({ product }: { product: IProduct }) => {
       });
     } catch (error: any) {
       message.error(
-        "Cập nhật trạng thái thất bại: " + error.response?.data?.message
+        "Cập nhật trạng thái thất bại: " + error.response?.data?.error
       );
     } finally {
       setLoadingId(null);

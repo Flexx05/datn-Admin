@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useInvalidate } from "@refinedev/core";
 import { Button, message, Popconfirm } from "antd";
 import { axiosInstance } from "../../utils/axiosInstance";
@@ -23,8 +24,8 @@ const CloseConversation = ({
         id: conversationId,
         invalidates: ["list", "detail"],
       });
-    } catch (error) {
-      message.error("Lỗi khi khóa đoạn chat");
+    } catch (error: any) {
+      message.error("Lỗi khi khóa đoạn chat\n" + error.response?.data?.error);
     }
   };
   return (

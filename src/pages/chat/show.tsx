@@ -9,9 +9,7 @@ import Loader from "../../utils/loading";
 const ChatShow = () => {
   const { queryResult } = useShow<IConversation>({
     errorNotification: (error: any) => ({
-      message:
-        "❌ Lỗi hệ thống " +
-        (error.response?.data?.message || error.response?.data?.error),
+      message: "❌ Lỗi hệ thống " + error.response?.data?.error,
       description: "Có lỗi xảy ra trong quá trình xử lý.",
       type: "error",
     }),
@@ -20,7 +18,6 @@ const ChatShow = () => {
   const record = data?.data;
 
   const customer = record?.participants.find((p) => p.userId.role === "user");
-  const participants = record?.participants;
 
   const chatTypeMap: Record<number, string> = {
     1: "Tin nhắn hỗ trợ",
@@ -120,12 +117,7 @@ const ChatShow = () => {
               <Table.Column
                 title="Người cập nhật"
                 dataIndex={"updateBy"}
-                render={(value: string) => {
-                  const participant = participants?.find(
-                    (p) => p.userId._id === value
-                  );
-                  return <>{participant?.userId.fullName}</>;
-                }}
+                render={(value) => value.fullName || value.email}
               />
               <Table.Column
                 title="Thời gian cập nhật"
@@ -144,7 +136,9 @@ const ChatShow = () => {
 
           <Descriptions.Item label="Người được phân công">
             {record?.assignedTo ? (
-              <Typography.Text>{record.assignedTo}</Typography.Text>
+              <Typography.Text>
+                {record.assignedTo.fullName || record.assignedTo.email}
+              </Typography.Text>
             ) : (
               <Tag color="red">Chưa phân công</Tag>
             )}

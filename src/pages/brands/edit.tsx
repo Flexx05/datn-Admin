@@ -16,9 +16,7 @@ export const BrandEdit = () => {
       type: "success" as const,
     }),
     errorNotification: (error: any) => ({
-      message:
-        "❌ Cập nhật thất bại! " + error.response?.data?.message ||
-        error.response?.data?.error,
+      message: "❌ Cập nhật thất bại! " + error.response?.data?.error,
       description: "Có lỗi xảy ra trong quá trình xử lý.",
       type: "error" as const,
     }),

@@ -38,9 +38,7 @@ export const ProductCreate = () => {
     }),
     errorNotification: (error?: HttpError) => ({
       message:
-        "❌ Tạo sản phẩm thất bại! " +
-        ((error?.response?.data?.message || error?.response?.data?.error) ??
-          ""),
+        "❌ Tạo sản phẩm thất bại! " + (error?.response?.data?.error ?? ""),
       description: "Có lỗi xảy ra trong quá trình xử lý.",
       type: "error",
     }),

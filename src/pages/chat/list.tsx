@@ -46,6 +46,9 @@ const ChatList = () => {
     null
   );
   const [popoverOpen, setPopoverOpen] = useState<boolean>(false);
+  const [staffAssigned, setStaffAssigned] = useState<
+    string | number | undefined
+  >("");
   const screens = useBreakpoint();
   const { id } = useParams();
   const nav = useNavigate();
@@ -73,8 +76,14 @@ const ChatList = () => {
         operator: "eq",
         value: filterStatus,
       },
+      {
+        field: "assignedTo",
+        operator: "eq",
+        value: staffAssigned,
+      },
     ],
   });
+
   const invalidate = useInvalidate();
   const chatData = data?.data.filter((item) => item.messages.length > 1) || [];
 
@@ -114,8 +123,10 @@ const ChatList = () => {
         id,
         invalidates: ["list", "detail"],
       });
-    } catch (error) {
-      message.error("Lỗi khi thay đổi trạng thái đoạn chat");
+    } catch (error: any) {
+      message.error(
+        "Lỗi khi thay đổi trạng thái đoạn chat\n" + error.response?.data?.error
+      );
     }
   };
 
@@ -227,6 +238,14 @@ const ChatList = () => {
         >
           <Button>Trạng thái</Button>
         </Popover>
+        {user?.role !== "admin" ? (
+          staffAssigned !== userId ? (
+            <Button onClick={() => setStaffAssigned(userId)}>Đă đăng ký</Button>
+          ) : (
+            <Button onClick={() => setStaffAssigned("all")}>Tất cả</Button>
+          )
+        ) : null}
+        <Divider style={{ margin: "10px 0" }} />
 
         {chatData.length > 0 ? (
           chatData.map((conversation) => {
@@ -411,6 +430,7 @@ const ChatList = () => {
                             user?.role === "admin" ? (
                               <AssignConversationToStaff
                                 conversationId={id || ""}
+                                placeMent="rightTop"
                                 disabledStatus={
                                   conversation?.status === "closed"
                                 }

@@ -479,53 +479,84 @@ const Messages = () => {
                   )}
                   <Tooltip
                     title={dayjs(message.createdAt).format("HH:mm")}
-                    placement="left"
+                    placement={isUser ? "right" : "left"}
                   >
-                    {message.content !== "" && (
-                      <div
-                        style={{
-                          background: isUser
-                            ? mode === "dark"
-                              ? "#575757"
-                              : "#f0f0f0"
-                            : "#1269EB",
-                          color: isUser ? undefined : "#fff",
-                          borderRadius: 16,
-                          padding: screens?.xs ? "6px 10px" : "8px 16px",
-                          maxWidth: screens?.xs ? 220 : 700,
-                          wordBreak: "break-word",
-                          fontSize: screens?.xs ? 13 : 15,
-                          textAlign: "left",
-                        }}
-                      >
-                        {message.content}
-                      </div>
-                    )}
                     <div
                       style={{
                         display: "flex",
-                        gap: 8,
-                        flexWrap: "wrap",
-                        flexDirection: "row-reverse",
+                        flexDirection: "column",
+                        alignItems: isUser ? "flex-start" : "flex-end", // ✅ bubble căn theo phía đúng
                       }}
                     >
-                      {message.files &&
-                        message.files?.map((url) =>
-                          url.endsWith(".mp4") ? (
-                            <Card
-                              style={{ width: 200 }}
-                              cover={
-                                <video
-                                  src={url}
-                                  controls
-                                  style={{ width: "100%", borderRadius: 8 }}
-                                />
-                              }
-                            />
-                          ) : (
-                            <Image width={200} src={url} />
-                          )
-                        )}
+                      {!isUser && (
+                        <div
+                          style={{
+                            textAlign: "right",
+                            fontSize: 10,
+                            color: "lightgray",
+                            marginBottom: 4,
+                            maxWidth: screens?.xs ? 220 : 700,
+                          }}
+                        >
+                          {conversation?.participants.find(
+                            (p) => p.userId._id === message.senderId
+                          )?.userId.fullName || "Hệ thống"}
+                        </div>
+                      )}
+
+                      {/* Bubble tin nhắn */}
+                      {message.content && (
+                        <div
+                          style={{
+                            background: isUser
+                              ? mode === "dark"
+                                ? "#575757"
+                                : "#f0f0f0"
+                              : "#1269EB",
+                            color: isUser ? undefined : "#fff",
+                            borderRadius: 16,
+                            padding: screens?.xs ? "6px 10px" : "8px 16px",
+                            maxWidth: screens?.xs ? 220 : 900,
+                            wordBreak: "break-word",
+                            fontSize: screens?.xs ? 13 : 15,
+                            textAlign: "left",
+                            display: "inline-block", // giữ chiều rộng phù hợp nội dung
+                          }}
+                        >
+                          {message.content}
+                        </div>
+                      )}
+
+                      {message.files?.length > 0 && (
+                        <div
+                          style={{
+                            display: "flex",
+                            gap: 8,
+                            flexWrap: "wrap",
+                            flexDirection: "row-reverse",
+                            marginTop: 6,
+                            maxWidth: screens?.xs ? 220 : 700,
+                          }}
+                        >
+                          {message.files.map((url, index) =>
+                            url.endsWith(".mp4") ? (
+                              <Card
+                                key={index}
+                                style={{ width: 200 }}
+                                cover={
+                                  <video
+                                    src={url}
+                                    controls
+                                    style={{ width: "100%", borderRadius: 8 }}
+                                  />
+                                }
+                              />
+                            ) : (
+                              <Image key={index} width={200} src={url} />
+                            )
+                          )}
+                        </div>
+                      )}
                     </div>
                   </Tooltip>
                 </div>

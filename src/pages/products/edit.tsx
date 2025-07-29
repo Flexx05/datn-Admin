@@ -40,8 +40,7 @@ export const ProductEdit = () => {
     errorNotification: (error?: HttpError) => ({
       message:
         "❌ Cập nhật sản phẩm thất bại! " +
-        ((error?.response?.data?.message || error?.response?.data?.error) ??
-          ""),
+        (error?.response?.data?.error ?? ""),
       description: "Có lỗi xảy ra trong quá trình xử lý.",
       type: "error",
     }),

@@ -26,7 +26,9 @@ const AssignConversation = ({
         invalidates: ["list", "detail"],
       });
     } catch (error: any) {
-      message.error("Lỗi khi đăng ký đoạn chat");
+      message.error(
+        "Lỗi khi đăng ký đoạn chat\n" + error.response?.data?.error
+      );
     }
   };
 
