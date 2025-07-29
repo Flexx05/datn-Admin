@@ -6,6 +6,7 @@ import {
   Badge,
   Button,
   Col,
+  Divider,
   Dropdown,
   Grid,
   Layout,
@@ -28,6 +29,10 @@ import {
 import { socket } from "../../socket";
 import { axiosInstance } from "../../utils/axiosInstance";
 import Loader from "../../utils/loading";
+import CloseConversation from "./CloseConversation";
+import AssignConversation from "./AssignConversation";
+import AssignConversationToStaff from "./AssignConversationToStaff";
+import UnAssignConversation from "./UnAssignConversation";
 
 const { Text, Title } = Typography;
 const { useBreakpoint } = Grid;
@@ -123,7 +128,7 @@ const ChatList = () => {
 
   const statusMap: Record<string, { label: string; color: string }> = {
     active: { label: "Hoạt động", color: "green" },
-    waiting: { label: "Đang chờ", color: "yellow" },
+    waiting: { label: "Đang chờ", color: "orange" },
     closed: { label: "Đã đóng", color: "red" },
   };
 
@@ -137,8 +142,8 @@ const ChatList = () => {
           type="link"
           style={{
             color: "white",
-            backgroundColor: color,
             textAlign: "left",
+            backgroundColor: color,
           }}
           onClick={() => setFilterStatus(key)}
         >
@@ -173,7 +178,12 @@ const ChatList = () => {
   if (isLoading) return <Loader />;
 
   return (
-    <Layout style={{ minHeight: "90vh", height: "90vh" }}>
+    <Layout
+      style={{
+        minHeight: "calc(90vh - 24px)",
+        height: "calc(90vh - 24px)",
+      }}
+    >
       <Sider
         width={screens.xs ? "100%" : 300}
         breakpoint="sm"
@@ -304,11 +314,18 @@ const ChatList = () => {
                         style={{
                           fontSize: 12,
                           width: "fit-content",
-                          marginLeft: 8,
+                          marginRight: 8,
                         }}
                       >
                         {statusMap[conversation.status].label}
                       </Tag>
+                      {conversation?.assignedTo && (
+                        <Text type="secondary" style={{ fontSize: 12 }}>
+                          Đăng ký:{" "}
+                          {conversation.assignedTo?.fullName ||
+                            conversation.assignedTo?.email}
+                        </Text>
+                      )}
                     </Row>
                   </Col>
                   <Col flex="20px">
@@ -339,9 +356,14 @@ const ChatList = () => {
                   >
                     <Dropdown
                       trigger={["click"]}
-                      onOpenChange={(visible) => setPopoverOpen(visible)}
+                      onOpenChange={(open) => {
+                        if (!open) return;
+                        setPopoverOpen(open);
+                      }}
                       popupRender={() => (
                         <div
+                          onClick={(e) => e.stopPropagation()}
+                          onMouseDown={(e) => e.stopPropagation()}
                           style={{
                             padding: 10,
                             backgroundColor: colorMode,
@@ -375,14 +397,54 @@ const ChatList = () => {
                                 marginTop: 8,
                               }}
                               type="link"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                              }}
                             >
                               Phân loại
                             </Button>
                           </Popover>
+
+                          <Divider style={{ margin: "8px 0" }} />
+
+                          {conversation?.assignedTo === null ? (
+                            user?.role === "admin" ? (
+                              <AssignConversationToStaff
+                                conversationId={id || ""}
+                                disabledStatus={
+                                  conversation?.status === "closed"
+                                }
+                                buttonType="link"
+                              />
+                            ) : (
+                              <AssignConversation
+                                conversationId={id || ""}
+                                disabledStatus={
+                                  conversation?.status === "closed"
+                                }
+                                buttonType="link"
+                              />
+                            )
+                          ) : (
+                            <UnAssignConversation conversationId={id || ""} />
+                          )}
+
+                          <CloseConversation
+                            conversationId={conversation._id}
+                            disableStatus={conversation.status === "closed"}
+                            buttonType="link"
+                          />
                         </div>
                       )}
                     >
-                      <Button icon={<DashOutlined />} shape="circle" />
+                      <Button
+                        icon={<DashOutlined />}
+                        shape="circle"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setPopoverOpen((prev) => !prev);
+                        }}
+                      />
                     </Dropdown>
                   </div>
                 )}
@@ -400,7 +462,7 @@ const ChatList = () => {
         style={{
           height: "90vh",
           overflowY: "auto",
-          padding: screens.xs ? 8 : 24,
+          padding: screens.xs ? "0 8px" : "0 24px",
           display: "flex",
           flexDirection: "column",
         }}

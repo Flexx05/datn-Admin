@@ -5,7 +5,11 @@ export interface IConversation {
   statusLogs: IStatusLog[];
   status: string;
   chatType: number;
-  assignedTo: string | null;
+  assignedTo: {
+    _id: string;
+    fullName: string;
+    email: string;
+  };
   createdBy: string;
   lastUpdated: string;
 }

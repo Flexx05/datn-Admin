@@ -45,6 +45,10 @@ import { INotification } from "../../interface/notification";
 import { socket, useChatSocket } from "../../socket";
 import { axiosInstance } from "../../utils/axiosInstance";
 import CloseConversation from "./CloseConversation";
+import AssignConversation from "./AssignConversation";
+import { useAuth } from "../../contexts/auth/AuthContext";
+import AssignConversationToStaff from "./AssignConversationToStaff";
+import UnAssignConversation from "./UnAssignConversation";
 
 type DisplayMessage = IMessage & { type?: "user"; senderRole?: string };
 
@@ -56,6 +60,7 @@ const Messages = () => {
   const [filterCategory, setFilterCategory] = useState<number>(0);
   const [fileList, setFileList] = useState<UploadFile[]>([]);
   const [uploadedImageUrls, setUploadedImageUrls] = useState<string[]>([]);
+  const [sending, setSending] = useState<boolean>(false);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { mode } = useContext(ColorModeContext);
@@ -63,6 +68,7 @@ const Messages = () => {
   const { useBreakpoint } = Grid;
   const screens = useBreakpoint();
   const invalidate = useInvalidate();
+  const { user } = useAuth();
 
   const { data, isLoading } = useOne<IConversation>({
     resource: "conversation",
@@ -249,6 +255,7 @@ const Messages = () => {
     if (!input.trim() && uploadedImageUrls.length === 0) return;
 
     try {
+      setSending(true);
       await axiosInstance.post("/send-message", {
         content: input,
         conversationId: id,
@@ -284,7 +291,9 @@ const Messages = () => {
       setUploadedImageUrls([]);
       setFileList([]);
     } catch (error: any) {
-      message.error("Lỗi khi gửi tin nhắn " + error.message);
+      message.error("Lỗi khi gửi tin nhắn " + error.response?.data?.error);
+    } finally {
+      setSending(false);
     }
   };
 
@@ -364,7 +373,13 @@ const Messages = () => {
 
   return (
     <div style={{ width: "100%", maxWidth: "auto", margin: "0 auto" }}>
-      <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+        }}
+      >
         <Typography.Title
           level={5}
           style={{
@@ -383,10 +398,30 @@ const Messages = () => {
             customer.userId?.fullName
           )}
         </Typography.Title>
-        <CloseConversation
-          conversationId={id || ""}
-          hiddenStatus={closedConversation}
-        />
+        <div style={{ display: "flex", gap: 8 }}>
+          <CloseConversation
+            conversationId={id || ""}
+            disableStatus={closedConversation}
+            buttonType="dashed"
+          />
+          {conversation?.assignedTo === null ? (
+            user?.role === "admin" ? (
+              <AssignConversationToStaff
+                conversationId={id || ""}
+                disabledStatus={conversation?.status === "closed"}
+                buttonType="dashed"
+              />
+            ) : (
+              <AssignConversation
+                conversationId={id || ""}
+                disabledStatus={conversation?.status === "closed"}
+                buttonType="dashed"
+              />
+            )
+          ) : (
+            <UnAssignConversation conversationId={id || ""} />
+          )}
+        </div>
       </div>
 
       <div
@@ -503,14 +538,22 @@ const Messages = () => {
 
       <Tooltip
         title={
-          !customer?.userId?.isActive && "Khách hàng này đã bị khóa tài khoản"
+          !customer?.userId?.isActive
+            ? "Khách hàng này đã bị khóa tài khoản"
+            : conversation?.status === "closed"
+            ? "Đoạn chat này đã kết thúc"
+            : ""
         }
       >
         <Space.Compact style={{ width: "100%" }}>
           {/* Tin nhắn nhanh */}
           <Tooltip title={"Tin nhắn nhanh"}>
             <Dropdown
-              disabled={!customer?.userId?.isActive}
+              disabled={
+                !customer?.userId?.isActive ||
+                isLoadingQuickChat ||
+                conversation?.status === "closed"
+              }
               placement="topLeft"
               trigger={["click"]}
               popupRender={() => (
@@ -576,12 +619,15 @@ const Messages = () => {
               <Button
                 icon={<SmileOutlined />}
                 type="link"
-                disabled={!customer?.userId?.isActive}
+                disabled={
+                  !customer?.userId?.isActive ||
+                  conversation?.status === "closed"
+                }
               />
             </Popover>
           </Tooltip>
 
-          <Tooltip title="Upload">
+          <Tooltip title="Đính kèm file ảnh hoặc video">
             <Popover
               trigger={["click"]}
               placement="bottom"
@@ -590,7 +636,10 @@ const Messages = () => {
                   listType="picture-card"
                   fileList={fileList}
                   onChange={(e) => handleUpload(e.fileList)}
-                  disabled={!customer?.userId?.isActive}
+                  disabled={
+                    !customer?.userId?.isActive ||
+                    conversation?.status === "closed"
+                  }
                   beforeUpload={() => false}
                 >
                   {fileList.length >= 10 ? null : (
@@ -605,7 +654,10 @@ const Messages = () => {
               <Button
                 icon={<UploadOutlined />}
                 type="link"
-                disabled={!customer?.userId?.isActive}
+                disabled={
+                  !customer?.userId?.isActive ||
+                  conversation?.status === "closed"
+                }
               />
             </Popover>
           </Tooltip>
@@ -622,14 +674,24 @@ const Messages = () => {
             onChange={(e) => setInput(e.target.value)}
             onPressEnter={handleSend}
             placeholder="Nhập tin nhắn..."
-            disabled={!customer?.userId?.isActive}
+            disabled={
+              !customer?.userId?.isActive ||
+              sending ||
+              conversation?.status === "closed"
+            }
           />
 
           <Button
             type="link"
-            icon={<SendOutlined />}
+            icon={
+              sending ? <Loading3QuartersOutlined spin /> : <SendOutlined />
+            }
             onClick={handleSend}
-            disabled={!customer?.userId?.isActive}
+            disabled={
+              !customer?.userId?.isActive ||
+              sending ||
+              conversation?.status === "closed"
+            }
             style={{
               borderTopRightRadius: 30,
               borderBottomRightRadius: 30,
