@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { DashOutlined } from "@ant-design/icons";
-import { useInvalidate, useList } from "@refinedev/core";
+import { CrudFilters, useInvalidate, useList } from "@refinedev/core";
 import {
   Avatar,
   Badge,
@@ -9,6 +9,7 @@ import {
   Divider,
   Dropdown,
   Grid,
+  Input,
   Layout,
   message,
   Popover,
@@ -17,7 +18,7 @@ import {
   Typography,
 } from "antd";
 import dayjs from "dayjs";
-import { useContext, useEffect, useState } from "react";
+import { useContext, useEffect, useMemo, useState } from "react";
 import { Outlet, useNavigate, useParams } from "react-router";
 import { useAuth } from "../../contexts/auth/AuthContext";
 import { ColorModeContext } from "../../contexts/color-mode";
@@ -50,6 +51,7 @@ const ChatList = () => {
     string | number | undefined
   >("");
   const screens = useBreakpoint();
+  const [searchValue, setSearchValue] = useState("");
   const { id } = useParams();
   const nav = useNavigate();
   const { user } = useAuth();
@@ -58,6 +60,44 @@ const ChatList = () => {
   const colorMode = mode === "dark" ? "#1a1a1a" : "white";
   const selectedMode = mode === "dark" ? "#2e2e2eff" : "#e8e8e858";
 
+  const filters = useMemo(() => {
+    const result = [];
+
+    if (filterChatType) {
+      result.push({
+        field: "chatType",
+        operator: "eq",
+        value: filterChatType,
+      });
+    }
+
+    if (filterStatus) {
+      result.push({
+        field: "status",
+        operator: "eq",
+        value: filterStatus,
+      });
+    }
+
+    if (staffAssigned) {
+      result.push({
+        field: "assignedTo",
+        operator: "eq",
+        value: staffAssigned,
+      });
+    }
+
+    if (searchValue.trim()) {
+      result.push({
+        field: "search", // 🔍 ví dụ bạn tìm theo tên khách hàng
+        operator: "contains",
+        value: searchValue.trim(),
+      });
+    }
+
+    return result as CrudFilters;
+  }, [filterChatType, filterStatus, staffAssigned, searchValue]);
+
   const { data, isLoading, refetch } = useList<IConversation>({
     resource: "conversation",
     errorNotification: {
@@ -65,23 +105,7 @@ const ChatList = () => {
       message: "Lỗi khi tải danh sách hội thoại",
       description: "Vui lòng thử lại sau.",
     },
-    filters: [
-      {
-        field: "chatType",
-        operator: "eq",
-        value: filterChatType,
-      },
-      {
-        field: "status",
-        operator: "eq",
-        value: filterStatus,
-      },
-      {
-        field: "assignedTo",
-        operator: "eq",
-        value: staffAssigned,
-      },
-    ],
+    filters: filters,
   });
 
   const invalidate = useInvalidate();
@@ -245,6 +269,12 @@ const ChatList = () => {
             <Button onClick={() => setStaffAssigned("all")}>Tất cả</Button>
           )
         ) : null}
+        <Input.Search
+          placeholder="Tìm theo tên khách hàng..."
+          allowClear
+          onSearch={(value) => setSearchValue(value)}
+          style={{ marginTop: 16 }}
+        />
         <Divider style={{ margin: "10px 0" }} />
 
         {chatData.length > 0 ? (
