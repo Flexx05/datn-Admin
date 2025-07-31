@@ -5,12 +5,20 @@ import { useInvalidate } from "@refinedev/core";
 
 type Props = {
   conversationId: string;
+  buttonType?: "link" | "text" | "default" | "primary" | "dashed";
+  staffId: string;
 };
-const UnAssignConversation = ({ conversationId }: Props) => {
+const UnAssignConversation = ({
+  conversationId,
+  buttonType,
+  staffId,
+}: Props) => {
   const invalidate = useInvalidate();
   const handleUnAssignConversation = async () => {
     try {
-      await axiosInstance.patch(`/conversation/un-assign/${conversationId}`);
+      await axiosInstance.patch(`/conversation/un-assign/${conversationId}`, {
+        staffId,
+      });
       invalidate({
         resource: "conversation",
         id: conversationId,
@@ -28,7 +36,7 @@ const UnAssignConversation = ({ conversationId }: Props) => {
         description={`Bạn chắc chắn hủy đăng ký đoạn chat này không?`}
         onConfirm={handleUnAssignConversation}
       >
-        <Button>Hủy đăng ký</Button>
+        <Button type={buttonType}>Hủy đăng ký</Button>
       </Popconfirm>
     </>
   );

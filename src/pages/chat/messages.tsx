@@ -435,7 +435,11 @@ const Messages = () => {
               />
             )
           ) : (
-            <UnAssignConversation conversationId={id || ""} />
+            <UnAssignConversation
+              conversationId={id || ""}
+              buttonType="dashed"
+              staffId={conversation?.assignedTo?._id || ""}
+            />
           )}
         </div>
       </div>

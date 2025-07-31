@@ -17,6 +17,7 @@ import { API_URL } from "../config/dataProvider";
 import { ColorModeContext } from "../contexts/color-mode";
 import { INotification } from "../interface/notification";
 import { socket } from "../socket";
+import { useAuth } from "../contexts/auth/AuthContext";
 
 // ! Thêm chức năng xóa hàng loạt và đánh dấu tất cả đã đọc
 
@@ -86,12 +87,20 @@ const ListNotification = ({ item }: { item: INotification }) => {
 const Nontification = () => {
   const [tabKey, setTabKey] = useState("unread");
   const { mode } = useContext(ColorModeContext);
+  const { user } = useAuth();
   const colorMode = mode === "dark" ? "#1a1a1a" : "white";
   const shadowMode =
     mode === "dark" ? "rgba(255, 255, 255, 0.21)" : "rgba(0, 0, 0, 0.1)";
   const { data, isLoading } = useList<INotification>({
     resource: "notification",
+    meta: {
+      recipientId: user?._id,
+    },
+    queryOptions: {
+      enabled: !!user?._id,
+    },
   });
+
   const invalidate = useInvalidate();
   useEffect(() => {
     const handleUpdate = () => {

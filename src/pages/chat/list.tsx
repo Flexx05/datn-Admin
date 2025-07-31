@@ -446,7 +446,11 @@ const ChatList = () => {
                               />
                             )
                           ) : (
-                            <UnAssignConversation conversationId={id || ""} />
+                            <UnAssignConversation
+                              conversationId={id || ""}
+                              buttonType="link"
+                              staffId={conversation?.assignedTo?._id || ""}
+                            />
                           )}
 
                           <CloseConversation
