@@ -613,7 +613,11 @@ const Messages = () => {
                     <Loading3QuartersOutlined />
                   ) : (
                     <Menu
-                      style={{ maxHeight: 200, overflowY: "auto" }}
+                      style={{
+                        maxHeight: 200,
+                        overflowY: "auto",
+                        maxWidth: 500,
+                      }}
                       items={quickChat?.data?.map((item: IQuickChat) => ({
                         key: item._id,
                         label:
