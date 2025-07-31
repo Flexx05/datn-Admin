@@ -206,14 +206,31 @@ const Messages = () => {
       const file = updatedFileList[i];
       const originFile = file.originFileObj as File;
 
+      // Kiểm tra định dạng file
       if (
         !originFile.type.startsWith("image/") &&
         !originFile.type.startsWith("video/")
       ) {
         message.error("Vui lòng chỉ tải lên ảnh hoặc video.");
-        return;
+        updatedFileList[i] = {
+          ...updatedFileList[i],
+          status: "error",
+        };
+        continue; // bỏ qua file này
       }
 
+      // Kiểm tra kích thước file (giới hạn 32MB)
+      const maxSize = 32 * 1024 * 1024;
+      if (originFile.size > maxSize) {
+        message.error(`❌ File "${file.name}" vượt quá 32MB.`);
+        updatedFileList[i] = {
+          ...updatedFileList[i],
+          status: "error",
+        };
+        continue; // bỏ qua file này
+      }
+
+      // Upload nếu file hợp lệ và chưa có URL
       if (!file.url && originFile) {
         try {
           const formData = new FormData();
@@ -223,9 +240,7 @@ const Messages = () => {
           const { data } = await axios.post(CLOUDINARY_URL, formData);
 
           let fileUrl = data.secure_url;
-
           if (originFile.type.startsWith("image/")) {
-            // Chuyển URL sang định dạng WebP bằng cách thêm `.webp` và /upload/f_auto/ nếu cần
             fileUrl = fileUrl.replace("/upload/", "/upload/f_webp/");
           }
 
@@ -246,6 +261,7 @@ const Messages = () => {
         newUploadedUrls.push(file.url);
       }
     }
+
     setFileList(updatedFileList);
     setUploadedImageUrls(newUploadedUrls);
   };
