@@ -31,6 +31,7 @@ const AssignConversationToStaff = ({
         operator: "eq",
         value: true,
       },
+      { field: "role", operator: "eq", value: "staff" },
     ],
     meta: {
       _limit: "off",

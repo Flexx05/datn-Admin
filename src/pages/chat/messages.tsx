@@ -477,33 +477,33 @@ const Messages = () => {
                       />
                     </div>
                   )}
-                  <Tooltip
-                    title={dayjs(message.createdAt).format("HH:mm")}
-                    placement={isUser ? "right" : "left"}
-                  >
-                    <div
-                      style={{
-                        display: "flex",
-                        flexDirection: "column",
-                        alignItems: isUser ? "flex-start" : "flex-end", // ✅ bubble căn theo phía đúng
-                      }}
-                    >
-                      {!isUser && (
-                        <div
-                          style={{
-                            textAlign: "right",
-                            fontSize: 10,
-                            color: "lightgray",
-                            marginBottom: 4,
-                            maxWidth: screens?.xs ? 220 : 700,
-                          }}
-                        >
-                          {conversation?.participants.find(
-                            (p) => p.userId._id === message.senderId
-                          )?.userId.fullName || "Hệ thống"}
-                        </div>
-                      )}
 
+                  <div
+                    style={{
+                      display: "flex",
+                      flexDirection: "column",
+                      alignItems: isUser ? "flex-start" : "flex-end", // ✅ bubble căn theo phía đúng
+                    }}
+                  >
+                    {!isUser && (
+                      <div
+                        style={{
+                          textAlign: "right",
+                          fontSize: 10,
+                          color: "lightgray",
+                          marginBottom: 4,
+                          maxWidth: screens?.xs ? 220 : 700,
+                        }}
+                      >
+                        {conversation?.participants.find(
+                          (p) => p.userId._id === message.senderId
+                        )?.userId.fullName || "Hệ thống"}
+                      </div>
+                    )}
+                    <Tooltip
+                      title={dayjs(message.createdAt).format("HH:mm")}
+                      placement={isUser ? "right" : "left"}
+                    >
                       {/* Bubble tin nhắn */}
                       {message.content && (
                         <div
@@ -557,8 +557,8 @@ const Messages = () => {
                           )}
                         </div>
                       )}
-                    </div>
-                  </Tooltip>
+                    </Tooltip>
+                  </div>
                 </div>
               </List.Item>
             );
@@ -693,7 +693,8 @@ const Messages = () => {
             </Popover>
           </Tooltip>
 
-          <Input
+          <Input.TextArea
+            autoSize={{ minRows: 1, maxRows: 5 }}
             style={{
               width: "100%",
               minWidth: 0,
