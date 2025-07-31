@@ -1,8 +1,15 @@
-import { BellFilled, CheckOutlined, CloseOutlined } from "@ant-design/icons";
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import {
+  BellFilled,
+  CheckOutlined,
+  CloseOutlined,
+  DeleteOutlined,
+} from "@ant-design/icons";
 import { useInvalidate, useList } from "@refinedev/core";
 import {
   Badge,
   Button,
+  Checkbox,
   Dropdown,
   List,
   Space,
@@ -12,32 +19,41 @@ import {
 } from "antd";
 import axios from "axios";
 import dayjs from "dayjs";
-import { useContext, useEffect, useState } from "react";
+import { useContext, useEffect, useMemo, useState } from "react";
 import { API_URL } from "../config/dataProvider";
 import { ColorModeContext } from "../contexts/color-mode";
 import { INotification } from "../interface/notification";
 import { socket } from "../socket";
 import { useAuth } from "../contexts/auth/AuthContext";
 
-// ! Thêm chức năng xóa hàng loạt và đánh dấu tất cả đã đọc
+const ListNotification = ({
+  item,
+  selected,
+  onSelect,
+}: {
+  item: INotification;
+  selected: boolean;
+  onSelect: (id: string, checked: boolean) => void;
+}) => {
+  const invalidate = useInvalidate();
 
-const ListNotification = ({ item }: { item: INotification }) => {
   const handleChangReadingStatus = async () => {
     await axios.patch(`${API_URL}/notification/${item._id}`);
-    await invalidate({
-      resource: "notification",
-      invalidates: ["list"],
-    });
+    await invalidate({ resource: "notification", invalidates: ["list"] });
   };
-  const invalidate = useInvalidate();
+
+  const handleDelete = async () => {
+    await axios.delete(`${API_URL}/notification/${item._id}`);
+    await invalidate({ resource: "notification", invalidates: ["list"] });
+  };
+
   return (
     <List.Item
       key={item._id}
       actions={[
-        item.isRead || (
+        !item.isRead && (
           <Tooltip title="Đánh dấu là đã đọc">
             <Button
-              loading={item.isRead}
               type="default"
               size="small"
               shape="circle"
@@ -52,15 +68,13 @@ const ListNotification = ({ item }: { item: INotification }) => {
             size="small"
             shape="circle"
             icon={<CloseOutlined />}
-            onClick={async () => {
-              await axios.delete(`${API_URL}/notification/${item._id}`);
-              await invalidate({
-                resource: "notification",
-                invalidates: ["list"],
-              });
-            }}
+            onClick={handleDelete}
           />
         </Tooltip>,
+        <Checkbox
+          checked={selected}
+          onChange={(e) => onSelect(item._id, e.target.checked)}
+        />,
       ]}
     >
       <List.Item.Meta
@@ -71,7 +85,7 @@ const ListNotification = ({ item }: { item: INotification }) => {
                 ? `/orders/show/${item.link}`
                 : item.type === 3
                 ? `/conversation/message/${item.link}`
-                : ""
+                : "#"
             }
             onClick={handleChangReadingStatus}
           >
@@ -84,24 +98,62 @@ const ListNotification = ({ item }: { item: INotification }) => {
   );
 };
 
-const Nontification = () => {
-  const [tabKey, setTabKey] = useState("unread");
+const Notification = () => {
+  const [tabKey, setTabKey] = useState<"unread" | "read">("unread");
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const { mode } = useContext(ColorModeContext);
   const { user } = useAuth();
-  const colorMode = mode === "dark" ? "#1a1a1a" : "white";
-  const shadowMode =
-    mode === "dark" ? "rgba(255, 255, 255, 0.21)" : "rgba(0, 0, 0, 0.1)";
+  const invalidate = useInvalidate();
+
   const { data, isLoading } = useList<INotification>({
     resource: "notification",
-    meta: {
-      recipientId: user?._id,
-    },
-    queryOptions: {
-      enabled: !!user?._id,
-    },
+    meta: { recipientId: user?._id },
+    queryOptions: { enabled: !!user?._id },
   });
 
-  const invalidate = useInvalidate();
+  const notifications = data?.data || ([] as INotification[]);
+
+  const filtered = useMemo(() => {
+    return notifications.filter((item) =>
+      tabKey === "unread" ? !item.isRead : item.isRead
+    );
+  }, [tabKey, notifications]);
+
+  const handleSelect = (id: string, checked: boolean) => {
+    setSelectedIds((prev) =>
+      checked ? [...prev, id] : prev.filter((_id) => _id !== id)
+    );
+  };
+
+  const handleDeleteSelected = async () => {
+    await Promise.all(
+      selectedIds.map((id) => axios.delete(`${API_URL}/notification/${id}`))
+    );
+    setSelectedIds([]);
+    await invalidate({ resource: "notification", invalidates: ["list"] });
+  };
+
+  const handleSelectAll = (checked: boolean) => {
+    const ids = checked ? filtered.map((n) => n._id) : [];
+    setSelectedIds(ids);
+  };
+
+  const handleMarkAllAsRead = async () => {
+    try {
+      const unreadIds = filtered.map((n) => n._id);
+      if (unreadIds.length === 0) return;
+
+      await axios.patch(`${API_URL}/notification/mark-many-read`, {
+        ids: unreadIds,
+      });
+
+      await invalidate({ resource: "notification", invalidates: ["list"] });
+      setSelectedIds((prev) => prev.filter((id) => !unreadIds.includes(id)));
+    } catch (error) {
+      console.error("Lỗi khi đánh dấu tất cả là đã đọc", error);
+    }
+  };
+
   useEffect(() => {
     const handleUpdate = () => {
       invalidate({
@@ -115,74 +167,108 @@ const Nontification = () => {
     };
   }, [invalidate]);
 
-  const read = data?.data.filter((item: INotification) => item.isRead === true);
-  const unread = data?.data.filter(
-    (item: INotification) => item.isRead === false
-  );
+  const colorMode = mode === "dark" ? "#1a1a1a" : "white";
+  const shadowMode =
+    mode === "dark" ? "rgba(255, 255, 255, 0.21)" : "rgba(0, 0, 0, 0.1)";
 
   return (
-    <>
-      <Dropdown
-        trigger={["click"]}
-        placement="bottomRight"
-        popupRender={() => (
-          <div
-            style={{
-              width: 400,
-              height: 555,
-              overflow: "auto",
-              padding: 12,
-              backgroundColor: colorMode,
-              boxShadow: `${shadowMode} 0px 8px 24px`,
-              borderRadius: 10,
-            }}
-          >
+    <Dropdown
+      trigger={["click"]}
+      placement="bottomRight"
+      popupRender={() => (
+        <div
+          style={{
+            width: 400,
+            height: 555,
+            overflow: "auto",
+            padding: 12,
+            backgroundColor: colorMode,
+            boxShadow: `${shadowMode} 0px 8px 24px`,
+            borderRadius: 10,
+          }}
+        >
+          <div style={{ display: "flex", justifyContent: "space-between" }}>
             <Typography.Text strong>Thông báo</Typography.Text>
-            <Tabs
-              activeKey={tabKey}
-              onChange={setTabKey}
-              defaultActiveKey="unread"
-            >
-              <Tabs.TabPane tab="Chưa đọc" key="unread">
-                <List
-                  loading={isLoading}
-                  dataSource={unread}
-                  renderItem={(item: INotification) => (
-                    <ListNotification item={item} />
-                  )}
-                ></List>
-              </Tabs.TabPane>
-              <Tabs.TabPane tab="Đã đọc" key="read">
-                <List
-                  loading={isLoading}
-                  dataSource={read}
-                  renderItem={(item: INotification) => (
-                    <ListNotification item={item} />
-                  )}
-                ></List>
-              </Tabs.TabPane>
-            </Tabs>
+            <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+              <Tooltip
+                title={
+                  selectedIds.length > 0 &&
+                  `Xóa ${selectedIds.length} thông báo đã chọn`
+                }
+              >
+                <Badge count={selectedIds.length}>
+                  <Button
+                    danger
+                    onClick={handleDeleteSelected}
+                    disabled={selectedIds.length === 0}
+                    icon={<DeleteOutlined />}
+                  />
+                </Badge>
+              </Tooltip>
+              <Tooltip title="Đánh dấu là tất cả đã đọc">
+                <Button
+                  icon={<CheckOutlined />}
+                  disabled={tabKey === "read" || filtered.length === 0}
+                  onClick={handleMarkAllAsRead}
+                />
+              </Tooltip>
+            </div>
           </div>
-        )}
-      >
-        <Space>
-          <Badge
-            count={unread?.length || 0}
-            color="red"
-            size="default"
-            offset={[-2, 2]}
-            style={{ cursor: "pointer" }}
-          >
-            <Button
-              type="text"
-              shape="circle"
-              icon={<BellFilled style={{ fontSize: "25px" }} />}
-            />
-          </Badge>
-        </Space>
-      </Dropdown>
-    </>
+
+          <Tabs activeKey={tabKey} onChange={(key) => setTabKey(key as any)}>
+            {["unread", "read"].map((key) => (
+              <Tabs.TabPane
+                tab={key === "unread" ? "Chưa đọc" : "Đã đọc"}
+                key={key}
+              >
+                <Checkbox
+                  indeterminate={
+                    selectedIds.length > 0 &&
+                    selectedIds.length < filtered.length
+                  }
+                  checked={
+                    filtered.length > 0 &&
+                    selectedIds.length === filtered.length
+                  }
+                  onChange={(e) => handleSelectAll(e.target.checked)}
+                >
+                  Chọn tất cả
+                </Checkbox>
+
+                <List
+                  loading={isLoading}
+                  dataSource={filtered}
+                  renderItem={(item) => (
+                    <ListNotification
+                      item={item}
+                      selected={selectedIds.includes(item._id)}
+                      onSelect={handleSelect}
+                    />
+                  )}
+                />
+              </Tabs.TabPane>
+            ))}
+          </Tabs>
+        </div>
+      )}
+    >
+      <Space>
+        <Badge
+          count={notifications.filter((item) => !item.isRead).length || 0}
+          color="red"
+          size="default"
+          offset={[-2, 2]}
+          style={{ cursor: "pointer" }}
+        >
+          <Button
+            type="text"
+            shape="circle"
+            icon={<BellFilled style={{ fontSize: "25px" }} />}
+          />
+        </Badge>
+      </Space>
+    </Dropdown>
   );
 };
 
-export default Nontification;
+export default Notification;
