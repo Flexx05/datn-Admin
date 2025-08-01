@@ -21,6 +21,7 @@ import { useCallback, useState } from "react";
 import { API_URL } from "../../config/dataProvider";
 import { IUser } from "../../interface/user";
 import Loader from "../../utils/loading";
+import { axiosInstance } from "../../utils/axiosInstance";
 
 export const UserList = () => {
   const [filterActive, setFilterActive] = useState<boolean>(true);
@@ -65,7 +66,7 @@ export const UserList = () => {
 
   const handleChangeStatus = async (record: IUser) => {
     try {
-      await axios.patch(`${API_URL}/admin/users/${record._id}/status`, {
+      await axiosInstance.patch(`/admin/users/${record._id}/status`, {
         isActive: !record.isActive,
       });
       message.success("Cập nhật trạng thái thành công");
