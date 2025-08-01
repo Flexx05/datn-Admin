@@ -77,9 +77,18 @@ export const resources = [
     name: "admin/users",
     list: "/users",
     show: "/users/show/:id",
+    meta: {
+      label: "Quản lý khách hàng",
+    },
+  },
+  {
+    name: "staffs",
+    list: "/staffs",
+    show: "/users/show/:id",
+    create: "/users/add",
     edit: "/users/edit/:id",
     meta: {
-      label: "Quản lý Khách hàng",
+      label: "Quản lý nhân viên",
     },
   },
   {
