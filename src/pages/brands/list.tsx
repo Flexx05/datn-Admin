@@ -19,11 +19,11 @@ import {
   Tooltip,
   Typography,
 } from "antd";
-import axios from "axios";
 import dayjs from "dayjs";
 import { useCallback, useState } from "react";
-import { API_URL } from "../../config/dataProvider";
 import { IBrand } from "../../interface/brand";
+import { axiosInstance } from "../../utils/axiosInstance";
+import Loader from "../../utils/loading";
 
 export const BrandList = () => {
   const [filterActive, setFilterActive] = useState<boolean>(true);
@@ -44,8 +44,7 @@ export const BrandList = () => {
       },
     ],
     errorNotification: (error: any) => ({
-      message:
-        "❌ Lỗi hệ thống " + (error.response?.data?.message | error.message),
+      message: "❌ Lỗi hệ thống " + error.response?.data.error,
       description: "Có lỗi xảy ra trong quá trình xử lý.",
       type: "error" as const,
     }),
@@ -57,7 +56,9 @@ export const BrandList = () => {
   const handleChangeStatus = async (record: IBrand) => {
     setLoadingId(record._id);
     try {
-      await axios.patch(`${API_URL}/brand/edit/${record._id}`, {
+      await axiosInstance.patch(`/brand/edit/${record._id}`, {
+        name: record.name,
+
         isActive: !record.isActive,
       });
 
@@ -138,7 +139,11 @@ export const BrandList = () => {
         onSearch={handleSearch}
         style={{ marginBottom: 16, maxWidth: 300 }}
       />
-      <Table {...tableProps} rowKey="_id">
+      <Table
+        {...tableProps}
+        rowKey="_id"
+        loading={tableProps.loading ? { indicator: <Loader /> } : false}
+      >
         <Table.Column
           dataIndex="stt"
           title={"STT"}

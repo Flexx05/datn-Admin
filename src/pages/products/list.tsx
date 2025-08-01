@@ -18,17 +18,17 @@ import {
   Tabs,
   Tooltip,
 } from "antd";
-import axios from "axios";
 import dayjs from "dayjs";
-import { useCallback, useState } from "react";
-import { API_URL } from "../../config/dataProvider";
+import React, { useCallback, useState } from "react";
 import {
   IProduct,
   IProductAttribute,
   IVariation,
 } from "../../interface/product";
+import { axiosInstance } from "../../utils/axiosInstance";
 import { ColorDots } from "./ColorDots";
 import { VariationTable } from "./VariationTable";
+import Loader from "../../utils/loading";
 
 export const ProductList = () => {
   const [filterActive, setFilterActive] = useState<boolean>(true);
@@ -49,8 +49,7 @@ export const ProductList = () => {
       },
     ],
     errorNotification: (error: any) => ({
-      message:
-        "❌ Lỗi hệ thống " + (error.response?.data?.message || error.message),
+      message: "❌ Lỗi hệ thống " + error.response?.data?.error,
       description: "Có lỗi xảy ra trong quá trình xử lý.",
       type: "error",
     }),
@@ -58,12 +57,13 @@ export const ProductList = () => {
 
   const invalidate = useInvalidate();
   const [loadingId, setLoadingId] = useState<string | number | null>(null);
+  const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
 
   const handleChangeStatus = useCallback(
     async (record: IProduct | IVariation | any) => {
       setLoadingId(record._id);
       try {
-        await axios.patch(`${API_URL}/product/edit/status/${record._id}`, {
+        await axiosInstance.patch(`/product/edit/status/${record._id}`, {
           isActive: !record.isActive,
         });
 
@@ -149,12 +149,60 @@ export const ProductList = () => {
         onSearch={handleSearch}
         style={{ marginBottom: 16, maxWidth: 300 }}
       />
+      <Popconfirm
+        title="Bạn chắc chắn xóa các sản phẩm đã chọn không ?"
+        onConfirm={async () => {
+          if (selectedRowKeys.length === 0) return;
+          try {
+            await Promise.all(
+              selectedRowKeys.map((id) =>
+                axiosInstance.delete(`product/delete/${id}`)
+              )
+            );
+            message.success("Xóa thành công");
+            await invalidate({
+              resource: "product",
+              invalidates: ["list"],
+            });
+            setSelectedRowKeys([]);
+          } catch (error: any) {
+            const errorMessage =
+              error.response?.data?.message ||
+              error.message ||
+              "Lỗi không xác định";
+            message.error("Xóa thất bại: " + errorMessage);
+          }
+        }}
+        okText="Xóa"
+        cancelText="Hủy"
+      >
+        <Button
+          type="primary"
+          danger
+          style={{ marginBottom: 16 }}
+          disabled={!selectedRowKeys.length}
+        >
+          Xóa hàng loạt
+        </Button>
+      </Popconfirm>
       <Table
         {...tableProps}
         rowKey="_id"
+        loading={
+          tableProps.loading
+            ? {
+                indicator: <Loader />,
+              }
+            : false
+        }
+        rowSelection={{
+          type: "checkbox",
+          selectedRowKeys,
+          onChange: (keys: React.Key[]) => setSelectedRowKeys(keys),
+        }}
         expandable={{
           expandedRowRender: (record: IProduct | IVariation | any) => (
-            <VariationTable variations={record.variation} />
+            <VariationTable product={record} />
           ),
           rowExpandable: (record) => !!record.variation?.length,
         }}
@@ -211,10 +259,15 @@ export const ProductList = () => {
         />
         <Table.Column
           title="Tồn kho"
-          dataIndex="stock"
+          dataIndex="inStock"
           render={(_, record: IProduct) =>
             record.variation?.reduce((prev, curr) => prev + curr.stock, 0) || 0
           }
+          filters={[
+            { text: "Còn hàng", value: true },
+            { text: "Hết hàng", value: false },
+          ]}
+          onFilter={(value, record) => record.inStock === value}
         />
         <Table.Column
           title="Ngày tạo"

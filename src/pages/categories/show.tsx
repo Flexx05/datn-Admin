@@ -1,29 +1,20 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { Show } from "@refinedev/antd";
 import { useShow } from "@refinedev/core";
-import {
-  Card,
-  Col,
-  Divider,
-  message,
-  Row,
-  Skeleton,
-  Tag,
-  Typography,
-} from "antd";
+import { Card, Col, Divider, message, Row, Spin, Tag, Typography } from "antd";
+import axios from "axios";
 import dayjs from "dayjs";
 import { useEffect, useRef, useState } from "react";
-import axios from "axios";
-import { ICategory } from "../../interface/category";
 import { API_URL } from "../../config/dataProvider";
+import { ICategory } from "../../interface/category";
+import Loader from "../../utils/loading";
 
 const { Title, Text } = Typography;
 
 export const CategoryShow = () => {
   const { queryResult } = useShow({
     errorNotification: (error: any) => ({
-      message:
-        "❌ Lỗi hệ thống " + (error.response?.data?.message | error.message),
+      message: "❌ Lỗi hệ thống " + error.response?.data?.error,
       description: "Có lỗi xảy ra trong quá trình xử lý.",
       type: "error" as const,
     }),
@@ -86,11 +77,9 @@ export const CategoryShow = () => {
   }, [record?.parentId]);
 
   return (
-    <Show isLoading={isLoading} canDelete={false} title="Chi tiết danh mục">
-      <Card bordered style={{ maxWidth: 700, margin: "0 auto" }}>
-        {isLoading ? (
-          <Skeleton active />
-        ) : (
+    <Show isLoading={false} canDelete={false} title="Chi tiết danh mục">
+      <Spin spinning={isLoading} indicator={<Loader />}>
+        <Card bordered style={{ maxWidth: 700, margin: "0 auto" }}>
           <Row gutter={[16, 16]}>
             <Col span={24}>
               <Title level={5}>Tên danh mục</Title>
@@ -179,8 +168,8 @@ export const CategoryShow = () => {
               </Col>
             )}
           </Row>
-        )}
-      </Card>
+        </Card>
+      </Spin>
     </Show>
   );
 };

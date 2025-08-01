@@ -10,6 +10,8 @@ export interface IProduct {
   variation: IVariation[];
   attributes: IProductAttribute[];
   isActive: boolean;
+  inStock: boolean;
+  selled: number;
   createdAt: string;
   updatedAt: string;
 }

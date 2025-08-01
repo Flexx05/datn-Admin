@@ -23,6 +23,7 @@ import dayjs from "dayjs";
 import { useCallback, useState } from "react";
 import { API_URL } from "../../config/dataProvider";
 import { ICategory } from "../../interface/category";
+import Loader from "../../utils/loading";
 
 export const CategoryList = () => {
   const [filterActive, setFilterActive] = useState<boolean>(true);
@@ -44,18 +45,15 @@ export const CategoryList = () => {
     ],
 
     errorNotification: (error: any) => ({
-      message:
-        "❌ Lỗi hệ thống " + (error.response?.data?.message || error.message),
+      message: "❌ Lỗi hệ thống " + error.response?.data?.error,
       description: "Có lỗi xảy ra trong quá trình xử lý.",
       type: "error",
     }),
   });
 
   const invalidate = useInvalidate();
-  const [loadingId, setLoadingId] = useState<string | number | null>(null);
 
   const handleChangeStatus = async (record: ICategory) => {
-    setLoadingId(record._id);
     try {
       await axios.patch(`${API_URL}/category/edit/${record._id}`, {
         parentId: record.parentId,
@@ -70,8 +68,6 @@ export const CategoryList = () => {
       });
     } catch (error) {
       message.error("Cập nhật trạng thái thất bại");
-    } finally {
-      setLoadingId(null);
     }
   };
 
@@ -193,7 +189,6 @@ export const CategoryList = () => {
               }
               confirmCancelText="Hủy"
               confirmOkText="Xóa"
-              loading={loadingId === record._id}
               hidden={isUnknown}
             />
             {record.isActive === false && (
@@ -202,7 +197,6 @@ export const CategoryList = () => {
                 onConfirm={() => handleChangeStatus(record)}
                 okText="Kích hoạt"
                 cancelText="Hủy"
-                okButtonProps={{ loading: loadingId === record._id }}
               >
                 <Button size="small" type="default">
                   Kích hoạt
@@ -234,6 +228,7 @@ export const CategoryList = () => {
       />
       <Table
         {...tableProps}
+        loading={tableProps.loading ? { indicator: <Loader /> } : undefined}
         rowKey="_id"
         columns={columns}
         expandable={{

@@ -9,62 +9,46 @@ import debounce from "lodash/debounce";
 const { RangePicker } = DatePicker;
 
 const VoucherCreate = () => {
-    const { formProps, saveButtonProps } = useForm({
-      successNotification: () => ({
-        message: "Tạo voucher thành công!",
-        description: "Voucher mới đã được thêm vào hệ thống.",
-        type: "success",
-      }),
-      errorNotification: (error?: HttpError) => ({
-        message: "Tạo voucher thất bại!",
-        description:
-          error?.response?.data?.message ??
-          "Có lỗi xảy ra trong quá trình xử lý.",
-        type: "error",
-      }),
-      redirect: "list",
-    });
+  const { formProps, saveButtonProps } = useForm({
+    successNotification: () => ({
+      message: "Tạo voucher thành công!",
+      description: "Voucher mới đã được thêm vào hệ thống.",
+      type: "success",
+    }),
+    errorNotification: (error?: HttpError) => ({
+      message: "Tạo voucher thất bại!",
+      description:
+        error?.response?.data?.message ??
+        "Có lỗi xảy ra trong quá trình xử lý.",
+      type: "error",
+    }),
+    redirect: "list",
+  });
 
-    const [discountType, setDiscountType] = useState("fixed");
-    const [fixedValue, setFixedValue] = useState<number | undefined>(undefined);
-    const [percentValue, setPercentValue] = useState<number | undefined>(
-      undefined
-    );
-    const [maxDiscount, setMaxDiscount] = useState<number | undefined>(
-      undefined
-    );
+  const [discountType, setDiscountType] = useState("fixed");
+  const [fixedValue, setFixedValue] = useState<number | undefined>(undefined);
+  const [percentValue, setPercentValue] = useState<number | undefined>(
+    undefined
+  );
+  const [maxDiscount, setMaxDiscount] = useState<number | undefined>(undefined);
 
-    const [userIds, setUserIds] = useState<string[]>([]);
-    const [userOptions, setUserOptions] = useState<
-      { label: string; value: string }[]
-    >([]);
-    const [fetching, setFetching] = useState(false);
+  const [userIds, setUserIds] = useState<string[]>([]);
+  const [userOptions, setUserOptions] = useState<
+    { label: string; value: string }[]
+  >([]);
+  const [fetching, setFetching] = useState(false);
 
-    // 🔥 REMOVED voucherScope state
+  // 🔥 REMOVED voucherScope state
 
-    const fetchUser = debounce((search: string) => {
-      setFetching(true);
-      axiosInstance
-        .get(
-          `/admin/users?search=${encodeURIComponent(
-            search
-          )}&isActive=true&limit=10`
-        )
-        .then((res) => {
-          const users = res.data?.docs || res.data || [];
-          setUserOptions(
-            users.map((u: any) => ({
-              label: `${u.fullName || u.email} (${u.email})`,
-              value: u._id,
-            }))
-          );
-          setFetching(false);
-        })
-        .catch(() => setFetching(false));
-    }, 400);
-
-    useEffect(() => {
-      axiosInstance.get("/admin/users?isActive=true").then((res) => {
+  const fetchUser = debounce((search: string) => {
+    setFetching(true);
+    axiosInstance
+      .get(
+        `/admin/users?search=${encodeURIComponent(
+          search
+        )}&isActive=true&limit=10`
+      )
+      .then((res) => {
         const users = res.data?.docs || res.data || [];
         setUserOptions(
           users.map((u: any) => ({
@@ -72,69 +56,83 @@ const VoucherCreate = () => {
             value: u._id,
           }))
         );
+        setFetching(false);
+      })
+      .catch(() => setFetching(false));
+  }, 400);
+
+  useEffect(() => {
+    axiosInstance.get("/admin/users?isActive=true").then((res) => {
+      const users = res.data?.docs || res.data || [];
+      setUserOptions(
+        users.map((u: any) => ({
+          label: `${u.fullName || u.email} (${u.email})`,
+          value: u._id,
+        }))
+      );
+    });
+  }, []);
+
+  const { form } = formProps;
+
+  const handleFinish = (values: any) => {
+    const [startDate, endDate] = values.dateRange || [];
+    const now = dayjs();
+
+    if (startDate && endDate) {
+      const start = dayjs(startDate);
+      const end = dayjs(endDate);
+
+      if (start.isAfter(end)) {
+        form?.setFields([
+          {
+            name: "dateRange",
+            errors: ["Ngày bắt đầu phải nhỏ hơn ngày kết thúc"],
+          },
+        ]);
+        return;
+      }
+
+      if (end.diff(start, "minute") < 1) {
+        form?.setFields([
+          {
+            name: "dateRange",
+            errors: [
+              "Thời gian kết thúc phải sau thời gian bắt đầu ít nhất 1 phút",
+            ],
+          },
+        ]);
+        return;
+      }
+
+      if (start.isBefore(now)) {
+        form?.setFields([
+          {
+            name: "dateRange",
+            errors: ["Ngày bắt đầu không được ở quá khứ"],
+          },
+        ]);
+        return;
+      }
+
+      values.startDate = start.toISOString();
+      values.endDate = end.toISOString();
+      delete values.dateRange;
+
+      values.userIds = userIds;
+      values.quantity = userIds.length > 0 ? userIds.length : values.quantity;
+
+      formProps.onFinish?.(values);
+    }
+  };
+
+  useEffect(() => {
+    if (userIds.length > 0) {
+      form?.setFieldsValue({
+        quantity: userIds.length,
       });
-    }, []);
-
-    const { form } = formProps;
-
-    const handleFinish = (values: any) => {
-      const [startDate, endDate] = values.dateRange || [];
-      const now = dayjs();
-
-      if (startDate && endDate) {
-        const start = dayjs(startDate);
-        const end = dayjs(endDate);
-
-        if (start.isAfter(end)) {
-          form?.setFields([
-            {
-              name: "dateRange",
-              errors: ["Ngày bắt đầu phải nhỏ hơn ngày kết thúc"],
-            },
-          ]);
-          return;
-        }
-
-        if (end.diff(start, "minute") < 1) {
-          form?.setFields([
-            {
-              name: "dateRange",
-              errors: [
-                "Thời gian kết thúc phải sau thời gian bắt đầu ít nhất 1 phút",
-              ],
-            },
-          ]);
-          return;
-        }
-
-        if (start.isBefore(now)) {
-          form?.setFields([
-            {
-              name: "dateRange",
-              errors: ["Ngày bắt đầu không được ở quá khứ"],
-            },
-          ]);
-          return;
-        }
-
-        values.startDate = start.toISOString();
-        values.endDate = end.toISOString();
-        delete values.dateRange;
-
-        values.userIds = userIds;
-        values.quantity = userIds.length > 0 ? userIds.length : values.quantity;
-
-        formProps.onFinish?.(values);
-      }
-    };
-    
-    useEffect(() => {
-      if (userIds.length > 0) {
-        form?.setFieldsValue({
-          quantity: userIds.length,
-        });
-      }
-    }, [userIds, form]);
+    }
+  }, [userIds, form]);
 
   return (
     <Create saveButtonProps={saveButtonProps} title="Thêm mới Voucher">
@@ -265,7 +263,6 @@ const VoucherCreate = () => {
                 setPercentValue(currentDiscountValue);
                 setMaxDiscount(currentMaxDiscount);
               }
-
               // Chuyển loại và set lại form
               setDiscountType(value);
               form?.setFieldsValue({

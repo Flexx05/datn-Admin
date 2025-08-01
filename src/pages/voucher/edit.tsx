@@ -123,19 +123,19 @@ const VoucherEdit = () => {
         return;
       }
 
-        const isStartDateEditable = !(
-          record?.voucherStatus === "active" ||
-          dayjs(record?.startDate).isBefore(now, "minute")
-        );
-        if (isStartDateEditable && start.isBefore(now)) {
-          formProps.form?.setFields([
-            {
-              name: "dateRange",
-              errors: ["Ngày bắt đầu không được ở quá khứ"],
-            },
-          ]);
-          return;
-        }
+      const isStartDateEditable = !(
+        record?.voucherStatus === "active" ||
+        dayjs(record?.startDate).isBefore(now, "minute")
+      );
+      if (isStartDateEditable && start.isBefore(now)) {
+        formProps.form?.setFields([
+          {
+            name: "dateRange",
+            errors: ["Ngày bắt đầu không được ở quá khứ"],
+          },
+        ]);
+        return;
+      }
 
       values.startDate = start.toISOString();
       values.endDate = end.toISOString();

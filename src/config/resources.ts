@@ -102,4 +102,22 @@ export const resources = [
       label: "Quản lý voucher",
     },
   },
+  {
+    name: "conversation",
+    list: "/conversation",
+    show: "/conversation/id/:id",
+    meta: {
+      label: "Chăm sóc khách hàng",
+    },
+  },
+  {
+    name: "quick-chat",
+    list: "/quick-chat",
+    show: "/quick-chat/id/:id",
+    create: "/quick-chat/add",
+    edit: "/quick-chat/edit/:id",
+    meta: {
+      label: "Quản lý tin nhắn nhanh",
+    },
+  },
 ];

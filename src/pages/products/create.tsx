@@ -7,7 +7,9 @@ import {
   Button,
   Form,
   Input,
+  InputNumber,
   Select,
+  Space,
   Spin,
   Upload,
   UploadFile,
@@ -16,17 +18,19 @@ import {
 import axios from "axios";
 import { useContext, useMemo, useState } from "react";
 import { CSSTransition, TransitionGroup } from "react-transition-group";
-import { API_URL } from "../../config/dataProvider";
+import { CLOUDINARY_URL } from "../../config/dataProvider";
 import { ColorModeContext } from "../../contexts/color-mode";
 import { IAttribute } from "../../interface/attribute";
 import { IBrand } from "../../interface/brand";
 import { ICategory } from "../../interface/category";
+import { axiosInstance } from "../../utils/axiosInstance";
 import { AttributeItem } from "./AttributeItem";
 import { VariationItem } from "./VariationItem";
 import "./variation-animations.css";
+import Loader from "../../utils/loading";
 
 export const ProductCreate = () => {
-  const { formProps, saveButtonProps } = useForm({
+  const { formProps, saveButtonProps, formLoading } = useForm({
     successNotification: () => ({
       message: "🎉 Tạo sản phẩm thành công!",
       description: "Sản phẩm mới đã được thêm vào hệ thống.",
@@ -34,7 +38,7 @@ export const ProductCreate = () => {
     }),
     errorNotification: (error?: HttpError) => ({
       message:
-        "❌ Tạo sản phẩm thất bại! " + (error?.response?.data?.message ?? ""),
+        "❌ Tạo sản phẩm thất bại! " + (error?.response?.data?.error ?? ""),
       description: "Có lỗi xảy ra trong quá trình xử lý.",
       type: "error",
     }),
@@ -42,22 +46,14 @@ export const ProductCreate = () => {
 
   const [fileList, setFileList] = useState<UploadFile[]>([]);
   const [uploadedImageUrls, setUploadedImageUrls] = useState<string[]>([]);
-  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const { mode } = useContext(ColorModeContext);
   const colorMode = mode === "light" ? "light" : "dark";
 
-  const normFile = (e: any) => e?.fileList?.slice(0, 5);
-
-  const handleChange = async ({
-    fileList: newFileList,
-  }: {
-    fileList: UploadFile[];
-  }) => {
+  const handleUpload = async (newFileList: UploadFile[]) => {
     const updatedFileList = newFileList.slice(0, 5).map((file) => ({
       ...file,
       status: file.status || "uploading",
     }));
-
     setFileList(updatedFileList);
 
     const newUploadedUrls: string[] = [];
@@ -65,8 +61,9 @@ export const ProductCreate = () => {
     for (let i = 0; i < updatedFileList.length; i++) {
       const file = updatedFileList[i];
       const originFile = file.originFileObj as File;
-      if (file.type !== "image/jpeg" && file.type !== "image/png") {
-        message.error("Vui lòng chỉ tải lên ảnh định dạng JPEG hoặc PNG.");
+
+      if (!originFile.type.startsWith("image/")) {
+        message.error("Vui lòng chỉ tải lên ảnh.");
         return;
       }
 
@@ -76,31 +73,33 @@ export const ProductCreate = () => {
           formData.append("file", originFile);
           formData.append("upload_preset", "Binova_Upload");
 
-          const { data } = await axios.post(
-            "https://api.cloudinary.com/v1_1/dtwm0rpqg/image/upload",
-            formData
-          );
+          const { data } = await axios.post(CLOUDINARY_URL, formData);
+
+          let fileUrl = data.secure_url;
+
+          if (originFile.type.startsWith("image/")) {
+            // Chuyển URL sang định dạng WebP bằng cách thêm `.webp` và /upload/f_auto/ nếu cần
+            fileUrl = fileUrl.replace("/upload/", "/upload/f_webp/");
+          }
 
           updatedFileList[i] = {
             ...updatedFileList[i],
+            url: fileUrl,
             status: "done",
-            url: data.secure_url,
           };
-          message.success(`Tải ảnh lên thành công: ${file.name}`);
-          newUploadedUrls.push(data.secure_url);
+          newUploadedUrls.push(fileUrl);
         } catch (error) {
           updatedFileList[i] = {
             ...updatedFileList[i],
             status: "error",
           };
-          message.error(`❌ Lỗi khi upload ảnh: ${file.name}`);
+          message.error(`❌ Lỗi khi upload file: ${file.name}`);
         }
       } else if (file.url) {
         newUploadedUrls.push(file.url);
       }
     }
-
-    setFileList([...updatedFileList]);
+    setFileList(updatedFileList);
     setUploadedImageUrls(newUploadedUrls);
   };
 
@@ -174,7 +173,6 @@ export const ProductCreate = () => {
   }, [allBrands]);
 
   const handleFinish = async (values: any) => {
-    setIsSubmitting(true);
     try {
       if (uploadedImageUrls.length === 0) {
         message.error("Bạn chưa tải ảnh hoặc ảnh chưa upload xong.");
@@ -183,16 +181,6 @@ export const ProductCreate = () => {
 
       if (values.variation && values.variation.length === 0) {
         message.error("Bạn chưa tạo biến thể sản phẩm.");
-        return;
-      }
-
-      if (values.attributes && values.attributes.length === 0) {
-        message.error("Bạn chưa thêm thuộc tính cho sản phẩm.");
-        return;
-      }
-
-      if (values.attributes && values.attributes.length <= 1) {
-        message.error("Vui lòng thêm ít nhất 2 thuộc tính cho sản phẩm.");
         return;
       }
 
@@ -263,22 +251,24 @@ export const ProductCreate = () => {
     } catch (error) {
       message.error("Lỗi khi tạo sản phẩm!");
       console.error(error);
-    } finally {
-      setIsSubmitting(false);
     }
   };
 
-  if (category?.isLoading || brand?.isLoading || attribute?.isLoading) {
-    return (
-      <div style={{ textAlign: "center", padding: "50px 0" }}>
-        <Spin size="large" />
-      </div>
-    );
-  }
-
   return (
-    <Create saveButtonProps={saveButtonProps} title="Tạo sản phẩm">
-      <Spin spinning={isSubmitting} tip="Đang xử lý...">
+    <Create
+      saveButtonProps={saveButtonProps}
+      title="Tạo sản phẩm"
+      isLoading={false}
+    >
+      <Spin
+        spinning={
+          formLoading ||
+          category?.isLoading ||
+          brand?.isLoading ||
+          attribute?.isLoading
+        }
+        indicator={<Loader />}
+      >
         <Form {...formProps} layout="vertical" onFinish={handleFinish}>
           <Form.Item
             label="Tên sản phẩm"
@@ -302,14 +292,12 @@ export const ProductCreate = () => {
           <Form.Item
             label="Hình ảnh"
             name="image"
-            valuePropName="fileList"
             rules={[{ required: true, message: "Vui chọn hình ảnh" }]}
-            getValueFromEvent={normFile}
           >
             <Upload
               listType="picture-card"
               fileList={fileList}
-              onChange={handleChange}
+              onChange={(e) => handleUpload(e.fileList)}
               maxCount={5}
               beforeUpload={() => false}
             >
@@ -331,16 +319,7 @@ export const ProductCreate = () => {
             name="categoryId"
             rules={[{ required: true, message: "Vui lòng chọn danh mục" }]}
           >
-            <Select loading={category?.isLoading}>
-              <Select.Option value={"684b9ab14a1d82d1e454b374"}>
-                Danh mục không xác định
-              </Select.Option>
-              {categoryOptions.map((item) => (
-                <Select.Option key={item.value} value={item.value}>
-                  {item.label}
-                </Select.Option>
-              ))}
-            </Select>
+            <Select loading={category?.isLoading} options={categoryOptions} />
           </Form.Item>
 
           <Form.Item
@@ -385,7 +364,6 @@ export const ProductCreate = () => {
             <Form.Item label={null}>
               <Button
                 onClick={async () => {
-                  setIsSubmitting(true);
                   try {
                     const attributes =
                       formProps.form?.getFieldValue("attributes");
@@ -394,8 +372,8 @@ export const ProductCreate = () => {
                       message.error("Vui lòng thêm thuộc tính trước!");
                       return;
                     }
-                    const response = await axios.post(
-                      `${API_URL}/product/generate-variations`,
+                    const response = await axiosInstance.post(
+                      `/product/generate-variations`,
                       {
                         attributes,
                       }
@@ -414,16 +392,77 @@ export const ProductCreate = () => {
                     });
 
                     message.success("Tạo biến thể thành công!");
-                  } catch (error) {
-                    message.error("Lỗi khi tạo biến thể!");
-                  } finally {
-                    setIsSubmitting(false);
+                  } catch (error: any) {
+                    message.error(
+                      "Lỗi khi tạo biến thể! " + error.response.data.error ||
+                        error.response.data.message
+                    );
                   }
                 }}
-                disabled={isSubmitting}
               >
                 Tạo sản phẩm biến thể
               </Button>
+            </Form.Item>
+
+            <Form.Item label="Áp dụng hàng loạt cho biến thể">
+              <Space.Compact style={{ display: "flex", gap: 12 }}>
+                <Form.Item name="regularPrice" noStyle>
+                  <InputNumber
+                    placeholder="Giá gốc"
+                    min={1000}
+                    style={{ width: 120 }}
+                  />
+                </Form.Item>
+                <Form.Item name="salePrice" noStyle>
+                  <InputNumber
+                    placeholder="Giá giảm"
+                    min={1000}
+                    style={{ width: 120 }}
+                  />
+                </Form.Item>
+                <Form.Item name="stock" noStyle>
+                  <InputNumber
+                    placeholder="Tồn kho"
+                    min={0}
+                    style={{ width: 120 }}
+                  />
+                </Form.Item>
+                <Button
+                  type="primary"
+                  onClick={() => {
+                    const values = formProps.form?.getFieldsValue([
+                      "defaultPrice",
+                      "defaultSalePrice",
+                      "defaultStock",
+                      "variation",
+                    ]);
+
+                    const {
+                      defaultPrice,
+                      defaultSalePrice,
+                      defaultStock,
+                      variation,
+                    } = values;
+
+                    if (!variation || variation.length === 0) {
+                      message.warning("Chưa có biến thể để áp dụng.");
+                      return;
+                    }
+
+                    const updated = variation.map((item: any) => ({
+                      ...item,
+                      regularPrice: defaultPrice ?? item.regularPrice,
+                      salePrice: defaultSalePrice ?? item.salePrice,
+                      stock: defaultStock ?? item.stock,
+                    }));
+
+                    formProps.form?.setFieldsValue({ variation: updated });
+                    message.success("✅ Đã áp dụng cho tất cả biến thể!");
+                  }}
+                >
+                  Áp dụng
+                </Button>
+              </Space.Compact>
             </Form.Item>
 
             <Form.List name="variation">

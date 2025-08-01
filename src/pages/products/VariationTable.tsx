@@ -1,18 +1,60 @@
-import { Image, Table, Tag, Typography } from "antd";
-import { IVariation, IProductAttribute } from "../../interface/product";
-import { ColorDots } from "./ColorDots";
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import { RetweetOutlined } from "@ant-design/icons";
+import { useInvalidate } from "@refinedev/core";
+import {
+  Image,
+  message,
+  Popconfirm,
+  Space,
+  Table,
+  Tag,
+  Tooltip,
+  Typography,
+} from "antd";
+import { useState } from "react";
+import {
+  IProduct,
+  IProductAttribute,
+  IVariation,
+} from "../../interface/product";
 import { formatCurrency } from "../order/formatCurrency";
+import { ColorDots } from "./ColorDots";
+import { axiosInstance } from "../../utils/axiosInstance";
 
-export const VariationTable = ({
-  variations,
-}: {
-  variations: IVariation[];
-}) => {
+export const VariationTable = ({ product }: { product: IProduct }) => {
+  const [loadingId, setLoadingId] = useState<string | number | null>(null);
+  const invalidate = useInvalidate();
+  const variations = product.variation;
   if (!variations || variations.length === 0) {
     return (
       <Typography.Text type="secondary">Không có biến thể</Typography.Text>
     );
   }
+  const handleChangeStatus = async (variation: IVariation) => {
+    if (!product?._id || !variation?._id) return;
+
+    setLoadingId(variation._id);
+    try {
+      await axiosInstance.patch(`variation/edit/${variation._id}`, {
+        productId: product._id,
+        isActive: variation.isActive,
+      });
+
+      message.success("Cập nhật trạng thái thành công");
+
+      await invalidate({
+        id: product._id,
+        resource: "product",
+        invalidates: ["list"],
+      });
+    } catch (error: any) {
+      message.error(
+        "Cập nhật trạng thái thất bại: " + error.response?.data?.error
+      );
+    } finally {
+      setLoadingId(null);
+    }
+  };
   return (
     <Table dataSource={variations} pagination={false} rowKey="_id" size="small">
       <Table.Column
@@ -77,6 +119,32 @@ export const VariationTable = ({
           <Tag color={isActive ? "green" : "red"}>
             {isActive ? "Có hiệu lực" : "Không có hiệu lực"}
           </Tag>
+        )}
+      />
+      <Table.Column
+        dataIndex="actions"
+        render={(_, record: IVariation) => (
+          <Space>
+            <Tooltip title="Cập nhật trạng thái">
+              <Popconfirm
+                title="Bạn chắc chắn thay đổi hiệu lực không ?"
+                onConfirm={() => handleChangeStatus(record)}
+                okText="Thay đổi"
+                cancelText="Hủy"
+                okButtonProps={{ loading: loadingId === record._id }}
+              >
+                <RetweetOutlined
+                  style={{
+                    border: "1px solid #404040",
+                    borderRadius: "20%",
+                    padding: 4,
+                    cursor: "pointer",
+                    opacity: loadingId === record._id ? 0.5 : 1,
+                  }}
+                />
+              </Popconfirm>
+            </Tooltip>
+          </Space>
         )}
       />
     </Table>

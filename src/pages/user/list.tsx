@@ -20,6 +20,7 @@ import dayjs from "dayjs";
 import { useCallback, useState } from "react";
 import { API_URL } from "../../config/dataProvider";
 import { IUser } from "../../interface/user";
+import Loader from "../../utils/loading";
 
 export const UserList = () => {
   const [filterActive, setFilterActive] = useState<boolean>(true);
@@ -35,7 +36,8 @@ export const UserList = () => {
     resource: "admin/users",
     errorNotification: (error: any) => ({
       message:
-        "❌ Lỗi hệ thống " + (error.response?.data?.message || error.message),
+        "❌ Lỗi hệ thống " +
+        (error.response?.data?.message || error.response?.data?.error),
       description: "Có lỗi xảy ra trong quá trình xử lý.",
       type: "error",
     }),
@@ -51,7 +53,6 @@ export const UserList = () => {
   });
 
   const invalidate = useInvalidate();
-  const [loadingId, setLoadingId] = useState<string | number | null>(null);
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedUser, setSelectedUser] = useState<IUser | null>(null);
   const [lockReason, setLockReason] = useState("");
@@ -63,7 +64,6 @@ export const UserList = () => {
   ) => void;
 
   const handleChangeStatus = async (record: IUser) => {
-    setLoadingId(record._id);
     try {
       await axios.patch(`${API_URL}/admin/users/${record._id}/status`, {
         isActive: !record.isActive,
@@ -72,8 +72,6 @@ export const UserList = () => {
       await invalidate({ resource: "admin/users", invalidates: ["list"] });
     } catch (error) {
       message.error("Cập nhật trạng thái thất bại");
-    } finally {
-      setLoadingId(null);
     }
   };
 
@@ -149,7 +147,7 @@ export const UserList = () => {
             <Input.TextArea
               rows={4}
               value={lockReason}
-              onChange={e => setLockReason(e.target.value)}
+              onChange={(e) => setLockReason(e.target.value)}
               placeholder="Nhập lý do khóa tài khoản..."
             />
           </Form.Item>
@@ -176,6 +174,7 @@ export const UserList = () => {
       />
       <Table
         {...tableProps}
+        loading={tableProps.loading ? { indicator: <Loader /> } : false}
         rowKey="_id"
         onChange={(pagination, filters, sorter, extra) => {
           tableProps.onChange?.(pagination, filters, sorter, extra);
@@ -269,7 +268,6 @@ export const UserList = () => {
                   onConfirm={() => handleChangeStatus(record)}
                   okText="Mở khoá"
                   cancelText="Huỷ"
-                  okButtonProps={{ loading: loadingId === record._id }}
                 >
                   <Button size="small" type="primary">
                     Mở khoá

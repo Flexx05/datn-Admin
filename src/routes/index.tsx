@@ -9,7 +9,6 @@ import {
   AttributeList,
   AttributeShow,
 } from "../pages/attributes";
-import { CommentList, CommentShow } from "../pages/comments";
 import { BrandCreate, BrandEdit, BrandList, BrandShow } from "../pages/brands";
 import {
   CategoryCreate,
@@ -17,20 +16,27 @@ import {
   CategoryList,
   CategoryShow,
 } from "../pages/categories";
+import ChatList from "../pages/chat/list";
+import Messages from "../pages/chat/messages";
+import ChatShow from "../pages/chat/show";
+import { CommentList, CommentShow } from "../pages/comments";
+import { Dashboard } from "../pages/dashboard";
 import { Login } from "../pages/login";
+import { OrderList } from "../pages/order/list";
+import { OrderShow } from "../pages/order/show";
 import {
   ProductCreate,
   ProductEdit,
   ProductList,
   ProductShow,
 } from "../pages/products";
+import QuickChatCreate from "../pages/quick-chat/create";
+import QuickChatEdit from "../pages/quick-chat/edit";
+import QuickChatList from "../pages/quick-chat/list";
 import { UserList, UserShow } from "../pages/user";
-import { OrderList } from "../pages/order/list";
-import { OrderShow } from "../pages/order/show";
-import { Dashboard } from "../pages/dashboard";
-import VoucherList from "../pages/voucher/list";
 import VoucherCreate from "../pages/voucher/create";
 import VoucherEdit from "../pages/voucher/edit";
+import VoucherList from "../pages/voucher/list";
 import VoucherShow from "../pages/voucher/show";
 import TopProductsStatistics from "../pages/statistics/top-products";
 import RevenueOrdersStatistics from "../pages/statistics/order-statistics";
@@ -92,12 +98,18 @@ const AppRoutes = () => {
             <Route index element={<CommentList />} />
             <Route path="id/:id" element={<CommentShow />} />
           </Route>
+          <Route path="/conversation" element={<ChatList />}>
+            <Route path="id/:id" element={<ChatShow />} />
+            <Route path="message/:id" element={<Messages />} />
+          </Route>
           <Route path="/orders">
             <Route index element={<OrderList />} />
             <Route path="show/:id" element={<OrderShow />} />
-            <Route path="return-requests/show/:id" element={<ReturnRequestDetail />} />
+            <Route
+              path="return-requests/show/:id"
+              element={<ReturnRequestDetail />}
+            />
           </Route>
-          <Route path="*" element={<ErrorComponent />} />
           <Route path="/vouchers">
             <Route index element={<VoucherList />} />
             <Route path="add" element={<VoucherCreate />} />
@@ -110,6 +122,13 @@ const AppRoutes = () => {
           <Route path="/statistics/order-revenue">
             <Route index element={<RevenueOrdersStatistics />} />
           </Route>
+          <Route path="/quick-chat">
+            <Route index element={<QuickChatList />} />
+            <Route path="add" element={<QuickChatCreate />} />
+            <Route path="edit/:id" element={<QuickChatEdit />} />
+          </Route>
+          {/* Cấm xóa */}
+          <Route path="*" element={<ErrorComponent />} />
         </Route>
         <Route
           element={
