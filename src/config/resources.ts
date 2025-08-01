@@ -86,7 +86,7 @@ export const resources = [
     name: "orders",
     list: "/orders",
     show: "/orders/show/:id",
-    returnRequetsShow: "/orders/return-requests/show/:id",
+    returnRequests: "/orders/return-requests/show/:id",
     meta: {
       label: "Quản lý đơn hàng",
     },
