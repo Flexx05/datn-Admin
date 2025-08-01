@@ -44,7 +44,8 @@ const PieChartComponent = () => {
     ordersData?.data?.forEach((order: any) => {
       const month = dayjs(order.createdAt).format("MM/YYYY");
       if (!result[month]) result[month] = { complete: 0, cancel: 0 };
-      if (order.status === 4) result[month].complete += 1;
+      if (order.status === 4 && order.paymentStatus === 1)
+        result[month].complete += 1;
       if (order.status === 5) result[month].cancel += 1;
     });
     return result;

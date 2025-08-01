@@ -10,14 +10,21 @@ import { Link } from "react-router-dom";
 import { IBrand } from "../../interface/brand";
 import { ICategory } from "../../interface/category";
 import { IProduct } from "../../interface/product";
-import LineChartComponent from "./LineChartComponent";
 import TopSellingProducts from "./TopSellingProducts";
+import OrderRevenueLineChart from "./OrderRevenueLineChart";
+import OrderPaymentPieChart from "./OrderPaymentPieChart";
 import PieChartComponent from "./PieChartComponent";
 import OrderNearly from "./OrderNearly";
+import TopSellingCategories from "./TopSellingCategories";
+import { DashboardFilter, DashboardFilterValue } from "./DashboardFilter";
+import { useState } from "react";
 
 const { Title } = Typography;
 
 export const Dashboard: React.FC = () => {
+  const [dashboardFilter, setDashboardFilter] = useState<DashboardFilterValue>(
+    {}
+  );
   const { data: productsData, isLoading: isLoadingProducts } =
     useList<IProduct>({
       resource: "product",
@@ -128,13 +135,27 @@ export const Dashboard: React.FC = () => {
           </Card>
         </Col>
       </Row>
+      <Card style={{ marginTop: 16 }} bordered={false} title="Bộ lọc (Mặc định lấy toàn bộ dữ liệu)">
+        <DashboardFilter onChange={setDashboardFilter} />
+      </Card>
 
       <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
-        <Col xs={24} md={12}>
-          <LineChartComponent />
+        <Col xs={24} md={13}>
+          <OrderRevenueLineChart filter={dashboardFilter} />
+        </Col>
+        <Col xs={24} md={11}>
+          <PieChartComponent />
         </Col>
         <Col xs={24} md={12}>
-          <PieChartComponent />
+          <OrderPaymentPieChart filter={dashboardFilter} />
+        </Col>
+        <Col xs={24} md={12}>
+          <TopSellingCategories
+            productsData={productsData?.data ?? []}
+            ordersData={ordersData}
+            isLoading={isLoadingProducts || isLoadingOrders}
+            filter={dashboardFilter}
+          />
         </Col>
       </Row>
 
@@ -145,6 +166,7 @@ export const Dashboard: React.FC = () => {
               productsData={productsData?.data ?? []}
               ordersData={ordersData}
               isLoading={isLoadingProducts}
+              filter={dashboardFilter}
             />
           </Card>
         </Col>

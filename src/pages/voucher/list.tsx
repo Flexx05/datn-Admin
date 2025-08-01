@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { EditButton, List, ShowButton, useTable } from "@refinedev/antd";
 import { useInvalidate } from "@refinedev/core";
 import {
@@ -17,8 +16,7 @@ import { IVoucher } from "../../interface/voucher";
 import { useCallback, useEffect, useState } from "react";
 import dayjs from "dayjs";
 import { axiosInstance } from "../../utils/axiosInstance";
-import { io } from "socket.io-client";
-import Loader from "../../utils/loading";
+import { socket } from "../../socket/socket";
 
 const VoucherList = () => {
   const [filterIsDeleted, setFilterIsDeleted] = useState<boolean>(true);
@@ -57,7 +55,9 @@ const VoucherList = () => {
   const invalidate = useInvalidate();
 
   useEffect(() => {
-    const socket = io("http://localhost:8080"); // Đúng port backend của bạn
+    if (!socket.connected) {
+      socket.connect();
+    }
     socket.on("connect", () => {
       console.log("Socket connected!", socket.id);
     });
@@ -68,6 +68,8 @@ const VoucherList = () => {
       });
     });
     return () => {
+      socket.off("voucherStatusUpdated");
+      socket.off("connect");
       socket.disconnect();
     };
   }, [invalidate]);
@@ -191,11 +193,7 @@ const VoucherList = () => {
         style={{ marginBottom: 16, maxWidth: 300 }}
       />
 
-      <Table
-        {...tableProps}
-        rowKey="_id"
-        loading={tableProps.loading ? { indicator: <Loader /> } : false}
-      >
+      <Table {...tableProps} rowKey="_id">
         <Table.Column title="STT" render={(_, __, index) => index + 1} />
         <Table.Column title="Mã giảm giá" dataIndex="code" />
 
