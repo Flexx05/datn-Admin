@@ -41,6 +41,7 @@ import VoucherShow from "../pages/voucher/show";
 import TopProductsStatistics from "../pages/statistics/top-products";
 import RevenueOrdersStatistics from "../pages/statistics/order-statistics";
 import { ReturnRequestDetail } from "../pages/order/returnRequestDetail";
+import { StaffList, StaffShow } from "../pages/staff";
 
 const AppRoutes = () => {
   return (
@@ -93,6 +94,10 @@ const AppRoutes = () => {
           <Route path="/users">
             <Route index element={<UserList />} />
             <Route path="show/:id" element={<UserShow />} />
+          </Route>
+          <Route path="/staffs">
+            <Route index element={<StaffList />} />
+            <Route path="show/:id" element={<StaffShow />} />
           </Route>
           <Route path="/comments">
             <Route index element={<CommentList />} />
