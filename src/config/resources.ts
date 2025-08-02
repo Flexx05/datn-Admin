@@ -84,9 +84,7 @@ export const resources = [
   {
     name: "staffs",
     list: "/staffs",
-    show: "/users/show/:id",
-    create: "/users/add",
-    edit: "/users/edit/:id",
+    show: "/staffs/show/:id",
     meta: {
       label: "Quản lý nhân viên",
     },
