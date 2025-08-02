@@ -1,24 +1,25 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { List, ShowButton, useTable } from "@refinedev/antd";
-import { IUser } from "../../interface/user";
+import { CrudFilters, useInvalidate } from "@refinedev/core";
 import {
-  Modal,
+  Avatar,
+  Button,
   Form,
   Input,
-  Tabs,
-  Table,
-  Avatar,
-  Tag,
-  Button,
+  Modal,
   Popconfirm,
   Space,
+  Table,
+  Tabs,
+  Tag,
   Tooltip,
   message,
 } from "antd";
-import Loader from "../../utils/loading";
 import { useCallback, useState } from "react";
-import { CrudFilters, useInvalidate } from "@refinedev/core";
+import { IUser } from "../../interface/user";
 import { axiosInstance } from "../../utils/axiosInstance";
+import Loader from "../../utils/loading";
+import { RoleTagWithPopover } from "./RoleTagWithPopover";
 
 export const StaffList = () => {
   const [filterActive, setFilterActive] = useState<boolean>(true);
@@ -86,6 +87,20 @@ export const StaffList = () => {
       });
       message.success("Cập nhật trạng thái thành công");
       await invalidate({ resource: "staffs", invalidates: ["list"] });
+    } catch (error: any) {
+      message.error(
+        "Cập nhật trạng thái thất bại " + error?.response?.data?.error
+      );
+    }
+  };
+
+  const handleChangeRole = async (id: string, role: string) => {
+    try {
+      await axiosInstance.patch(`/staffs/${id}/role`, {
+        role,
+      });
+      message.success("Cập nhật vai trò thành công");
+      invalidate({ resource: "staffs", invalidates: ["list"] });
     } catch (error: any) {
       message.error(
         "Cập nhật trạng thái thất bại " + error?.response?.data?.error
@@ -188,10 +203,11 @@ export const StaffList = () => {
         <Table.Column
           dataIndex={"role"}
           title="Vai trò"
-          render={(value: string) => (
-            <Tag color={value === "admin" ? "green" : "yellow"}>
-              {value === "admin" ? "Quản trị viên" : "Nhân viên"}
-            </Tag>
+          render={(_: unknown, record) => (
+            <RoleTagWithPopover
+              record={record}
+              onRoleChange={handleChangeRole}
+            />
           )}
           filters={[
             {
