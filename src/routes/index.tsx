@@ -42,8 +42,10 @@ import VoucherCreate from "../pages/voucher/create";
 import VoucherEdit from "../pages/voucher/edit";
 import VoucherList from "../pages/voucher/list";
 import VoucherShow from "../pages/voucher/show";
+import { useAuth } from "../contexts/auth/AuthContext";
 
 const AppRoutes = () => {
+  const { user } = useAuth();
   return (
     <div>
       <Routes>
@@ -59,10 +61,15 @@ const AppRoutes = () => {
             </Authenticated>
           }
         >
-          <Route index element={<NavigateToResource resource="dashboard" />} />
-          <Route path="/dashboard">
-            <Route index element={<Dashboard />} />
-          </Route>
+          <Route
+            index
+            element={
+              <NavigateToResource
+                resource={user?.role === "admin" ? "dashboard" : "product"}
+              />
+            }
+          />
+          <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/product">
             <Route index element={<ProductList />} />
             <Route path="add" element={<ProductCreate />} />

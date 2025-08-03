@@ -2,8 +2,9 @@
 import { LogoutOutlined } from "@ant-design/icons";
 import { useLogout, useMenu } from "@refinedev/core";
 import { Layout, Menu } from "antd";
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+import { AccesControlProvider } from "../../config/accessControlProvider";
 import { IconMapping } from "../../utils/IconMapping";
 import { TitleLogo } from "../TitleLogo";
 
@@ -11,13 +12,38 @@ const { Sider } = Layout;
 
 export const CustomSider = () => {
   const [collapsed, setCollapsed] = useState(false);
+  const [visibleMenuItems, setVisibleMenuItems] = useState<typeof menuItems>(
+    []
+  );
   const navigate = useNavigate();
   const location = useLocation();
   const { mutate: logout } = useLogout();
   const { menuItems: rawMenuItems } = useMenu();
   const menuItems = rawMenuItems.map(({ children, ...item }) => item);
 
-  // TODO: Phân quyền
+  const filteredMenuItems = useMemo(() => {
+    return menuItems;
+  }, [menuItems]);
+
+  const checkPermission = async (resource: string) => {
+    const result = await AccesControlProvider.can({ resource, action: "list" });
+    return result.can;
+  };
+
+  useEffect(() => {
+    const filterMenu = async () => {
+      const checks = await Promise.all(
+        filteredMenuItems.map(async (item) => {
+          const canView = await checkPermission((item.name as string) ?? "");
+          return canView ? item : null;
+        })
+      );
+
+      setVisibleMenuItems(checks.filter(Boolean) as typeof menuItems);
+    };
+
+    filterMenu();
+  }, []);
 
   return (
     <Sider
@@ -40,7 +66,7 @@ export const CustomSider = () => {
         mode="inline"
         selectedKeys={[location.pathname]}
         items={[
-          ...menuItems.map((item) => ({
+          ...visibleMenuItems.map((item) => ({
             ...item,
             onClick: () => navigate(item.route || item.key),
             icon: IconMapping[item.icon as string],

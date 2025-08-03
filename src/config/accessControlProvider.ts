@@ -1,5 +1,18 @@
 import { AccessControlProvider } from "@refinedev/core";
 
+const staffPermissions: Record<string, string[]> = {
+  product: ["list", "show"],
+  category: ["list", "show"],
+  brand: ["list", "show"],
+  attribute: ["list", "show"],
+  comments: ["list", "show"],
+  voucher: ["list", "show"],
+  "admin/users": ["list", "show"],
+  orders: ["list", "show", "returnRequests"],
+  conversation: ["list", "show"],
+  "quick-chat": ["list", "show", "create", "edit", "delete"],
+};
+
 export const AccesControlProvider: AccessControlProvider = {
   can: async ({ action, resource }) => {
     const user = localStorage.getItem("user");
@@ -13,16 +26,12 @@ export const AccesControlProvider: AccessControlProvider = {
       }
     }
 
-    if (resource === "products" && action === "list") {
+    if (role === "admin") return { can: true };
+    if (role === "staff") {
+      const allowedActions = staffPermissions[resource as string] ?? [];
       return {
-        can: role === "staff" || role === "admin",
-        reason: "Bạn chỉ có quyền xem danh sách sản phẩm",
-      };
-    }
-    if (resource === "products" && action === "show") {
-      return {
-        can: role === "staff" || role === "admin",
-        reason: "Bạn chỉ có quyền xem chi tiết sản phẩm",
+        can: allowedActions.includes(action),
+        reason: `Bạn chỉ có quyền ${allowedActions.join(", ")} với ${resource}`,
       };
     }
 

@@ -9,6 +9,7 @@ import AppRoutes from "../routes";
 import { useAuthProvider } from "./authProvider";
 import dataProvider from "./dataProvider";
 import { resources } from "./resources";
+import { AccesControlProvider } from "./accessControlProvider";
 
 const RefineConfig = () => {
   const authProvider = useAuthProvider();
@@ -19,7 +20,7 @@ const RefineConfig = () => {
         notificationProvider={useNotificationProvider}
         routerProvider={routerBindings}
         authProvider={authProvider}
-        // accessControlProvider={AccesControlProvider}
+        accessControlProvider={AccesControlProvider}
         resources={resources}
         options={{
           syncWithLocation: true,
