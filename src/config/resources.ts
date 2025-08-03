@@ -4,6 +4,7 @@ export const resources = [
     list: "/dashboard",
     meta: {
       label: "Trang chủ",
+      icon: "dashboard",
     },
   },
   {
@@ -29,6 +30,7 @@ export const resources = [
     meta: {
       canDelete: true,
       label: "Quản lý sản phẩm",
+      icon: "product",
     },
   },
   {
@@ -40,6 +42,7 @@ export const resources = [
     meta: {
       canDelete: true,
       label: "Quản lý danh mục",
+      icon: "category",
     },
   },
   {
@@ -51,6 +54,7 @@ export const resources = [
     meta: {
       canDelete: true,
       label: "Quản lý thương hiệu",
+      icon: "brand",
     },
   },
   {
@@ -62,6 +66,7 @@ export const resources = [
     meta: {
       canDelete: true,
       label: "Quản lý thuộc tính",
+      icon: "attribute",
     },
   },
   {
@@ -71,6 +76,7 @@ export const resources = [
     meta: {
       canDelete: true,
       label: "Quản lý đánh giá",
+      icon: "comment",
     },
   },
   {
@@ -79,6 +85,7 @@ export const resources = [
     show: "/users/show/:id",
     meta: {
       label: "Quản lý khách hàng",
+      icon: "user",
     },
   },
   {
@@ -87,6 +94,7 @@ export const resources = [
     show: "/staffs/show/:id",
     meta: {
       label: "Quản lý nhân viên",
+      icon: "staff",
     },
   },
   {
@@ -96,6 +104,7 @@ export const resources = [
     returnRequests: "/orders/return-requests/show/:id",
     meta: {
       label: "Quản lý đơn hàng",
+      icon: "order",
     },
   },
   {
@@ -107,6 +116,7 @@ export const resources = [
     meta: {
       canDelete: true,
       label: "Quản lý voucher",
+      icon: "voucher",
     },
   },
   {
@@ -115,6 +125,7 @@ export const resources = [
     show: "/conversation/id/:id",
     meta: {
       label: "Chăm sóc khách hàng",
+      icon: "conversation",
     },
   },
   {
@@ -125,6 +136,7 @@ export const resources = [
     edit: "/quick-chat/edit/:id",
     meta: {
       label: "Quản lý tin nhắn nhanh",
+      icon: "quick-chat",
     },
   },
 ];

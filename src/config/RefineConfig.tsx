@@ -19,6 +19,7 @@ const RefineConfig = () => {
         notificationProvider={useNotificationProvider}
         routerProvider={routerBindings}
         authProvider={authProvider}
+        // accessControlProvider={AccesControlProvider}
         resources={resources}
         options={{
           syncWithLocation: true,
