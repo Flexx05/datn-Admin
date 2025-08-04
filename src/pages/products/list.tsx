@@ -151,42 +151,44 @@ export const ProductList = () => {
         onSearch={handleSearch}
         style={{ marginBottom: 16, maxWidth: 300 }}
       />
-      <Popconfirm
-        title="Bạn chắc chắn xóa các sản phẩm đã chọn không ?"
-        onConfirm={async () => {
-          if (selectedRowKeys.length === 0) return;
-          try {
-            await Promise.all(
-              selectedRowKeys.map((id) =>
-                axiosInstance.delete(`product/delete/${id}`)
-              )
-            );
-            message.success("Xóa thành công");
-            await invalidate({
-              resource: "product",
-              invalidates: ["list"],
-            });
-            setSelectedRowKeys([]);
-          } catch (error: any) {
-            const errorMessage =
-              error.response?.data?.message ||
-              error.message ||
-              "Lỗi không xác định";
-            message.error("Xóa thất bại: " + errorMessage);
-          }
-        }}
-        okText="Xóa"
-        cancelText="Hủy"
-      >
-        <Button
-          type="primary"
-          danger
-          style={{ marginBottom: 16 }}
-          disabled={!selectedRowKeys.length}
+      {user?.role === "admin" && (
+        <Popconfirm
+          title="Bạn chắc chắn xóa các sản phẩm đã chọn không ?"
+          onConfirm={async () => {
+            if (selectedRowKeys.length === 0) return;
+            try {
+              await Promise.all(
+                selectedRowKeys.map((id) =>
+                  axiosInstance.delete(`product/delete/${id}`)
+                )
+              );
+              message.success("Xóa thành công");
+              await invalidate({
+                resource: "product",
+                invalidates: ["list"],
+              });
+              setSelectedRowKeys([]);
+            } catch (error: any) {
+              const errorMessage =
+                error.response?.data?.message ||
+                error.message ||
+                "Lỗi không xác định";
+              message.error("Xóa thất bại: " + errorMessage);
+            }
+          }}
+          okText="Xóa"
+          cancelText="Hủy"
         >
-          Xóa hàng loạt
-        </Button>
-      </Popconfirm>
+          <Button
+            type="primary"
+            danger
+            style={{ marginBottom: 16 }}
+            disabled={!selectedRowKeys.length}
+          >
+            Xóa hàng loạt
+          </Button>
+        </Popconfirm>
+      )}
       <Table
         {...tableProps}
         rowKey="_id"
@@ -197,11 +199,16 @@ export const ProductList = () => {
               }
             : false
         }
-        rowSelection={{
-          type: "checkbox",
-          selectedRowKeys,
-          onChange: (keys: React.Key[]) => setSelectedRowKeys(keys),
-        }}
+        rowSelection={
+          user?.role === "admin"
+            ? {
+                selectedRowKeys,
+                onChange: (keys: React.Key[]) => {
+                  setSelectedRowKeys(keys);
+                },
+              }
+            : undefined
+        }
         expandable={{
           expandedRowRender: (record: IProduct | IVariation | any) => (
             <VariationTable product={record} />
