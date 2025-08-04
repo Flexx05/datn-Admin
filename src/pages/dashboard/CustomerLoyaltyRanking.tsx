@@ -1,5 +1,3 @@
-// src/components/dashboard/CustomerLoyaltyRanking.tsx
-
 import { useList } from "@refinedev/core";
 import { Table, Card, Avatar } from "antd";
 import dayjs from "dayjs";
@@ -87,12 +85,21 @@ const CustomerLoyaltyRanking = () => {
             dataIndex: "total",
             render: (val) => val.toLocaleString("vi-VN") + "₫",
             align: "right",
+            sorter: (a, b) => a.total - b.total,
+            defaultSortOrder: "descend", // mặc định sắp giảm dần
           },
           {
             title: "Hạng",
             dataIndex: "rank",
-            render: (val: number) => getRank(val),
+            render: (val) => getRank(val),
             align: "center",
+            filters: [
+              { text: "Kim cương", value: 3 },
+              { text: "Vàng", value: 2 },
+              { text: "Bạc", value: 1 },
+              { text: "Đồng", value: 0 },
+            ],
+            onFilter: (value, record) => record.rank === value,
           },
         ]}
       />

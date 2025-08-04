@@ -39,10 +39,17 @@ const VoucherEdit = () => {
   const [fetching, setFetching] = useState(false);
 
   const record = queryResult?.data?.data?.data;
+  const [initialQuantity, setInitialQuantity] = useState<number>(
+    record?.quantity || 1
+  );
 
   useEffect(() => {
     if (record) {
       setDiscountType(record.discountType);
+
+      if (record.quantity) {
+        setInitialQuantity(record.quantity);
+      }
 
       if (record.discountType === "fixed") {
         setFixedValue(record.discountValue);
@@ -412,6 +419,30 @@ const VoucherEdit = () => {
               type: "number",
               min: 1,
               message: "Số lượng voucher phải lớn hơn hoặc bằng 1",
+            },
+            {
+              validator: (_, value) => {
+                const isPublic = userIds.length === 0;
+                const wasPublicInitially =
+                  !record?.userIds || record.userIds.length === 0;
+                const isActive = record?.voucherStatus === "active";
+
+                // Nếu trước đó là công khai, vẫn đang công khai, và đang active
+                if (
+                  wasPublicInitially &&
+                  isPublic &&
+                  isActive &&
+                  typeof value === "number" &&
+                  value < initialQuantity
+                ) {
+                  return Promise.reject(
+                    new Error(
+                      `Không thể giảm số lượng voucher công khai khi đang hoạt động (hiện tại: ${initialQuantity})`
+                    )
+                  );
+                }
+                return Promise.resolve();
+              },
             },
           ]}
         >

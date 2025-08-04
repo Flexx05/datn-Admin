@@ -7,20 +7,6 @@ export const resources = [
     },
   },
   {
-    name: "top-products-statistics",
-    list: "/statistics/top-products",
-    meta: {
-      label: "Thống kê sản phẩm bán chạy",
-    },
-  },
-  {
-    name: "order-revenue-statistics",
-    list: "/statistics/order-revenue",
-    meta: {
-      label: "Thống kê doanh thu đơn hàng",
-    },
-  },
-  {
     name: "product",
     list: "/product",
     create: "/product/add",
