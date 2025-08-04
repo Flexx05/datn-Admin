@@ -24,6 +24,7 @@ import { useCallback, useState } from "react";
 import { API_URL } from "../../config/dataProvider";
 import { ICategory } from "../../interface/category";
 import Loader from "../../utils/loading";
+import { useAuth } from "../../contexts/auth/AuthContext";
 
 export const CategoryList = () => {
   const [filterActive, setFilterActive] = useState<boolean>(true);
@@ -52,6 +53,7 @@ export const CategoryList = () => {
   });
 
   const invalidate = useInvalidate();
+  const { user } = useAuth();
 
   const handleChangeStatus = async (record: ICategory) => {
     try {
@@ -191,7 +193,7 @@ export const CategoryList = () => {
               confirmOkText="Xóa"
               hidden={isUnknown}
             />
-            {record.isActive === false && (
+            {record.isActive === false && user?.role === "admin" && (
               <Popconfirm
                 title="Bạn chắc chắn kích hoạt hiệu lực không ?"
                 onConfirm={() => handleChangeStatus(record)}

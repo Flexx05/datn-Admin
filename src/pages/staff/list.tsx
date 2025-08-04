@@ -207,6 +207,21 @@ export const StaffList = () => {
             <RoleTagWithPopover
               record={record}
               onRoleChange={handleChangeRole}
+              renderTag={(role, label, onClick) => (
+                <Tag
+                  color={
+                    role === "admin"
+                      ? "green"
+                      : role === "staff"
+                      ? "blue"
+                      : "gold"
+                  }
+                  style={{ cursor: "pointer" }}
+                  onClick={onClick}
+                >
+                  {label}
+                </Tag>
+              )}
             />
           )}
           filters={[

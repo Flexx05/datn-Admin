@@ -29,6 +29,7 @@ import { axiosInstance } from "../../utils/axiosInstance";
 import { ColorDots } from "./ColorDots";
 import { VariationTable } from "./VariationTable";
 import Loader from "../../utils/loading";
+import { useAuth } from "../../contexts/auth/AuthContext";
 
 export const ProductList = () => {
   const [filterActive, setFilterActive] = useState<boolean>(true);
@@ -58,6 +59,7 @@ export const ProductList = () => {
   const invalidate = useInvalidate();
   const [loadingId, setLoadingId] = useState<string | number | null>(null);
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
+  const { user } = useAuth();
 
   const handleChangeStatus = useCallback(
     async (record: IProduct | IVariation | any) => {
@@ -312,7 +314,7 @@ export const ProductList = () => {
                 loading={loadingId === record._id}
                 disabled={loadingId === record._id}
               />
-              {record.isActive === false && (
+              {record.isActive === false && user?.role === "admin" && (
                 <Popconfirm
                   title="Bạn chắc chắn kích hoạt hiệu lực không ?"
                   onConfirm={() => handleChangeStatus(record)}

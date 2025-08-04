@@ -1,17 +1,30 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { Button, message, Popconfirm, Popover, Space, Tag } from "antd";
-import { useState } from "react";
+import { Button, message, Popconfirm, Popover, Space } from "antd";
+import { useEffect, useState } from "react";
+
+type RoleTagWithPopoverProps = {
+  record: any;
+  onRoleChange: (id: string, newRole: string) => void;
+  renderTag: (
+    role: string,
+    label: string,
+    onClick: () => void
+  ) => React.ReactNode;
+};
 
 export const RoleTagWithPopover = ({
   record,
   onRoleChange,
-}: {
-  record: any;
-  onRoleChange: (id: string, newRole: string) => void;
-}) => {
+  renderTag,
+}: RoleTagWithPopoverProps) => {
   const [popoverVisible, setPopoverVisible] = useState(false);
   const [confirmVisible, setConfirmVisible] = useState(false);
   const [selectedRole, setSelectedRole] = useState<string | null>(null);
+  const [currentRole, setCurrentRole] = useState<string>(record.role);
+
+  useEffect(() => {
+    setCurrentRole(record.role);
+  }, [record.role]);
 
   const roles = [
     { value: "admin", label: "Quản trị viên" },
@@ -20,7 +33,7 @@ export const RoleTagWithPopover = ({
   ];
 
   const handleSelectRole = (role: string) => {
-    if (record.role === "admin" && role === "user") {
+    if (currentRole === "admin" && role === "user") {
       message.error(
         "Không thể chuyển trực tiếp từ Quản trị viên thành Khách hàng"
       );
@@ -34,6 +47,7 @@ export const RoleTagWithPopover = ({
   const handleConfirm = async () => {
     if (selectedRole) {
       await onRoleChange(record._id, selectedRole);
+      setCurrentRole(selectedRole);
     }
     setConfirmVisible(false);
   };
@@ -43,29 +57,22 @@ export const RoleTagWithPopover = ({
     setConfirmVisible(false);
   };
 
-  const currentTag = (
-    <Tag
-      color={record.role === "admin" ? "green" : "yellow"}
-      style={{ cursor: "pointer" }}
-      onClick={() => setPopoverVisible(true)}
-    >
-      {roles.find((r) => r.value === record.role)?.label}
-    </Tag>
-  );
+  const currentRoleLabel =
+    roles.find((r) => r.value === currentRole)?.label || currentRole;
 
   return (
     <Popover
       content={
         <Space direction="vertical">
           {roles
-            .filter((r) => r.value !== record.role)
+            .filter((r) => r.value !== currentRole)
             .map((role) => (
               <Button
                 key={role.value}
                 type="text"
                 size="small"
                 onClick={() => handleSelectRole(role.value)}
-                disabled={record.role === "admin" && role.value === "user"}
+                disabled={currentRole === "admin" && role.value === "user"}
               >
                 {role.label}
               </Button>
@@ -83,7 +90,9 @@ export const RoleTagWithPopover = ({
         onConfirm={handleConfirm}
         onCancel={handleCancel}
       >
-        {currentTag}
+        {renderTag(currentRole, currentRoleLabel, () =>
+          setPopoverVisible(true)
+        )}
       </Popconfirm>
     </Popover>
   );

@@ -25,6 +25,7 @@ import { API_URL } from "../../config/dataProvider";
 import { IAttribute } from "../../interface/attribute";
 import { ColorDots } from "../products/ColorDots";
 import Loader from "../../utils/loading";
+import { useAuth } from "../../contexts/auth/AuthContext";
 
 export const AttributeList = () => {
   const [filterActive, setFilterActive] = useState<boolean>(true);
@@ -53,6 +54,7 @@ export const AttributeList = () => {
   const invalidate = useInvalidate();
   const [loadingId, setLoadingId] = useState<string | number | null>(null);
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
+  const { user } = useAuth();
 
   const handleChangeStatus = async (record: IAttribute) => {
     setLoadingId(record._id);
@@ -253,7 +255,7 @@ export const AttributeList = () => {
                 loading={loadingId === record._id}
                 hidden={record.countProduct > 0}
               />
-              {record.isActive === false && (
+              {record.isActive === false && user?.role === "admin" && (
                 <Popconfirm
                   title="Bạn chắc chắn kích hoạt hiệu lực không ?"
                   onConfirm={() => handleChangeStatus(record)}

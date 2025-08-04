@@ -28,7 +28,6 @@ export const resources = [
     edit: "/product/edit/:id",
     show: "/product/id/:id",
     meta: {
-      canDelete: true,
       label: "Quản lý sản phẩm",
       icon: "product",
     },
@@ -40,7 +39,6 @@ export const resources = [
     edit: "/category/edit/:id",
     show: "/category/id/:id",
     meta: {
-      canDelete: true,
       label: "Quản lý danh mục",
       icon: "category",
     },
@@ -52,7 +50,6 @@ export const resources = [
     edit: "/brand/edit/:id",
     show: "/brand/id/:id",
     meta: {
-      canDelete: true,
       label: "Quản lý thương hiệu",
       icon: "brand",
     },
@@ -64,7 +61,6 @@ export const resources = [
     edit: "/attribute/edit/:id",
     show: "/attribute/id/:id",
     meta: {
-      canDelete: true,
       label: "Quản lý thuộc tính",
       icon: "attribute",
     },
@@ -74,7 +70,6 @@ export const resources = [
     list: "/comments",
     show: "/comments/id/:id",
     meta: {
-      canDelete: true,
       label: "Quản lý đánh giá",
       icon: "comment",
     },
@@ -114,7 +109,6 @@ export const resources = [
     edit: "/vouchers/edit/:id",
     show: "/vouchers/id/:id",
     meta: {
-      canDelete: true,
       label: "Quản lý voucher",
       icon: "voucher",
     },
