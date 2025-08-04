@@ -275,21 +275,32 @@ export const UserList = () => {
               {user?.role === "admin" ? (
                 record.isActive ? (
                   <>
-                    <Tooltip title="Thay đổi vai trò" key={"role"}>
-                      <RoleTagWithPopover
-                        record={record}
-                        onRoleChange={handleChangeRole}
-                        renderTag={(role, label, onClick) => (
+                    <RoleTagWithPopover
+                      record={record}
+                      onRoleChange={handleChangeRole}
+                      renderTag={(role, label, onClick) => (
+                        <Tooltip
+                          title={
+                            record.countOrderNotSuccess > 0 ||
+                            record.isVerify === false
+                              ? "Tài khoản chưa kích hoạt hoặc đang có đơn hàng chưa hoàn thành"
+                              : "Đổi vai trò"
+                          }
+                          key={"role"}
+                        >
                           <Button
                             size="small"
                             type="default"
-                            disabled={record.countOrderNotSuccess > 0}
+                            disabled={
+                              record.countOrderNotSuccess > 0 ||
+                              record.isVerify === false
+                            }
                             icon={<ArrowUpOutlined />}
                             onClick={onClick}
                           />
-                        )}
-                      />
-                    </Tooltip>
+                        </Tooltip>
+                      )}
+                    />
                     <Button
                       danger
                       size="small"
