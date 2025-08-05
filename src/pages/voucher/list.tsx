@@ -215,6 +215,17 @@ const VoucherList = () => {
         />
 
         <Table.Column
+          title="Loại tạo"
+          dataIndex="isAuto"
+          key="isAuto"
+          render={(isAuto: boolean) => (
+            <Tag color={isAuto ? "magenta" : "gold"}>
+              {isAuto ? "Tạo tự động" : "Tạo thủ công"}
+            </Tag>
+          )}
+        />
+
+        <Table.Column
           title="Giá trị giảm"
           render={(_, record) => {
             if (record.discountType === "fixed") {
@@ -274,11 +285,21 @@ const VoucherList = () => {
         <Table.Column<IVoucher>
           title="Thao tác"
           render={(_, record) => {
-            const isEditable =
-              record.voucherStatus === "active" ||
-              record.voucherStatus === "inactive";
+            const isAutoActive =
+              record.isAuto && record.voucherStatus !== "expired";
 
-            const deleteButton = (
+            const deleteButton = isAutoActive ? (
+              <Tooltip title="Chỉ có thể xóa voucher tự động khi đã hết hạn">
+                <span>
+                  <Button
+                    icon={<DeleteOutlined />}
+                    danger
+                    size="small"
+                    disabled
+                  />
+                </span>
+              </Tooltip>
+            ) : (
               <Popconfirm
                 title="Bạn có chắc chắn chuyển voucher này vào thùng rác?"
                 onConfirm={() => handleDelete(record._id)}
@@ -295,7 +316,18 @@ const VoucherList = () => {
               </Popconfirm>
             );
 
-            const permanentDeleteButton = (
+            const permanentDeleteButton = isAutoActive ? (
+              <Tooltip title="Chỉ có thể xóa voucher tự động khi đã hết hạn">
+                <span>
+                  <Button
+                    icon={<DeleteOutlined />}
+                    danger
+                    size="small"
+                    disabled
+                  />
+                </span>
+              </Tooltip>
+            ) : (
               <Popconfirm
                 title="Bạn có chắc chắn muốn xóa vĩnh viễn voucher này? Hành động này không thể hoàn tác."
                 onConfirm={() => handleDelete(record._id)}
@@ -312,24 +344,45 @@ const VoucherList = () => {
                   size="small"
                   loading={loadingId === record._id}
                   disabled={loadingId === record._id}
-                ></Button>
+                />
               </Popconfirm>
             );
 
-            const editButton = isEditable ? (
-              <EditButton hideText size="small" recordItemId={record._id} />
-            ) : (
-              <Tooltip title="Voucher đã hết hạn, không thể chỉnh sửa">
-                <span>
-                  <EditButton
-                    hideText
-                    size="small"
-                    recordItemId={record._id}
-                    disabled
-                  />
-                </span>
-              </Tooltip>
-            );
+            const editButton = (() => {
+              if (record.voucherStatus === "expired") {
+                return (
+                  <Tooltip title="Voucher đã hết hạn, không thể chỉnh sửa">
+                    <span>
+                      <EditButton
+                        hideText
+                        size="small"
+                        recordItemId={record._id}
+                        disabled
+                      />
+                    </span>
+                  </Tooltip>
+                );
+              }
+
+              if (record.isAuto) {
+                return (
+                  <Tooltip title="Không thể chỉnh sửa voucher được tạo tự động">
+                    <span>
+                      <EditButton
+                        hideText
+                        size="small"
+                        recordItemId={record._id}
+                        disabled
+                      />
+                    </span>
+                  </Tooltip>
+                );
+              }
+
+              return (
+                <EditButton hideText size="small" recordItemId={record._id} />
+              );
+            })();
 
             return (
               <Space>

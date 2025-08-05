@@ -137,6 +137,12 @@ const VoucherShow = () => {
           )}
         </Descriptions.Item>
 
+        <Descriptions.Item label="Loại tạo">
+          <Tag color={voucher?.isAuto ? "magenta" : "gold"}>
+            {voucher?.isAuto ? "Tự động" : "Thủ công"}
+          </Tag>
+        </Descriptions.Item>
+
         <Descriptions.Item label="Ngày bắt đầu">
           {voucher?.startDate && new Date(voucher.startDate).toLocaleString()}
         </Descriptions.Item>
