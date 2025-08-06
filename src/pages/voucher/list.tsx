@@ -218,6 +218,11 @@ const VoucherList = () => {
           title="Loại tạo"
           dataIndex="isAuto"
           key="isAuto"
+          filters={[
+            { text: "Tạo tự động", value: true },
+            { text: "Tạo thủ công", value: false },
+          ]}
+          onFilter={(value, record) => record.isAuto === value}
           render={(isAuto: boolean) => (
             <Tag color={isAuto ? "magenta" : "gold"}>
               {isAuto ? "Tạo tự động" : "Tạo thủ công"}

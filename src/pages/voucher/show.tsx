@@ -16,7 +16,7 @@ const VoucherShow = () => {
   useEffect(() => {
     if (voucher?.userIds && voucher.userIds.length > 0) {
       axiosInstance
-        .get("/admin/users?isActive=true")
+        .get("/admin/users?isActive=true&_limit=off")
         .then((res) => {
           const allUsers = res.data?.docs || res.data || [];
           const voucherUserIds = voucher.userIds.map((id: any) =>
@@ -117,7 +117,7 @@ const VoucherShow = () => {
             {voucher?.maxDiscount?.toLocaleString()}đ
           </Descriptions.Item>
         )}
-        <Descriptions.Item label="Số lượng tổng cộng">
+        <Descriptions.Item label="Số lượng">
           {voucher?.quantity}
         </Descriptions.Item>
 
