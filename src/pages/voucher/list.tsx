@@ -290,21 +290,7 @@ const VoucherList = () => {
         <Table.Column<IVoucher>
           title="Thao tác"
           render={(_, record) => {
-            const isAutoActive =
-              record.isAuto && record.voucherStatus !== "expired";
-
-            const deleteButton = isAutoActive ? (
-              <Tooltip title="Chỉ có thể xóa voucher tự động khi đã hết hạn">
-                <span>
-                  <Button
-                    icon={<DeleteOutlined />}
-                    danger
-                    size="small"
-                    disabled
-                  />
-                </span>
-              </Tooltip>
-            ) : (
+            const deleteButton = (
               <Popconfirm
                 title="Bạn có chắc chắn chuyển voucher này vào thùng rác?"
                 onConfirm={() => handleDelete(record._id)}
@@ -321,18 +307,7 @@ const VoucherList = () => {
               </Popconfirm>
             );
 
-            const permanentDeleteButton = isAutoActive ? (
-              <Tooltip title="Chỉ có thể xóa voucher tự động khi đã hết hạn">
-                <span>
-                  <Button
-                    icon={<DeleteOutlined />}
-                    danger
-                    size="small"
-                    disabled
-                  />
-                </span>
-              </Tooltip>
-            ) : (
+            const permanentDeleteButton = (
               <Popconfirm
                 title="Bạn có chắc chắn muốn xóa vĩnh viễn voucher này? Hành động này không thể hoàn tác."
                 onConfirm={() => handleDelete(record._id)}

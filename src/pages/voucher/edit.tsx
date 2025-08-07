@@ -118,12 +118,12 @@ const VoucherEdit = () => {
         return;
       }
 
-      if (end.diff(start, "minute") < 1) {
+      if (end.diff(start, "minute") < 5) {
         formProps.form?.setFields([
           {
             name: "dateRange",
             errors: [
-              "Thời gian kết thúc phải sau thời gian bắt đầu ít nhất 1 phút",
+              "Thời gian kết thúc phải sau thời gian bắt đầu ít nhất 5 phút",
             ],
           },
         ]);
@@ -483,7 +483,7 @@ const VoucherEdit = () => {
                   disabledMinutes: (selectedHour) =>
                     selectedHour === currentHour
                       ? Array.from({ length: 60 }, (_, i) => i).filter(
-                          (m) => m <= currentMinute
+                          (m) => m < currentMinute
                         )
                       : [],
                 };
