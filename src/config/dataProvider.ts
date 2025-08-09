@@ -1,13 +1,15 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { DataProvider } from "@refinedev/core";
-import axios from "axios";
+import { axiosInstance } from "../utils/axiosInstance";
 
 export const API_URL = "http://localhost:8080/api";
+export const CLOUDINARY_URL =
+  "https://api.cloudinary.com/v1_1/dtwm0rpqg/auto/upload";
 
 const dataProvider: DataProvider = {
   getApiUrl: () => API_URL,
+
   getList: async ({ resource, filters, pagination, sorters, meta }) => {
-    let endpoint = `${API_URL}/${resource}`;
     const params: Record<string, any> = {};
 
     if (filters) {
@@ -21,43 +23,61 @@ const dataProvider: DataProvider = {
         // Thêm các operator khác nếu cần
       });
     }
-    // Nếu resource hỗ trợ tìm kiếm (ví dụ: "attribute", "product"...)
-    const resourcesWithSearchApi = [
-      "attribute",
-      "product",
-      "category",
-      "brand",
-    ];
-    if (resourcesWithSearchApi.includes(resource)) {
-      endpoint += "/search";
+
+    if (sorters && sorters.length > 0) {
+      const sorter = sorters[0];
+      params._sort = sorter.field;
+      params._order = sorter.order;
+    } else {
+      // Nếu không có, dùng mặc định
+      params._sort = "createdAt";
+      params._order = "desc";
     }
-    endpoint += "";
-    const { data } = await axios.get(endpoint, { params });
-    console.log(params);
+
+    if (pagination && pagination.pageSize) {
+      params._page = pagination.current || 1;
+      params._limit = pagination.pageSize;
+    }
+
+    if (meta) {
+      Object.assign(params, meta);
+    }
+
+    const { data } = await axiosInstance.get(`${resource}`, {
+      params,
+    });
 
     return {
-      data,
-      total: data.length,
+      data: data.docs || data,
+      total: data.length || data.totalDocs || 0,
     };
   },
 
   getOne: async ({ resource, id }) => {
-    const { data } = await axios.get(`${API_URL}/${resource}/id/${id}`);
+    const { data } = await axiosInstance.get(`${API_URL}/${resource}/id/${id}`);
     return { data };
   },
   update: async ({ resource, id, variables }) => {
-    const { data } = await axios.patch(
-      `${API_URL}/${resource}/edit/${id}`,
+    let url = "";
+    if (resource === "comments/reply") {
+      url = `${API_URL}/comments/reply/${id}`;
+    } else {
+      url = `${API_URL}/${resource}/edit/${id}`;
+    }
+    const { data } = await axiosInstance.patch(url, variables);
+    return { data };
+  },
+  create: async ({ resource, variables }) => {
+    const { data } = await axiosInstance.post(
+      `${API_URL}/${resource}/add`,
       variables
     );
     return { data };
   },
-  create: async ({ resource, variables }) => {
-    const { data } = await axios.post(`${API_URL}/${resource}/add`, variables);
-    return { data };
-  },
   deleteOne: async ({ resource, id }) => {
-    const { data } = await axios.delete(`${API_URL}/${resource}/delete/${id}`);
+    const { data } = await axiosInstance.delete(
+      `${API_URL}/${resource}/delete/${id}`
+    );
     return { data };
   },
 };

@@ -6,26 +6,55 @@ import {
   ShowButton,
   useTable,
 } from "@refinedev/antd";
-import { Input, Popconfirm, Space, Table, message } from "antd";
-import { IAttribute } from "../../interface/attribute";
-import { PlusCircleOutlined } from "@ant-design/icons";
-import axios from "axios";
-import { API_URL } from "../../config/dataProvider";
-import { useState } from "react";
 import { useInvalidate } from "@refinedev/core";
+import {
+  Button,
+  Input,
+  Popconfirm,
+  Space,
+  Table,
+  Tabs,
+  Tooltip,
+  Typography,
+  message,
+} from "antd";
+import axios from "axios";
+import dayjs from "dayjs";
+import { useCallback, useState } from "react";
+import { API_URL } from "../../config/dataProvider";
+import { IAttribute } from "../../interface/attribute";
+import { ColorDots } from "../products/ColorDots";
+import Loader from "../../utils/loading";
+import { useAuth } from "../../contexts/auth/AuthContext";
 
 export const AttributeList = () => {
+  const [filterActive, setFilterActive] = useState<boolean>(true);
   const { tableProps, setFilters } = useTable({
     syncWithLocation: true,
+    permanentFilter: [
+      {
+        field: "isActive",
+        operator: "eq",
+        value: filterActive,
+      },
+    ],
+    onSearch: (value) => [
+      {
+        field: "search",
+        operator: "contains",
+        value: value,
+      },
+    ],
     errorNotification: (error: any) => ({
-      message:
-        "❌ Lỗi hệ thống " + (error.response?.data?.message | error.message),
+      message: "❌ Lỗi hệ thống " + error.response?.data?.error,
       description: "Có lỗi xảy ra trong quá trình xử lý.",
       type: "error" as const,
     }),
   });
   const invalidate = useInvalidate();
   const [loadingId, setLoadingId] = useState<string | number | null>(null);
+  const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
+  const { user } = useAuth();
 
   const handleChangeStatus = async (record: IAttribute) => {
     setLoadingId(record._id);
@@ -48,17 +77,119 @@ export const AttributeList = () => {
     }
   };
 
+  const handleTabChange = useCallback(
+    (key: string) => {
+      const isActiveFilter = key === "active";
+      setFilterActive(isActiveFilter);
+      // Cập nhật lại filter mới
+      setFilters(
+        [
+          {
+            field: "isActive",
+            operator: "eq",
+            value: isActiveFilter,
+          },
+        ],
+        "replace"
+      );
+    },
+    [setFilters]
+  );
+
+  const handleSearch = useCallback(
+    (value: string) => {
+      setFilters(
+        value
+          ? [
+              {
+                field: "search",
+                operator: "contains",
+                value,
+              },
+              {
+                field: "isActive",
+                operator: "eq",
+                value: filterActive,
+              },
+            ]
+          : [
+              {
+                field: "isActive",
+                operator: "eq",
+                value: filterActive,
+              },
+            ],
+        "replace"
+      );
+    },
+    [filterActive, setFilters]
+  );
+
   return (
     <List title={"Quản lý thuộc tính"}>
+      <Tabs
+        activeKey={filterActive ? "active" : "trash"}
+        onChange={handleTabChange}
+        style={{ marginBottom: 16 }}
+      >
+        <Tabs.TabPane tab="Thuộc tính đang hoạt động" key="active" />
+        <Tabs.TabPane tab="Thùng rác" key="trash" />
+      </Tabs>
       <Input.Search
         placeholder="Tìm kiếm tên thuộc tính"
         allowClear
-        onSearch={(value) =>
-          setFilters([{ field: "name", operator: "eq", value }], "replace")
-        }
+        onSearch={handleSearch}
         style={{ marginBottom: 16, maxWidth: 300 }}
       />
-      <Table {...tableProps} rowKey="_id">
+      {user?.role === "admin" && (
+        <Popconfirm
+          title="Bạn chắc chắn xóa hàng loạt không ?"
+          onConfirm={async () => {
+            if (selectedRowKeys.length === 0) return;
+            try {
+              await Promise.all(
+                selectedRowKeys.map((id) =>
+                  axios.delete(`${API_URL}/attribute/delete/${id}`)
+                )
+              );
+              message.success("Xóa hàng loạt thành công");
+              setSelectedRowKeys([]);
+              await invalidate({
+                resource: "attribute",
+                invalidates: ["list"],
+              });
+            } catch (error: any) {
+              const errorMessage =
+                error.response?.data?.message ||
+                error.message ||
+                "Lỗi không xác định";
+              message.error("Xóa thất bại: " + errorMessage);
+            }
+          }}
+        >
+          <Button
+            danger
+            disabled={selectedRowKeys.length === 0}
+            style={{ marginBottom: 16 }}
+          >
+            Xóa hàng loạt
+          </Button>
+        </Popconfirm>
+      )}
+      <Table
+        {...tableProps}
+        rowKey="_id"
+        loading={tableProps.loading ? { indicator: <Loader /> } : false}
+        rowSelection={
+          user?.role === "admin"
+            ? {
+                type: "checkbox",
+                selectedRowKeys,
+                onChange: (keys: React.Key[]) => setSelectedRowKeys(keys),
+              }
+            : undefined
+        }
+      >
         <Table.Column
           dataIndex="stt"
           title={"STT"}
@@ -70,34 +201,29 @@ export const AttributeList = () => {
           title={"Giá trị"}
           render={(_: unknown, record: IAttribute) => {
             return record.isColor ? (
-              <div style={{ display: "flex", gap: 4 }}>
-                {record.values.map((item: string, idx: number) => (
-                  <div
-                    key={idx}
-                    style={{
-                      width: 20,
-                      height: 20,
-                      backgroundColor: item,
-                      borderRadius: "50%",
-                    }}
-                  ></div>
-                ))}
-              </div>
+              <ColorDots colors={record.values} />
             ) : (
               record.values.join(", ")
             );
           }}
         />
         <Table.Column
-          dataIndex="isActive"
-          title={"Trạng thái"}
-          filters={[
-            { text: "Có hiệu lực", value: true },
-            { text: "Không có hiệu lực", value: false },
-          ]}
-          onFilter={(value, record) => record.isActive === value}
-          render={(value: boolean) =>
-            value ? "Có hiệu lực" : "Không có hiệu lực"
+          dataIndex="countProduct"
+          title={"Số lượng sản phẩm sử dụng"}
+          render={(value: number) => (
+            <Typography.Text>{value || 0}</Typography.Text>
+          )}
+        />
+        <Table.Column
+          dataIndex="createdAt"
+          title={"Ngày tạo"}
+          render={(value: string) => (
+            <Typography.Text>
+              {dayjs(value).format("DD/MM/YYYY")}
+            </Typography.Text>
+          )}
+          sorter={(a: IAttribute, b: IAttribute) =>
+            new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
           }
         />
         <Table.Column
@@ -105,19 +231,37 @@ export const AttributeList = () => {
           dataIndex="actions"
           render={(_, record: IAttribute) => (
             <Space>
-              <EditButton hideText size="small" recordItemId={record._id} />
-              <ShowButton hideText size="small" recordItemId={record._id} />
-              {record.isActive ? (
-                <DeleteButton
+              <Tooltip title="Chỉnh sửa thuộc tính">
+                <EditButton
                   hideText
                   size="small"
                   recordItemId={record._id}
-                  confirmTitle="Bạn chắc chắn xóa không ?"
-                  confirmCancelText="Hủy"
-                  confirmOkText="Xóa"
-                  loading={loadingId === record._id}
+                  hidden={!record.isActive}
                 />
-              ) : (
+              </Tooltip>
+              <Tooltip title="Xem chi tiết">
+                <ShowButton
+                  hideText
+                  size="small"
+                  recordItemId={record._id}
+                  hidden={!record.isActive}
+                />
+              </Tooltip>
+              <DeleteButton
+                hideText
+                size="small"
+                recordItemId={record._id}
+                confirmTitle={
+                  record.isActive
+                    ? "Bạn chắc chắn chuyển vào thùng rác không ?"
+                    : "Bạn chắc chắn xóa vĩnh viễn không ?"
+                }
+                confirmCancelText="Hủy"
+                confirmOkText="Xóa"
+                loading={loadingId === record._id}
+                hidden={record.countProduct > 0}
+              />
+              {record.isActive === false && user?.role === "admin" && (
                 <Popconfirm
                   title="Bạn chắc chắn kích hoạt hiệu lực không ?"
                   onConfirm={() => handleChangeStatus(record)}
@@ -125,15 +269,9 @@ export const AttributeList = () => {
                   cancelText="Hủy"
                   okButtonProps={{ loading: loadingId === record._id }}
                 >
-                  <PlusCircleOutlined
-                    style={{
-                      border: "1px solid #404040",
-                      borderRadius: "20%",
-                      padding: 4,
-                      cursor: "pointer",
-                      opacity: loadingId === record._id ? 0.5 : 1,
-                    }}
-                  />
+                  <Button size="small" type="default">
+                    Kích hoạt
+                  </Button>
                 </Popconfirm>
               )}
             </Space>

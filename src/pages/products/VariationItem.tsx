@@ -1,16 +1,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import {
-  DatePicker,
-  Form,
-  InputNumber,
-  Popconfirm,
-  Upload,
-  Button,
-  message,
-} from "antd";
 import { MinusCircleOutlined, PlusOutlined } from "@ant-design/icons";
+import { Button, Form, InputNumber, message, Popconfirm, Upload } from "antd";
 import axios from "axios";
-import dayjs from "dayjs";
+import { ColorDots } from "./ColorDots";
+import { CLOUDINARY_URL } from "../../config/dataProvider";
 
 interface VariationItemProps {
   field: any;
@@ -23,7 +16,17 @@ export const VariationItem: React.FC<VariationItemProps> = ({
   remove,
   form,
 }) => {
-  const handleImageChange = async ({ fileList }: { fileList: any[] }) => {
+  const handleImageChange = async (info: any) => {
+    const fileList = Array.isArray(info?.fileList) ? info.fileList : [];
+
+    // Nếu xóa ảnh (fileList rỗng)
+    if (!fileList.length) {
+      const currentVariations = form.getFieldValue("variation") || [];
+      currentVariations[field.name]["image"] = [];
+      form.setFieldsValue({ variation: currentVariations });
+      return;
+    }
+
     const file = fileList[0];
 
     if (file && file.originFileObj) {
@@ -32,10 +35,7 @@ export const VariationItem: React.FC<VariationItemProps> = ({
       formData.append("upload_preset", "Binova_Upload");
 
       try {
-        const res = await axios.post(
-          "https://api.cloudinary.com/v1_1/dtwm0rpqg/image/upload",
-          formData
-        );
+        const res = await axios.post(CLOUDINARY_URL, formData);
 
         const url = res.data.secure_url;
         const currentVariations = form.getFieldValue("variation") || [];
@@ -52,9 +52,10 @@ export const VariationItem: React.FC<VariationItemProps> = ({
       } catch (error) {
         message.error("❌ Lỗi khi upload ảnh biến thể.");
       }
-    } else if (!fileList.length) {
+    } else {
+      // Nếu chỉ chọn ảnh đã có (không phải upload mới)
       const currentVariations = form.getFieldValue("variation") || [];
-      currentVariations[field.name]["image"] = [];
+      currentVariations[field.name]["image"] = fileList;
       form.setFieldsValue({ variation: currentVariations });
     }
   };
@@ -106,16 +107,7 @@ export const VariationItem: React.FC<VariationItemProps> = ({
               <strong>{attr.attributeName}:</strong>
               {attr.values.map((val: string, i: number) =>
                 isColor ? (
-                  <div
-                    key={i}
-                    style={{
-                      width: 16,
-                      height: 16,
-                      borderRadius: "50%",
-                      backgroundColor: val,
-                      border: "1px solid #ccc",
-                    }}
-                  />
+                  <ColorDots colors={[val]} />
                 ) : (
                   <span key={i}>{val}</span>
                 )
@@ -135,8 +127,6 @@ export const VariationItem: React.FC<VariationItemProps> = ({
           label="Ảnh biến thể"
           name={[field.name, "image"]}
           rules={[{ required: true, message: "Vui lòng chọn ảnh" }]}
-          valuePropName="fileList"
-          getValueFromEvent={(e) => (Array.isArray(e) ? e : e?.fileList)}
         >
           <Upload
             listType="picture-card"
@@ -164,7 +154,20 @@ export const VariationItem: React.FC<VariationItemProps> = ({
               name={[field.name, "regularPrice"]}
               rules={[
                 { required: true, message: "Vui lòng nhập giá!" },
-                { type: "number", min: 0, message: "Giá không được âm!" },
+                {
+                  pattern: /^[1-9]\d*$/,
+                  message: "Giá phải là số nguyên dương!",
+                },
+                {
+                  type: "number",
+                  min: 1000,
+                  message: "Giá phải lớn hơn hoặc bằng 1000!",
+                },
+                {
+                  type: "number",
+                  max: 1000000000,
+                  message: "Giá không được lớn hơn 1 tỷ!",
+                },
               ]}
             >
               <InputNumber placeholder="Nhập giá" />
@@ -174,7 +177,20 @@ export const VariationItem: React.FC<VariationItemProps> = ({
               label="Giá giảm"
               name={[field.name, "salePrice"]}
               rules={[
-                { type: "number", min: 0, message: "Giá không được âm!" },
+                {
+                  pattern: /^[1-9]\d*$/,
+                  message: "Giá phải là số nguyên dương!",
+                },
+                {
+                  type: "number",
+                  min: 1000,
+                  message: "Giá phải lớn hơn hoặc bằng 1000!",
+                },
+                {
+                  type: "number",
+                  max: 1000000000,
+                  message: "Giá không được lớn hơn 1 tỷ!",
+                },
                 {
                   validator: (_, value) => {
                     const price = form.getFieldValue([
@@ -182,8 +198,8 @@ export const VariationItem: React.FC<VariationItemProps> = ({
                       field.name,
                       "regularPrice",
                     ]);
-                    if (value >= price) {
-                      return Promise.reject("Giá giảm phải nhỏ hơn giá gốc!");
+                    if (value > price) {
+                      return Promise.reject("Giá giảm không lớn hơn giá gốc!");
                     }
                     return Promise.resolve();
                   },
@@ -193,76 +209,23 @@ export const VariationItem: React.FC<VariationItemProps> = ({
               <InputNumber placeholder="Nhập giá giảm (nếu có)" />
             </Form.Item>
           </div>
-
-          <div style={{ display: "flex", gap: "20px" }}>
-            <Form.Item shouldUpdate>
-              {() => {
-                const salePrice = form.getFieldValue([
-                  "variation",
-                  field.name,
-                  "salePrice",
-                ]);
-                const saleTo = form.getFieldValue([
-                  "variation",
-                  field.name,
-                  "saleTo",
-                ]);
-                return (
-                  <Form.Item
-                    label="Ngày bắt đầu giảm"
-                    name={[field.name, "saleForm"]}
-                  >
-                    <DatePicker
-                      style={{ width: "100%" }}
-                      format="YYYY-MM-DD"
-                      placeholder="Chọn ngày bắt đầu"
-                      disabled={!salePrice}
-                      disabledDate={(current) =>
-                        saleTo && current.isAfter(dayjs(saleTo))
-                      }
-                    />
-                  </Form.Item>
-                );
-              }}
-            </Form.Item>
-
-            <Form.Item shouldUpdate>
-              {() => {
-                const salePrice = form.getFieldValue([
-                  "variation",
-                  field.name,
-                  "salePrice",
-                ]);
-                const saleForm = form.getFieldValue([
-                  "variation",
-                  field.name,
-                  "saleForm",
-                ]);
-                return (
-                  <Form.Item
-                    label="Ngày kết thúc giảm"
-                    name={[field.name, "saleTo"]}
-                  >
-                    <DatePicker
-                      style={{ width: "100%" }}
-                      format="YYYY-MM-DD"
-                      placeholder="Chọn ngày kết thúc"
-                      disabled={!salePrice}
-                      disabledDate={(current) =>
-                        saleForm && current.isBefore(dayjs(saleForm))
-                      }
-                    />
-                  </Form.Item>
-                );
-              }}
-            </Form.Item>
-          </div>
         </div>
 
         <Form.Item
           label="Tồn kho"
           name={[field.name, "stock"]}
-          rules={[{ required: true, message: "Vui lòng nhập tồn kho!" }]}
+          rules={[
+            { required: true, message: "Vui lòng nhập tồn kho!" },
+            {
+              pattern: /^[0-9]\d*$/,
+              message: "Tồn kho phải là số nguyên dương!",
+            },
+            {
+              type: "number",
+              max: 10000,
+              message: "Tồn kho không được lớn hơn 10.000!",
+            },
+          ]}
         >
           <InputNumber placeholder="Nhập tồn kho" />
         </Form.Item>

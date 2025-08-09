@@ -1,7 +1,10 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { MinusCircleOutlined } from "@ant-design/icons";
-import { Form, Select, Space, Checkbox } from "antd";
+import { Form, Select, Space, Checkbox, message } from "antd";
 import { IAttribute } from "../../interface/attribute";
+import { ColorDots } from "./ColorDots";
+import { useContext, useEffect, useState } from "react";
+import { ColorModeContext } from "../../contexts/color-mode";
 
 interface AttributeItemProps {
   field: any;
@@ -16,6 +19,8 @@ export const AttributeItem = ({
   allAttributes,
   form,
 }: AttributeItemProps) => {
+  const [isValueSelectDisabled, setIsValueSelectDisabled] = useState(true);
+  const { mode } = useContext(ColorModeContext);
   const selectedAttributeIds =
     form
       .getFieldValue("attributes")
@@ -30,34 +35,34 @@ export const AttributeItem = ({
       value: attr._id,
     }));
 
+  if (availableAttributes.length === 0) {
+    availableAttributes.push({
+      label: "Thuộc tính không xác định",
+      value: "",
+    });
+  }
+
   const currentAttributeId = form.getFieldValue([
     "attributes",
     field.name,
     "attributeId",
   ]);
 
-  const isColor = form.getFieldValue(["attributes", field.name, "isColor"]);
+  const currentAttribute = allAttributes.find(
+    (attr) => attr._id === currentAttributeId
+  );
 
-  const rawValues =
-    allAttributes.find((attr) => attr._id === currentAttributeId)?.values || [];
-
+  const isColor = currentAttribute?.isColor;
+  const rawValues = currentAttribute?.values || [];
   const valueOptions = rawValues.map((val) => ({
-    label: isColor ? (
-      <div
-        style={{
-          backgroundColor: val,
-          width: 20,
-          height: 20,
-          borderRadius: "50%",
-          border: "1px solid #ccc",
-          display: "inline-block",
-        }}
-      />
-    ) : (
-      val
-    ),
+    label: isColor ? <ColorDots colors={[val]} /> : val,
     value: val,
   }));
+
+  // Khi mount hoặc khi currentAttributeId thay đổi, cập nhật trạng thái disabled
+  useEffect(() => {
+    setIsValueSelectDisabled(!currentAttributeId);
+  }, [currentAttributeId]);
 
   return (
     <Space
@@ -76,20 +81,62 @@ export const AttributeItem = ({
         ]}
       >
         <Select
-          placeholder="Chọn thuộc tính"
+          showSearch
+          filterOption={(input, option) =>
+            (option?.label ?? "").toLowerCase().includes(input.toLowerCase())
+          }
+          placeholder={"Chọn thuộc tính"}
           options={availableAttributes}
-          onChange={(selectedId) => {
+          onChange={async (selectedId) => {
             const selectedAttr = allAttributes.find(
               (attr) => attr._id === selectedId
             );
-            form.setFieldValue(
+            // Kiểm tra trùng isColor
+            const selectedIsColor = selectedAttr?.isColor;
+            const attributes = form.getFieldValue("attributes") || [];
+            const duplicate = attributes.some(
+              (attr: any, idx: number) =>
+                idx !== field.name &&
+                attr?.attributeId &&
+                allAttributes.find((a) => a._id === attr.attributeId)
+                  ?.isColor === selectedIsColor
+            );
+            if (duplicate) {
+              message.error(
+                `Không được chọn 2 thuộc tính cùng kiểu ${
+                  selectedIsColor ? "màu sắc" : "kích thước"
+                }`
+              );
+              // Reset lại giá trị vừa chọn
+              await form.setFieldValue(
+                ["attributes", field.name, "attributeId"],
+                undefined
+              );
+              await form.setFieldValue(
+                ["attributes", field.name, "values"],
+                []
+              );
+              await form.setFieldValue(
+                ["attributes", field.name, "isColor"],
+                false
+              );
+              await Promise.resolve();
+              return;
+            }
+            await form.setFieldValue(
               ["attributes", field.name, "values"],
               selectedAttr?.values || []
             );
-            form.setFieldValue(
+            await form.setFieldValue(
               ["attributes", field.name, "isColor"],
               selectedAttr?.isColor ?? false
             );
+            await form.setFieldValue(
+              ["attributes", field.name, "attributeId"],
+              selectedId
+            );
+            await Promise.resolve();
+            setIsValueSelectDisabled(!selectedId);
           }}
         />
       </Form.Item>
@@ -137,7 +184,7 @@ export const AttributeItem = ({
                 placeholder="Chọn hoặc thêm giá trị mới"
                 options={valueOptions}
                 style={{ minWidth: "250px" }}
-                disabled={!currentAttributeId}
+                disabled={isValueSelectDisabled}
                 tagRender={
                   isColor
                     ? (props) => {
@@ -148,25 +195,22 @@ export const AttributeItem = ({
                               display: "inline-flex",
                               alignItems: "center",
                               marginRight: 4,
-                              padding: "0 6px",
-                              border: "1px solid #ccc",
-                              borderRadius: 12,
-                              backgroundColor: "black",
+                              padding: "4px",
+                              borderRadius: 8,
+                              backgroundColor:
+                                mode === "light" ? "#f0f0f0" : "#333",
                             }}
                           >
-                            <div
-                              style={{
-                                backgroundColor: value as string,
-                                width: 16,
-                                height: 16,
-                                borderRadius: "50%",
-                                marginRight: 4,
-                              }}
-                            />
+                            <ColorDots colors={[value]} />
                             {closable && (
                               <span
                                 onClick={onClose}
-                                style={{ cursor: "pointer", fontSize: 12 }}
+                                style={{
+                                  cursor: "pointer",
+                                  fontSize: 12,
+                                  fontWeight: 600,
+                                  color: "grey",
+                                }}
                               >
                                 ✕
                               </span>
@@ -183,13 +227,13 @@ export const AttributeItem = ({
       </Form.Item>
 
       <Form.Item
-        hidden
         {...field}
         name={[field.name, "isColor"]}
         valuePropName="checked"
         style={{ margin: 0 }}
+        hidden
       >
-        <Checkbox>Có phải màu sắc?</Checkbox>
+        <Checkbox></Checkbox>
       </Form.Item>
 
       <MinusCircleOutlined onClick={() => remove(field.name)} />

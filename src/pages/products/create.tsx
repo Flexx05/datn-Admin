@@ -3,19 +3,34 @@ import { PlusOutlined } from "@ant-design/icons";
 import { Create, useForm, useSelect } from "@refinedev/antd";
 import { HttpError } from "@refinedev/core";
 import MDEditor from "@uiw/react-md-editor";
-import { Button, Form, Input, Select, Upload, UploadFile, message } from "antd";
+import {
+  Button,
+  Form,
+  Input,
+  InputNumber,
+  Select,
+  Space,
+  Spin,
+  Upload,
+  UploadFile,
+  message,
+} from "antd";
 import axios from "axios";
-import dayjs from "dayjs";
-import { useMemo, useState } from "react";
-import { API_URL } from "../../config/dataProvider";
+import { useContext, useMemo, useState } from "react";
+import { CSSTransition, TransitionGroup } from "react-transition-group";
+import { CLOUDINARY_URL } from "../../config/dataProvider";
+import { ColorModeContext } from "../../contexts/color-mode";
 import { IAttribute } from "../../interface/attribute";
 import { IBrand } from "../../interface/brand";
 import { ICategory } from "../../interface/category";
+import { axiosInstance } from "../../utils/axiosInstance";
 import { AttributeItem } from "./AttributeItem";
 import { VariationItem } from "./VariationItem";
+import "./variation-animations.css";
+import Loader from "../../utils/loading";
 
 export const ProductCreate = () => {
-  const { formProps, saveButtonProps } = useForm({
+  const { formProps, saveButtonProps, formLoading } = useForm({
     successNotification: () => ({
       message: "🎉 Tạo sản phẩm thành công!",
       description: "Sản phẩm mới đã được thêm vào hệ thống.",
@@ -23,7 +38,7 @@ export const ProductCreate = () => {
     }),
     errorNotification: (error?: HttpError) => ({
       message:
-        "❌ Tạo sản phẩm thất bại! " + (error?.response?.data?.message ?? ""),
+        "❌ Tạo sản phẩm thất bại! " + (error?.response?.data?.error ?? ""),
       description: "Có lỗi xảy ra trong quá trình xử lý.",
       type: "error",
     }),
@@ -31,19 +46,14 @@ export const ProductCreate = () => {
 
   const [fileList, setFileList] = useState<UploadFile[]>([]);
   const [uploadedImageUrls, setUploadedImageUrls] = useState<string[]>([]);
+  const { mode } = useContext(ColorModeContext);
+  const colorMode = mode === "light" ? "light" : "dark";
 
-  const normFile = (e: any) => e?.fileList?.slice(0, 5);
-
-  const handleChange = async ({
-    fileList: newFileList,
-  }: {
-    fileList: UploadFile[];
-  }) => {
+  const handleUpload = async (newFileList: UploadFile[]) => {
     const updatedFileList = newFileList.slice(0, 5).map((file) => ({
       ...file,
       status: file.status || "uploading",
     }));
-
     setFileList(updatedFileList);
 
     const newUploadedUrls: string[] = [];
@@ -52,37 +62,44 @@ export const ProductCreate = () => {
       const file = updatedFileList[i];
       const originFile = file.originFileObj as File;
 
+      if (!originFile.type.startsWith("image/")) {
+        message.error("Vui lòng chỉ tải lên ảnh.");
+        return;
+      }
+
       if (!file.url && originFile) {
         try {
           const formData = new FormData();
           formData.append("file", originFile);
           formData.append("upload_preset", "Binova_Upload");
 
-          const { data } = await axios.post(
-            "https://api.cloudinary.com/v1_1/dtwm0rpqg/image/upload",
-            formData
-          );
+          const { data } = await axios.post(CLOUDINARY_URL, formData);
+
+          let fileUrl = data.secure_url;
+
+          if (originFile.type.startsWith("image/")) {
+            // Chuyển URL sang định dạng WebP bằng cách thêm `.webp` và /upload/f_auto/ nếu cần
+            fileUrl = fileUrl.replace("/upload/", "/upload/f_webp/");
+          }
 
           updatedFileList[i] = {
             ...updatedFileList[i],
+            url: fileUrl,
             status: "done",
-            url: data.secure_url,
           };
-          message.success(`Tải ảnh lên thành công: ${file.name}`);
-          newUploadedUrls.push(data.secure_url);
+          newUploadedUrls.push(fileUrl);
         } catch (error) {
           updatedFileList[i] = {
             ...updatedFileList[i],
             status: "error",
           };
-          message.error(`❌ Lỗi khi upload ảnh: ${file.name}`);
+          message.error(`❌ Lỗi khi upload file: ${file.name}`);
         }
       } else if (file.url) {
         newUploadedUrls.push(file.url);
       }
     }
-
-    setFileList([...updatedFileList]);
+    setFileList(updatedFileList);
     setUploadedImageUrls(newUploadedUrls);
   };
 
@@ -91,6 +108,9 @@ export const ProductCreate = () => {
     optionLabel: "name",
     optionValue: "_id",
     pagination: { mode: "off" },
+    meta: {
+      _limit: "off",
+    },
   });
 
   const { queryResult: brand } = useSelect({
@@ -98,6 +118,9 @@ export const ProductCreate = () => {
     optionLabel: "name",
     optionValue: "_id",
     pagination: { mode: "off" },
+    meta: {
+      _limit: "off",
+    },
   });
 
   const { queryResult: attribute } = useSelect({
@@ -106,7 +129,8 @@ export const ProductCreate = () => {
     optionValue: "_id",
     pagination: { mode: "off" },
     meta: {
-      fields: ["isColor"],
+      fields: ["isColor", "values", "name", "isActive"],
+      _limit: "off",
     },
   });
 
@@ -126,8 +150,13 @@ export const ProductCreate = () => {
   );
 
   const categoryOptions = useMemo(() => {
-    return allCategories
-      .filter((item: ICategory) => item.parentId !== null && item.isActive)
+    // Lấy tất cả danh mục con từ subCategories
+    const subCategories = allCategories.flatMap(
+      (cat) => cat.subCategories || []
+    );
+    // Gộp tất cả danh mục con vào một mảng
+    return subCategories
+      .filter((item) => item.isActive)
       .map((item) => ({
         label: item.name,
         value: item._id,
@@ -150,8 +179,20 @@ export const ProductCreate = () => {
         return;
       }
 
+      if (values.variation && values.variation.length === 0) {
+        message.error("Bạn chưa tạo biến thể sản phẩm.");
+        return;
+      }
+
+      if (values.name && typeof values.name === "string") {
+        values.name = values.name.trim();
+      }
+
       // Kiểm tra danh mục còn hoạt động
-      const selectedCategory = allCategories.find(
+      const allSubCategories = allCategories.flatMap(
+        (cat) => cat.subCategories || []
+      );
+      const selectedCategory = allSubCategories.find(
         (cat) => cat._id === values.categoryId
       );
       if (!selectedCategory || !selectedCategory.isActive) {
@@ -183,18 +224,6 @@ export const ProductCreate = () => {
         return;
       }
 
-      // Kiểm tra ngày kết thúc không trước ngày bắt đầu
-      const hasInvalidDateRange = values.variation?.some((variation: any) => {
-        const start = variation.saleForm ? dayjs(variation.saleForm) : null;
-        const end = variation.saleTo ? dayjs(variation.saleTo) : null;
-        return start && end && end.isBefore(start);
-      });
-
-      if (hasInvalidDateRange) {
-        message.error("Ngày kết thúc giảm giá không được trước ngày bắt đầu.");
-        return;
-      }
-
       // Chuẩn hóa dữ liệu biến thể
       const normalizedVariations = (values.variation || []).map(
         (variation: any) => {
@@ -207,12 +236,7 @@ export const ProductCreate = () => {
           return {
             ...variation,
             image: imageUrl,
-            saleForm: variation.saleForm
-              ? dayjs(variation.saleForm).format("YYYY-MM-DD")
-              : undefined,
-            saleTo: variation.saleTo
-              ? dayjs(variation.saleTo).format("YYYY-MM-DD")
-              : undefined,
+            // Đã xóa xử lý saleFrom và saleTo
           };
         }
       );
@@ -231,138 +255,238 @@ export const ProductCreate = () => {
   };
 
   return (
-    <Create saveButtonProps={saveButtonProps} title="Tạo sản phẩm">
-      <Form {...formProps} layout="vertical" onFinish={handleFinish}>
-        <Form.Item
-          label="Tên sản phẩm"
-          name="name"
-          rules={[{ required: true, message: "Vui lòng nhập tên sản phẩm" }]}
-        >
-          <Input />
-        </Form.Item>
-
-        <Form.Item
-          label="Hình ảnh"
-          name="image"
-          valuePropName="fileList"
-          rules={[{ required: true, message: "Vui chọn hình ảnh" }]}
-          getValueFromEvent={normFile}
-        >
-          <Upload
-            listType="picture-card"
-            fileList={fileList}
-            onChange={handleChange}
-            maxCount={5}
-            beforeUpload={() => false}
+    <Create
+      saveButtonProps={saveButtonProps}
+      title="Tạo sản phẩm"
+      isLoading={false}
+    >
+      <Spin
+        spinning={
+          formLoading ||
+          category?.isLoading ||
+          brand?.isLoading ||
+          attribute?.isLoading
+        }
+        indicator={<Loader />}
+      >
+        <Form {...formProps} layout="vertical" onFinish={handleFinish}>
+          <Form.Item
+            label="Tên sản phẩm"
+            name="name"
+            rules={[
+              { required: true, message: "Vui lòng nhập tên sản phẩm" },
+              { min: 3, message: "Tên sản phẩm phải có ít nhất 3 ký tự" },
+              {
+                max: 100,
+                message: "Tên sản phẩm không được vượt quá 100 ký tự",
+              },
+              {
+                pattern: /^[\p{L}0-9\s]+$/u,
+                message: "Tên sản phẩm không được chứa ký tự đặc biệt",
+              },
+            ]}
           >
-            {fileList.length >= 5 ? null : (
-              <div>
-                <PlusOutlined />
-                <div style={{ marginTop: 8 }}>Tải ảnh</div>
-              </div>
-            )}
-          </Upload>
-        </Form.Item>
-
-        <Form.Item label="Mô tả" name="description">
-          <MDEditor data-color-mode="dark" />
-        </Form.Item>
-
-        <Form.Item
-          label="Danh mục"
-          name="categoryId"
-          rules={[{ required: true, message: "Vui lòng chọn danh mục" }]}
-        >
-          <Select loading={category?.isLoading} options={categoryOptions} />
-        </Form.Item>
-
-        <Form.Item
-          label="Thương hiệu"
-          name="brandId"
-          rules={[{ required: true, message: "Vui lòng chọn thương hiệu" }]}
-        >
-          <Select loading={brand?.isLoading} options={brandOptions} />
-        </Form.Item>
-
-        <Form.Item
-          label="Thuộc tính"
-          rules={[{ required: true, message: "Thuộc tính bắt buộc nhập" }]}
-        >
-          <Form.List name="attributes">
-            {(fields, { add, remove }) => (
-              <>
-                {fields.map((field) => (
-                  <AttributeItem
-                    key={field.key}
-                    field={field}
-                    remove={remove}
-                    allAttributes={allAttributes}
-                    form={formProps.form}
-                  />
-                ))}
-                <Form.Item>
-                  <Button
-                    type="dashed"
-                    onClick={() => add()}
-                    icon={<PlusOutlined />}
-                    block
-                  >
-                    Thêm thuộc tính
-                  </Button>
-                </Form.Item>
-              </>
-            )}
-          </Form.List>
-
-          <Form.Item label={null}>
-            <Button
-              onClick={async () => {
-                try {
-                  const response = await axios.post(
-                    `${API_URL}/product/generate-variations`,
-                    {
-                      attributes: formProps.form?.getFieldValue("attributes"),
-                    }
-                  );
-
-                  const generatedVariations = response.data.variation.map(
-                    (item: any) => ({
-                      attributes: item.attributes || [],
-                      regularPrice: 0,
-                      stock: 0,
-                    })
-                  );
-
-                  await formProps.form?.setFieldsValue({
-                    variation: generatedVariations,
-                  });
-
-                  message.success("Tạo biến thể thành công!");
-                } catch (error) {
-                  message.error("Lỗi khi tạo biến thể!");
-                }
-              }}
-            >
-              Tạo sản phẩm biến thể
-            </Button>
+            <Input />
           </Form.Item>
 
-          <Form.List name="variation">
-            {(fields, { remove }) => (
-              <>
-                {fields.map((field) => (
-                  <VariationItem
-                    key={field.key}
-                    field={field}
-                    remove={remove}
-                    form={formProps.form}
+          <Form.Item
+            label="Hình ảnh"
+            name="image"
+            rules={[{ required: true, message: "Vui chọn hình ảnh" }]}
+          >
+            <Upload
+              listType="picture-card"
+              fileList={fileList}
+              onChange={(e) => handleUpload(e.fileList)}
+              maxCount={5}
+              beforeUpload={() => false}
+            >
+              {fileList.length >= 5 ? null : (
+                <div>
+                  <PlusOutlined />
+                  <div style={{ marginTop: 8 }}>Tải ảnh</div>
+                </div>
+              )}
+            </Upload>
+          </Form.Item>
+
+          <Form.Item label="Mô tả" name="description">
+            <MDEditor data-color-mode={colorMode} />
+          </Form.Item>
+
+          <Form.Item
+            label="Danh mục"
+            name="categoryId"
+            rules={[{ required: true, message: "Vui lòng chọn danh mục" }]}
+          >
+            <Select loading={category?.isLoading} options={categoryOptions} />
+          </Form.Item>
+
+          <Form.Item
+            label="Thương hiệu"
+            name="brandId"
+            rules={[{ required: true, message: "Vui lòng chọn thương hiệu" }]}
+          >
+            <Select loading={brand?.isLoading} options={brandOptions} />
+          </Form.Item>
+
+          <Form.Item
+            label="Thuộc tính"
+            name="attributes"
+            rules={[{ required: true, message: "Thuộc tính bắt buộc nhập" }]}
+          >
+            <Form.List name="attributes">
+              {(fields, { add, remove }) => (
+                <>
+                  {fields.map((field) => (
+                    <AttributeItem
+                      key={field.key}
+                      field={field}
+                      remove={remove}
+                      allAttributes={allAttributes}
+                      form={formProps.form}
+                    />
+                  ))}
+                  <Form.Item>
+                    <Button
+                      type="dashed"
+                      onClick={() => add()}
+                      icon={<PlusOutlined />}
+                      block
+                    >
+                      Thêm thuộc tính
+                    </Button>
+                  </Form.Item>
+                </>
+              )}
+            </Form.List>
+
+            <Form.Item label={null}>
+              <Button
+                onClick={async () => {
+                  try {
+                    const attributes =
+                      formProps.form?.getFieldValue("attributes");
+
+                    if (!attributes || attributes.length === 0) {
+                      message.error("Vui lòng thêm thuộc tính trước!");
+                      return;
+                    }
+                    const response = await axiosInstance.post(
+                      `/product/generate-variations`,
+                      {
+                        attributes,
+                      }
+                    );
+
+                    const generatedVariations = response.data.variation.map(
+                      (item: any) => ({
+                        attributes: item.attributes || [],
+                        regularPrice: 0,
+                        stock: 0,
+                      })
+                    );
+
+                    await formProps.form?.setFieldsValue({
+                      variation: generatedVariations,
+                    });
+
+                    message.success("Tạo biến thể thành công!");
+                  } catch (error: any) {
+                    message.error(
+                      "Lỗi khi tạo biến thể! " + error.response.data.error ||
+                        error.response.data.message
+                    );
+                  }
+                }}
+              >
+                Tạo sản phẩm biến thể
+              </Button>
+            </Form.Item>
+
+            <Form.Item label="Áp dụng hàng loạt cho biến thể">
+              <Space.Compact style={{ display: "flex", gap: 12 }}>
+                <Form.Item name="regularPrice" noStyle>
+                  <InputNumber
+                    placeholder="Giá gốc"
+                    min={1000}
+                    style={{ width: 120 }}
                   />
-                ))}
-              </>
-            )}
-          </Form.List>
-        </Form.Item>
-      </Form>
+                </Form.Item>
+                <Form.Item name="salePrice" noStyle>
+                  <InputNumber
+                    placeholder="Giá giảm"
+                    min={1000}
+                    style={{ width: 120 }}
+                  />
+                </Form.Item>
+                <Form.Item name="stock" noStyle>
+                  <InputNumber
+                    placeholder="Tồn kho"
+                    min={0}
+                    style={{ width: 120 }}
+                  />
+                </Form.Item>
+                <Button
+                  type="primary"
+                  onClick={() => {
+                    const values = formProps.form?.getFieldsValue([
+                      "defaultPrice",
+                      "defaultSalePrice",
+                      "defaultStock",
+                      "variation",
+                    ]);
+
+                    const {
+                      defaultPrice,
+                      defaultSalePrice,
+                      defaultStock,
+                      variation,
+                    } = values;
+
+                    if (!variation || variation.length === 0) {
+                      message.warning("Chưa có biến thể để áp dụng.");
+                      return;
+                    }
+
+                    const updated = variation.map((item: any) => ({
+                      ...item,
+                      regularPrice: defaultPrice ?? item.regularPrice,
+                      salePrice: defaultSalePrice ?? item.salePrice,
+                      stock: defaultStock ?? item.stock,
+                    }));
+
+                    formProps.form?.setFieldsValue({ variation: updated });
+                    message.success("✅ Đã áp dụng cho tất cả biến thể!");
+                  }}
+                >
+                  Áp dụng
+                </Button>
+              </Space.Compact>
+            </Form.Item>
+
+            <Form.List name="variation">
+              {(fields, { remove }) => (
+                <TransitionGroup>
+                  {fields.map((field) => (
+                    <CSSTransition
+                      key={field.key}
+                      timeout={400}
+                      classNames="variation-fade"
+                    >
+                      <VariationItem
+                        field={field}
+                        remove={remove}
+                        form={formProps.form}
+                      />
+                    </CSSTransition>
+                  ))}
+                </TransitionGroup>
+              )}
+            </Form.List>
+          </Form.Item>
+        </Form>
+      </Spin>
     </Create>
   );
 };

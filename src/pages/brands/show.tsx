@@ -1,27 +1,18 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Show } from "@refinedev/antd";
 import { useShow } from "@refinedev/core";
-import {
-  Card,
-  Col,
-  Image,
-  Row,
-  Skeleton,
-  Typography,
-  Tag,
-  message,
-} from "antd";
+import { Card, Col, Image, message, Row, Spin, Tag, Typography } from "antd";
 import dayjs from "dayjs";
 import { useEffect, useRef, useState } from "react";
 import { IBrand } from "../../interface/brand";
+import Loader from "../../utils/loading";
 
 const { Title, Text } = Typography;
 
 export const BrandShow = () => {
   const { queryResult } = useShow({
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     errorNotification: (error: any) => ({
-      message:
-        "❌ Lỗi hệ thống " + (error.response?.data?.message | error.message),
+      message: "❌ Lỗi hệ thống " + error.response?.data?.error,
       description: "Có lỗi xảy ra trong quá trình xử lý.",
       type: "error" as const,
     }),
@@ -60,11 +51,9 @@ export const BrandShow = () => {
   }, [lastStatus, refetch]);
 
   return (
-    <Show isLoading={isLoading} canDelete={false} title="Chi tiết thương hiệu">
-      <Card bordered style={{ maxWidth: 600, margin: "0 auto" }}>
-        {isLoading ? (
-          <Skeleton active />
-        ) : (
+    <Show isLoading={false} canDelete={false} title="Chi tiết thương hiệu">
+      <Spin spinning={isLoading} indicator={<Loader />}>
+        <Card bordered style={{ maxWidth: 600, margin: "0 auto" }}>
           <Row gutter={[16, 16]} justify="center">
             <Col span={24} style={{ textAlign: "center" }}>
               <Image
@@ -96,6 +85,11 @@ export const BrandShow = () => {
             </Col>
 
             <Col span={24}>
+              <Text strong>Đường dẫn: </Text>
+              <Text>{record?.slug || "Không rõ"}</Text>
+            </Col>
+
+            <Col span={24}>
               <Text strong>Ngày tạo: </Text>
               <Text>
                 {record?.createdAt
@@ -113,8 +107,8 @@ export const BrandShow = () => {
               </Text>
             </Col>
           </Row>
-        )}
-      </Card>
+        </Card>
+      </Spin>
     </Show>
   );
 };

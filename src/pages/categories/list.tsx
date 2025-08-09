@@ -1,5 +1,4 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { PlusCircleOutlined } from "@ant-design/icons";
 import {
   DeleteButton,
   EditButton,
@@ -8,28 +7,55 @@ import {
   useTable,
 } from "@refinedev/antd";
 import { useInvalidate } from "@refinedev/core";
-import { Input, message, Popconfirm, Space, Table, Typography } from "antd";
+import {
+  Button,
+  Input,
+  message,
+  Popconfirm,
+  Space,
+  Table,
+  Tabs,
+  Tooltip,
+  Typography,
+} from "antd";
 import axios from "axios";
-import { useState } from "react";
+import dayjs from "dayjs";
+import { useCallback, useState } from "react";
 import { API_URL } from "../../config/dataProvider";
 import { ICategory } from "../../interface/category";
+import Loader from "../../utils/loading";
+import { useAuth } from "../../contexts/auth/AuthContext";
 
 export const CategoryList = () => {
+  const [filterActive, setFilterActive] = useState<boolean>(true);
   const { tableProps, setFilters } = useTable<ICategory>({
     syncWithLocation: true,
+    permanentFilter: [
+      {
+        field: "isActive",
+        operator: "eq",
+        value: filterActive,
+      },
+    ],
+    onSearch: (value) => [
+      {
+        field: "search",
+        operator: "contains",
+        value: value,
+      },
+    ],
+
     errorNotification: (error: any) => ({
-      message:
-        "❌ Lỗi hệ thống " + (error.response?.data?.message || error.message),
+      message: "❌ Lỗi hệ thống " + error.response?.data?.error,
       description: "Có lỗi xảy ra trong quá trình xử lý.",
       type: "error",
     }),
   });
 
   const invalidate = useInvalidate();
-  const [loadingId, setLoadingId] = useState<string | number | null>(null);
+  const { user } = useAuth();
 
   const handleChangeStatus = async (record: ICategory) => {
-    setLoadingId(record._id);
     try {
       await axios.patch(`${API_URL}/category/edit/${record._id}`, {
         parentId: record.parentId,
@@ -44,24 +70,169 @@ export const CategoryList = () => {
       });
     } catch (error) {
       message.error("Cập nhật trạng thái thất bại");
-    } finally {
-      setLoadingId(null);
     }
   };
 
+  const handleTabChange = useCallback(
+    (key: string) => {
+      const isActiveFilter = key === "active";
+      setFilterActive(isActiveFilter);
+
+      // Cập nhật lại filter mới
+      setFilters(
+        [
+          {
+            field: "isActive",
+            operator: "eq",
+            value: isActiveFilter,
+          },
+        ],
+        "replace"
+      );
+    },
+    [setFilters]
+  );
+
+  const handleSearch = useCallback(
+    (value: string) => {
+      setFilters(
+        value
+          ? [
+              {
+                field: "search",
+                operator: "contains",
+                value,
+              },
+              {
+                field: "isActive",
+                operator: "eq",
+                value: filterActive,
+              },
+            ]
+          : [
+              {
+                field: "isActive",
+                operator: "eq",
+                value: filterActive,
+              },
+            ],
+        "replace"
+      );
+    },
+    [filterActive, setFilters]
+  );
+
+  const columns = [
+    {
+      dataIndex: "stt",
+      title: "STT",
+      render: (_: unknown, __: ICategory, index: number) => index + 1,
+      width: 60,
+    },
+    {
+      dataIndex: "name",
+      title: "Tên danh mục",
+      width: 200,
+    },
+    {
+      dataIndex: "slug",
+      title: "Đường dẫn",
+      width: 200,
+    },
+    {
+      dataIndex: "countProduct",
+      title: "Số sản phẩm trong danh mục",
+      width: 180,
+    },
+    {
+      dataIndex: "createdAt",
+      title: "Ngày tạo",
+      render: (value: string) => (
+        <Typography.Text>{dayjs(value).format("DD/MM/YYYY")}</Typography.Text>
+      ),
+      width: 100,
+      sorter: (a: ICategory, b: ICategory) =>
+        new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
+    },
+    {
+      title: "Hành động",
+      dataIndex: "actions",
+      render: (_: unknown, record: ICategory) => {
+        const isUnknown = record.slug === "danh-muc-khong-xac-dinh";
+        return (
+          <Space>
+            <Tooltip title="Chỉnh sửa danh mục">
+              <EditButton
+                hideText
+                size="small"
+                recordItemId={record._id}
+                hidden={!record.isActive || isUnknown}
+              />
+            </Tooltip>
+            <Tooltip title="Xem chi tiết">
+              <ShowButton
+                hideText
+                size="small"
+                recordItemId={record._id}
+                hidden={!record.isActive}
+              />
+            </Tooltip>
+            <DeleteButton
+              hideText
+              size="small"
+              recordItemId={record._id}
+              confirmTitle={
+                record.isActive
+                  ? `Bạn chắc chắn chuyển vào thùng rác ${
+                      record.countProduct &&
+                      `và chuyển ${record.countProduct} sản phẩm vào Danh mục không xác định`
+                    } không ?`
+                  : "Bạn chắc chắn xóa vĩnh viễn không ?"
+              }
+              confirmCancelText="Hủy"
+              confirmOkText="Xóa"
+              hidden={isUnknown}
+            />
+            {record.isActive === false && user?.role === "admin" && (
+              <Popconfirm
+                title="Bạn chắc chắn kích hoạt hiệu lực không ?"
+                onConfirm={() => handleChangeStatus(record)}
+                okText="Kích hoạt"
+                cancelText="Hủy"
+              >
+                <Button size="small" type="default">
+                  Kích hoạt
+                </Button>
+              </Popconfirm>
+            )}
+          </Space>
+        );
+      },
+      width: 150,
+    },
+  ];
+
   return (
     <List title={"Quản lý danh mục"}>
+      <Tabs
+        activeKey={filterActive ? "active" : "trash"}
+        onChange={handleTabChange}
+        style={{ marginBottom: 16 }}
+      >
+        <Tabs.TabPane tab="Danh mục đang hoạt động" key="active" />
+        <Tabs.TabPane tab="Thùng rác" key="trash" />
+      </Tabs>
       <Input.Search
         placeholder="Tìm kiếm danh mục"
         allowClear
-        onSearch={(value) =>
-          setFilters([{ field: "name", operator: "eq", value }], "replace")
-        }
-        style={{ marginBottom: 16, maxWidth: 300 }}
+        onSearch={handleSearch}
+        style={{ marginBottom: 16, maxWidth: 200 }}
       />
       <Table
         {...tableProps}
+        loading={tableProps.loading ? { indicator: <Loader /> } : undefined}
         rowKey="_id"
+        columns={columns}
         expandable={{
           expandedRowRender: (record: ICategory) => {
             const children = record.subCategories;
@@ -77,143 +248,17 @@ export const CategoryList = () => {
             return (
               <Table
                 dataSource={children}
+                columns={columns}
                 pagination={false}
                 rowKey="_id"
-                size="small"
+                size="large"
                 showHeader={false}
-              >
-                <Table.Column
-                  dataIndex="stt"
-                  render={(_: unknown, __: ICategory, index: number) =>
-                    index + 1
-                  }
-                  width={200}
-                />
-                <Table.Column dataIndex="name" width={420} />
-                <Table.Column
-                  render={(child: ICategory) =>
-                    child.isActive ? "Có hiệu lực" : "Không có hiệu lực"
-                  }
-                />
-                <Table.Column
-                  dataIndex="actions"
-                  width={330}
-                  render={(_, child: ICategory) => (
-                    <Space>
-                      <EditButton
-                        hideText
-                        size="small"
-                        recordItemId={child._id}
-                      />
-                      <ShowButton
-                        hideText
-                        size="small"
-                        recordItemId={child._id}
-                      />
-                      {child.isActive ? (
-                        <DeleteButton
-                          hideText
-                          size="small"
-                          recordItemId={child._id}
-                          confirmTitle="Bạn chắc chắn xóa không ?"
-                          confirmCancelText="Hủy"
-                          confirmOkText="Xóa"
-                          loading={loadingId === child._id}
-                        />
-                      ) : (
-                        <Popconfirm
-                          title="Bạn chắc chắn kích hoạt hiệu lực không ?"
-                          onConfirm={() => handleChangeStatus(child)}
-                          okText="Kích hoạt"
-                          cancelText="Hủy"
-                          okButtonProps={{ loading: loadingId === child._id }}
-                        >
-                          <PlusCircleOutlined
-                            style={{
-                              border: "1px solid #404040",
-                              borderRadius: "20%",
-                              padding: 4,
-                              cursor: "pointer",
-                              opacity: loadingId === child._id ? 0.5 : 1,
-                            }}
-                          />
-                        </Popconfirm>
-                      )}
-                    </Space>
-                  )}
-                />
-              </Table>
+              />
             );
           },
           rowExpandable: (record) => !!record.subCategories?.length,
         }}
-      >
-        <Table.Column
-          dataIndex="stt"
-          title="STT"
-          render={(_: unknown, __: ICategory, index: number) => index + 1}
-        />
-        <Table.Column dataIndex="name" title="Tên danh mục" width={430} />
-        <Table.Column
-          width={400}
-          title="Trạng thái"
-          dataIndex="isActive"
-          filters={[
-            { text: "Có hiệu lực", value: true },
-            { text: "Không có hiệu lực", value: false },
-          ]}
-          onFilter={(value, record) => {
-            return (
-              record.isActive === value ||
-              record.subCategories?.some(
-                (child: ICategory) => child.isActive === value
-              )
-            );
-          }}
-          render={(value: boolean) =>
-            value ? "Có hiệu lực" : "Không có hiệu lực"
-          }
-        />
-        <Table.Column
-          title="Hành động"
-          dataIndex="actions"
-          render={(_, record: ICategory) => (
-            <Space>
-              <EditButton hideText size="small" recordItemId={record._id} />
-              <ShowButton hideText size="small" recordItemId={record._id} />
-              {record.isActive ? (
-                <DeleteButton
-                  hideText
-                  size="small"
-                  recordItemId={record._id}
-                  confirmTitle="Bạn chắc chắn xóa không ?"
-                  confirmCancelText="Hủy"
-                  confirmOkText="Xóa"
-                  loading={loadingId === record._id}
-                />
-              ) : (
-                <Popconfirm
-                  title="Bạn chắc chắn kích hoạt hiệu lực không ?"
-                  onConfirm={() => handleChangeStatus(record)}
-                  okText="Kích hoạt"
-                  cancelText="Hủy"
-                  okButtonProps={{ loading: loadingId === record._id }}
-                >
-                  <PlusCircleOutlined
-                    style={{
-                      border: "1px solid #404040",
-                      borderRadius: "20%",
-                      padding: 4,
-                      cursor: "pointer",
-                      opacity: loadingId === record._id ? 0.5 : 1,
-                    }}
-                  />
-                </Popconfirm>
-              )}
-            </Space>
-          )}
-        />
-      </Table>
+      />
     </List>
   );
 };
