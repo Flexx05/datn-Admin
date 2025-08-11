@@ -1,5 +1,13 @@
 import React, { useState, useEffect } from "react";
-import { Form, Input, InputNumber, DatePicker, Select, Tag } from "antd";
+import {
+  Form,
+  Input,
+  InputNumber,
+  DatePicker,
+  Select,
+  Tag,
+  message,
+} from "antd";
 import { HttpError } from "@refinedev/core";
 import { Edit, useForm } from "@refinedev/antd";
 import dayjs from "dayjs";
@@ -162,6 +170,77 @@ const VoucherEdit = () => {
       });
     }
   }, [userIds, formProps.form]);
+
+  const [currentStatus, setCurrentStatus] = useState<string | undefined>(
+    undefined
+  );
+
+  useEffect(() => {
+    if (record?.voucherStatus) {
+      setCurrentStatus(record.voucherStatus); // Cập nhật ngay khi có record
+    }
+  }, [record?.voucherStatus]);
+
+  useEffect(() => {
+    if (!record?._id || !currentStatus) return;
+
+    let timeoutId: NodeJS.Timeout;
+    let intervalId: NodeJS.Timeout;
+
+    const fetchLatestStatus = async () => {
+      try {
+        const res = await axiosInstance.get(`/vouchers/id/${record._id}`);
+        const latest = res.data?.data;
+        if (!latest) return;
+
+        if (latest.voucherStatus !== currentStatus) {
+          message.warning(
+            `Trạng thái voucher đã thay đổi từ "${currentStatus}" sang "${latest.voucherStatus}"`
+          );
+
+          // Update form
+          formProps.form?.setFieldsValue({
+            dateRange: [dayjs(latest.startDate), dayjs(latest.endDate)],
+            quantity: latest.quantity,
+            userIds: latest.userIds || [],
+          });
+
+          // Refetch UI
+          queryResult?.refetch();
+
+          // Update state
+          setCurrentStatus(latest.voucherStatus);
+        }
+      } catch (err) {
+        console.error("Lỗi khi kiểm tra trạng thái voucher:", err);
+      }
+    };
+
+    // Check lần đầu
+    fetchLatestStatus();
+
+    // Đặt giờ thay đổi tiếp theo
+    const now = dayjs();
+    const nextChangeTime =
+      currentStatus === "inactive"
+        ? dayjs(record.startDate)
+        : currentStatus === "active"
+        ? dayjs(record.endDate)
+        : null;
+
+    if (nextChangeTime && nextChangeTime.isAfter(now)) {
+      const msUntilChange = nextChangeTime.diff(now, "millisecond");
+      timeoutId = setTimeout(fetchLatestStatus, msUntilChange);
+    }
+
+    // Polling dự phòng
+    intervalId = setInterval(fetchLatestStatus, 60000);
+
+    return () => {
+      clearTimeout(timeoutId);
+      clearInterval(intervalId);
+    };
+  }, [record?._id, currentStatus]);
 
   return (
     <Edit saveButtonProps={saveButtonProps} title="Cập nhật Voucher">
