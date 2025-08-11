@@ -174,10 +174,16 @@ const VoucherEdit = () => {
   const [currentStatus, setCurrentStatus] = useState<string | undefined>(
     undefined
   );
+  const [isFormDisabled, setIsFormDisabled] = useState(false);
 
   useEffect(() => {
     if (record?.voucherStatus) {
-      setCurrentStatus(record.voucherStatus); // Cập nhật ngay khi có record
+      setCurrentStatus(record.voucherStatus);
+
+      // Nếu voucher đã hết hạn
+      if (record.voucherStatus === "expired") {
+        setIsFormDisabled(true);
+      }
     }
   }, [record?.voucherStatus]);
 
@@ -197,6 +203,11 @@ const VoucherEdit = () => {
           message.warning(
             `Trạng thái voucher đã thay đổi từ "${currentStatus}" sang "${latest.voucherStatus}"`
           );
+
+          if (latest.voucherStatus === "expired") {
+            message.warning("Voucher đã hết hạn, không thể chỉnh sửa");
+            setIsFormDisabled(true);
+          }
 
           // Update form
           formProps.form?.setFieldsValue({
@@ -243,8 +254,16 @@ const VoucherEdit = () => {
   }, [record?._id, currentStatus]);
 
   return (
-    <Edit saveButtonProps={saveButtonProps} title="Cập nhật Voucher">
-      <Form {...formProps} layout="vertical" onFinish={handleFinish}>
+    <Edit
+      saveButtonProps={{ ...saveButtonProps, disabled: isFormDisabled }}
+      title="Cập nhật Voucher"
+    >
+      <Form
+        {...formProps}
+        layout="vertical"
+        onFinish={handleFinish}
+        disabled={isFormDisabled}
+      >
         <Form.Item
           label="Loại voucher"
           name="voucherType"
@@ -526,7 +545,7 @@ const VoucherEdit = () => {
           ]}
         >
           <InputNumber
-            disabled={userIds.length > 0}
+            disabled={isFormDisabled || userIds.length > 0}
             style={{ width: "100%" }}
             placeholder="Nhập số lượng voucher"
           />
@@ -569,10 +588,12 @@ const VoucherEdit = () => {
               }
               return {};
             }}
+            // Khi voucher đã hết hạn thì disable toàn bộ, còn khi đang hoạt động thì chỉ disable ngày bắt đầu
             disabled={[
-              record?.voucherStatus === "active" ||
-                dayjs(record?.startDate).isBefore(dayjs(), "minute"), // disable startDate
-              false, // endDate vẫn cho chỉnh
+              isFormDisabled ||
+                record?.voucherStatus === "active" ||
+                dayjs(record?.startDate).isBefore(dayjs(), "minute"),
+              isFormDisabled,
             ]}
           />
         </Form.Item>

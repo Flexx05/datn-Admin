@@ -40,7 +40,7 @@ const VoucherShow = () => {
     );
 
   return (
-    <Show>
+    <Show canEdit={voucher?.voucherStatus !== "expired" && !voucher?.isAuto}>
       <Title level={4}>Chi tiết Voucher</Title>
       <Divider />
       <Descriptions
