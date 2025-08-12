@@ -54,7 +54,7 @@ const CustomerLoyaltyRanking = () => {
   }, [ordersData]);
 
   return (
-    <Card title="Xếp hạng khách hàng thân thiết" loading={isLoading}>
+    <Card title="Xếp hạng khách hàng thân thiết (theo 90 ngày gần nhất)" loading={isLoading}>
       <Table
         dataSource={ranking}
         rowKey="userId"
