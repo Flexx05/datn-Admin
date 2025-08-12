@@ -5,7 +5,6 @@ import {
   EyeOutlined,
   TruckOutlined,
   UndoOutlined,
-  MessageOutlined, 
 } from "@ant-design/icons";
 import { List, useTable } from "@refinedev/antd";
 import { useInvalidate } from "@refinedev/core";
@@ -32,6 +31,7 @@ import { Order } from "../../interface/order";
 import { socket } from "../../socket";
 import { axiosInstance } from "../../utils/axiosInstance";
 import { statusMap } from "../dashboard/statusMap";
+import ButtonChat from "./ButtonChat";
 import { formatCurrency } from "./formatCurrency";
 
 // Định nghĩa interface cho yêu cầu hoàn hàng
@@ -91,19 +91,7 @@ const ReturnRequestActions: React.FC<{
   const isLoading = loadingId === record._id;
 
   // Nút chat
-  const chatButton = (
-    <Tooltip title="Chat với khách hàng">
-      <Button
-        size="small"
-        icon={<MessageOutlined />}
-        onClick={() => {
-          console.log(`${record._id}`);
-        }}
-      >
-        Chat
-      </Button>
-    </Tooltip>
-  );
+  const chatButton = <ButtonChat record={record.orderId} />;
 
   switch (record.status) {
     case 0: // Chờ duyệt
@@ -190,19 +178,7 @@ const OrderActions: React.FC<{
   const isLoading = loadingId === record._id;
 
   // Nút chat
-  const chatButton = (
-    <Tooltip title="Chat với khách hàng">
-      <Button
-        size="small"
-        icon={<MessageOutlined />}
-        onClick={() => {
-          console.log(`${record._id}`);
-        }}
-      >
-        Chat
-      </Button>
-    </Tooltip>
-  );
+  const chatButton = <ButtonChat record={record} />;
 
   switch (record.status) {
     case 0: // Chờ xác nhận
@@ -296,7 +272,7 @@ const OrderActions: React.FC<{
         </Popconfirm>
       );
 
-    // case 3: 
+    // case 3:
     //   return <Space>{chatButton}</Space>;
 
     case 4: // Hoàn thành
