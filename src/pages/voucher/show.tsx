@@ -16,7 +16,7 @@ const VoucherShow = () => {
   useEffect(() => {
     if (voucher?.userIds && voucher.userIds.length > 0) {
       axiosInstance
-        .get("/admin/users?isActive=true")
+        .get("/admin/users?isActive=true&_limit=off")
         .then((res) => {
           const allUsers = res.data?.docs || res.data || [];
           const voucherUserIds = voucher.userIds.map((id: any) =>
@@ -40,7 +40,7 @@ const VoucherShow = () => {
     );
 
   return (
-    <Show>
+    <Show canEdit={voucher?.voucherStatus !== "expired" && !voucher?.isAuto}>
       <Title level={4}>Chi tiết Voucher</Title>
       <Divider />
       <Descriptions
@@ -117,7 +117,7 @@ const VoucherShow = () => {
             {voucher?.maxDiscount?.toLocaleString()}đ
           </Descriptions.Item>
         )}
-        <Descriptions.Item label="Số lượng tổng cộng">
+        <Descriptions.Item label="Số lượng">
           {voucher?.quantity}
         </Descriptions.Item>
 
@@ -135,6 +135,12 @@ const VoucherShow = () => {
           {voucher?.voucherStatus === "expired" && (
             <Tag color="red">Hết hạn</Tag>
           )}
+        </Descriptions.Item>
+
+        <Descriptions.Item label="Loại tạo">
+          <Tag color={voucher?.isAuto ? "magenta" : "gold"}>
+            {voucher?.isAuto ? "Tự động" : "Thủ công"}
+          </Tag>
         </Descriptions.Item>
 
         <Descriptions.Item label="Ngày bắt đầu">

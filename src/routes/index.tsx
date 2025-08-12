@@ -35,8 +35,6 @@ import QuickChatCreate from "../pages/quick-chat/create";
 import QuickChatEdit from "../pages/quick-chat/edit";
 import QuickChatList from "../pages/quick-chat/list";
 import { StaffList, StaffShow } from "../pages/staff";
-import RevenueOrdersStatistics from "../pages/statistics/order-statistics";
-import TopProductsStatistics from "../pages/statistics/top-products";
 import { UserList, UserShow } from "../pages/user";
 import VoucherCreate from "../pages/voucher/create";
 import VoucherEdit from "../pages/voucher/edit";
@@ -123,12 +121,6 @@ const AppRoutes = () => {
             <Route path="add" element={<VoucherCreate />} />
             <Route path="edit/:id" element={<VoucherEdit />} />
             <Route path="id/:id" element={<VoucherShow />} />
-          </Route>
-          <Route path="/statistics/top-products">
-            <Route index element={<TopProductsStatistics />} />
-          </Route>
-          <Route path="/statistics/order-revenue">
-            <Route index element={<RevenueOrdersStatistics />} />
           </Route>
           <Route path="/quick-chat">
             <Route index element={<QuickChatList />} />

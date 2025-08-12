@@ -38,7 +38,6 @@ const VoucherCreate = () => {
   >([]);
   const [fetching, setFetching] = useState(false);
 
-  // 🔥 REMOVED voucherScope state
 
   const fetchUser = debounce((search: string) => {
     setFetching(true);
@@ -93,19 +92,19 @@ const VoucherCreate = () => {
         return;
       }
 
-      if (end.diff(start, "minute") < 1) {
+      if (end.diff(start, "minute") < 5) {
         form?.setFields([
           {
             name: "dateRange",
             errors: [
-              "Thời gian kết thúc phải sau thời gian bắt đầu ít nhất 1 phút",
+              "Thời gian kết thúc phải sau thời gian bắt đầu ít nhất 5 phút",
             ],
           },
         ]);
         return;
       }
 
-      if (start.isBefore(now)) {
+      if (start.isBefore(now, "minute")) {
         form?.setFields([
           {
             name: "dateRange",
@@ -425,7 +424,7 @@ const VoucherCreate = () => {
                   disabledMinutes: (selectedHour) =>
                     selectedHour === currentHour
                       ? Array.from({ length: 60 }, (_, i) => i).filter(
-                          (m) => m <= currentMinute
+                          (m) => m < currentMinute
                         )
                       : [],
                 };

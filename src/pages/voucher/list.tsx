@@ -215,6 +215,22 @@ const VoucherList = () => {
         />
 
         <Table.Column
+          title="Loại tạo"
+          dataIndex="isAuto"
+          key="isAuto"
+          filters={[
+            { text: "Tạo tự động", value: true },
+            { text: "Tạo thủ công", value: false },
+          ]}
+          onFilter={(value, record) => record.isAuto === value}
+          render={(isAuto: boolean) => (
+            <Tag color={isAuto ? "magenta" : "gold"}>
+              {isAuto ? "Tạo tự động" : "Tạo thủ công"}
+            </Tag>
+          )}
+        />
+
+        <Table.Column
           title="Giá trị giảm"
           render={(_, record) => {
             if (record.discountType === "fixed") {
@@ -274,10 +290,6 @@ const VoucherList = () => {
         <Table.Column<IVoucher>
           title="Thao tác"
           render={(_, record) => {
-            const isEditable =
-              record.voucherStatus === "active" ||
-              record.voucherStatus === "inactive";
-
             const deleteButton = (
               <Popconfirm
                 title="Bạn có chắc chắn chuyển voucher này vào thùng rác?"
@@ -312,24 +324,45 @@ const VoucherList = () => {
                   size="small"
                   loading={loadingId === record._id}
                   disabled={loadingId === record._id}
-                ></Button>
+                />
               </Popconfirm>
             );
 
-            const editButton = isEditable ? (
-              <EditButton hideText size="small" recordItemId={record._id} />
-            ) : (
-              <Tooltip title="Voucher đã hết hạn, không thể chỉnh sửa">
-                <span>
-                  <EditButton
-                    hideText
-                    size="small"
-                    recordItemId={record._id}
-                    disabled
-                  />
-                </span>
-              </Tooltip>
-            );
+            const editButton = (() => {
+              if (record.voucherStatus === "expired") {
+                return (
+                  <Tooltip title="Voucher đã hết hạn, không thể chỉnh sửa">
+                    <span>
+                      <EditButton
+                        hideText
+                        size="small"
+                        recordItemId={record._id}
+                        disabled
+                      />
+                    </span>
+                  </Tooltip>
+                );
+              }
+
+              if (record.isAuto) {
+                return (
+                  <Tooltip title="Không thể chỉnh sửa voucher được tạo tự động">
+                    <span>
+                      <EditButton
+                        hideText
+                        size="small"
+                        recordItemId={record._id}
+                        disabled
+                      />
+                    </span>
+                  </Tooltip>
+                );
+              }
+
+              return (
+                <EditButton hideText size="small" recordItemId={record._id} />
+              );
+            })();
 
             return (
               <Space>
