@@ -368,6 +368,7 @@ export const OrderList: React.FC = () => {
             order._id === data.order._id ? { ...order, ...data.order } : order
           )
         );
+        invalidate({ resource: "order", invalidates: ["list"] });
         if (activeTab === "returnRequests") {
           fetchReturnRequests(); // Làm mới danh sách yêu cầu hoàn hàng
         }
@@ -376,7 +377,6 @@ export const OrderList: React.FC = () => {
 
     socket.on("order-status-changed", handleChange);
     socket.on("new-notification", handleChange);
-    invalidate({ resource: "order", invalidates: ["list"] });
     return () => {
       socket.off("order-status-changed", handleChange);
       socket.off("new-notification", handleChange);
