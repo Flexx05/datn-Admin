@@ -112,14 +112,20 @@ export const OrderShow = () => {
           ? values.customReason
           : values.reason;
       await handleUpdateStatus(5, finalReason);
-      if (orderData.paymentMethod === "VNPAY" || (orderData.paymentMethod === "VI" && orderData.paymentStatus === 1)) {
-        const refundResponse = await axiosInstance.post('http://localhost:8080/api/wallet/cancel-refund', {
-          orderId: orderData._id,
-          type: 0,
-          amount: orderData.totalAmount,
-          status: 1,
-          description: `Trả lại tiền đơn hàng đã hủy ${orderData.orderCode}: ${finalReason}`,
-        });
+      if (
+        orderData.paymentMethod === "VNPAY" ||
+        (orderData.paymentMethod === "VI" && orderData.paymentStatus === 1)
+      ) {
+        const refundResponse = await axiosInstance.post(
+          "http://localhost:8080/api/wallet/cancel-refund",
+          {
+            orderId: orderData._id,
+            type: 0,
+            amount: orderData.totalAmount,
+            status: 1,
+            description: `Trả lại tiền đơn hàng đã hủy ${orderData.orderCode}: ${finalReason}`,
+          }
+        );
         const refundData = await refundResponse.data;
         if (!refundData.success) {
           message.error("Yêu cầu hoàn tiền thất bại");
@@ -348,7 +354,8 @@ export const OrderShow = () => {
                       fontStyle: "italic",
                     }}
                   >
-                    Lý do hủy: {orderData?.cancelReason || "Không có lý do cụ thể"}
+                    Lý do hủy:{" "}
+                    {orderData?.cancelReason || "Không có lý do cụ thể"}
                   </p>
                 </>
               ) : (
@@ -383,8 +390,8 @@ export const OrderShow = () => {
                     </Descriptions.Item>
                     <Descriptions.Item label="Ngày giao hàng">
                       <Text>
-                        {orderData?.status === 4 && orderData?.updatedAt
-                          ? formatDate(orderData?.updatedAt)
+                        {orderData?.deliveryDate
+                          ? formatDate(orderData?.deliveryDate)
                           : "Chưa xác định"}
                       </Text>
                     </Descriptions.Item>
@@ -647,7 +654,12 @@ export const OrderShow = () => {
                   >
                     Hủy bỏ
                   </Button>
-                  <Button type="primary" htmlType="submit" danger loading={isCancelLoading}>
+                  <Button
+                    type="primary"
+                    htmlType="submit"
+                    danger
+                    loading={isCancelLoading}
+                  >
                     Xác nhận hủy
                   </Button>
                 </div>
