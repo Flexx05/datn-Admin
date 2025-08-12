@@ -25,6 +25,7 @@ import { API_URL } from "../../config/dataProvider";
 import { IAttribute } from "../../interface/attribute";
 import { ColorDots } from "../products/ColorDots";
 import Loader from "../../utils/loading";
+import { useAuth } from "../../contexts/auth/AuthContext";
 
 export const AttributeList = () => {
   const [filterActive, setFilterActive] = useState<boolean>(true);
@@ -53,6 +54,7 @@ export const AttributeList = () => {
   const invalidate = useInvalidate();
   const [loadingId, setLoadingId] = useState<string | number | null>(null);
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
+  const { user } = useAuth();
 
   const handleChangeStatus = async (record: IAttribute) => {
     setLoadingId(record._id);
@@ -139,48 +141,54 @@ export const AttributeList = () => {
         onSearch={handleSearch}
         style={{ marginBottom: 16, maxWidth: 300 }}
       />
-      <Popconfirm
-        title="Bạn chắc chắn xóa hàng loạt không ?"
-        onConfirm={async () => {
-          if (selectedRowKeys.length === 0) return;
-          try {
-            await Promise.all(
-              selectedRowKeys.map((id) =>
-                axios.delete(`${API_URL}/attribute/delete/${id}`)
-              )
-            );
-            message.success("Xóa hàng loạt thành công");
-            setSelectedRowKeys([]);
-            await invalidate({
-              resource: "attribute",
-              invalidates: ["list"],
-            });
-          } catch (error: any) {
-            const errorMessage =
-              error.response?.data?.message ||
-              error.message ||
-              "Lỗi không xác định";
-            message.error("Xóa thất bại: " + errorMessage);
-          }
-        }}
-      >
-        <Button
-          danger
-          disabled={selectedRowKeys.length === 0}
-          style={{ marginBottom: 16 }}
+      {user?.role === "admin" && (
+        <Popconfirm
+          title="Bạn chắc chắn xóa hàng loạt không ?"
+          onConfirm={async () => {
+            if (selectedRowKeys.length === 0) return;
+            try {
+              await Promise.all(
+                selectedRowKeys.map((id) =>
+                  axios.delete(`${API_URL}/attribute/delete/${id}`)
+                )
+              );
+              message.success("Xóa hàng loạt thành công");
+              setSelectedRowKeys([]);
+              await invalidate({
+                resource: "attribute",
+                invalidates: ["list"],
+              });
+            } catch (error: any) {
+              const errorMessage =
+                error.response?.data?.message ||
+                error.message ||
+                "Lỗi không xác định";
+              message.error("Xóa thất bại: " + errorMessage);
+            }
+          }}
         >
-          Xóa hàng loạt
-        </Button>
-      </Popconfirm>
+          <Button
+            danger
+            disabled={selectedRowKeys.length === 0}
+            style={{ marginBottom: 16 }}
+          >
+            Xóa hàng loạt
+          </Button>
+        </Popconfirm>
+      )}
       <Table
         {...tableProps}
         rowKey="_id"
         loading={tableProps.loading ? { indicator: <Loader /> } : false}
-        rowSelection={{
-          type: "checkbox",
-          selectedRowKeys,
-          onChange: (keys: React.Key[]) => setSelectedRowKeys(keys),
-        }}
+        rowSelection={
+          user?.role === "admin"
+            ? {
+                type: "checkbox",
+                selectedRowKeys,
+                onChange: (keys: React.Key[]) => setSelectedRowKeys(keys),
+              }
+            : undefined
+        }
       >
         <Table.Column
           dataIndex="stt"
@@ -253,7 +261,7 @@ export const AttributeList = () => {
                 loading={loadingId === record._id}
                 hidden={record.countProduct > 0}
               />
-              {record.isActive === false && (
+              {record.isActive === false && user?.role === "admin" && (
                 <Popconfirm
                   title="Bạn chắc chắn kích hoạt hiệu lực không ?"
                   onConfirm={() => handleChangeStatus(record)}

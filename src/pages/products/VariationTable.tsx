@@ -20,10 +20,12 @@ import {
 import { formatCurrency } from "../order/formatCurrency";
 import { ColorDots } from "./ColorDots";
 import { axiosInstance } from "../../utils/axiosInstance";
+import { useAuth } from "../../contexts/auth/AuthContext";
 
 export const VariationTable = ({ product }: { product: IProduct }) => {
   const [loadingId, setLoadingId] = useState<string | number | null>(null);
   const invalidate = useInvalidate();
+  const { user } = useAuth();
   const variations = product.variation;
   if (!variations || variations.length === 0) {
     return (
@@ -121,32 +123,34 @@ export const VariationTable = ({ product }: { product: IProduct }) => {
           </Tag>
         )}
       />
-      <Table.Column
-        dataIndex="actions"
-        render={(_, record: IVariation) => (
-          <Space>
-            <Tooltip title="Cập nhật trạng thái">
-              <Popconfirm
-                title="Bạn chắc chắn thay đổi hiệu lực không ?"
-                onConfirm={() => handleChangeStatus(record)}
-                okText="Thay đổi"
-                cancelText="Hủy"
-                okButtonProps={{ loading: loadingId === record._id }}
-              >
-                <RetweetOutlined
-                  style={{
-                    border: "1px solid #404040",
-                    borderRadius: "20%",
-                    padding: 4,
-                    cursor: "pointer",
-                    opacity: loadingId === record._id ? 0.5 : 1,
-                  }}
-                />
-              </Popconfirm>
-            </Tooltip>
-          </Space>
-        )}
-      />
+      {user?.role === "admin" && (
+        <Table.Column
+          dataIndex="actions"
+          render={(_, record: IVariation) => (
+            <Space>
+              <Tooltip title="Cập nhật trạng thái">
+                <Popconfirm
+                  title="Bạn chắc chắn thay đổi hiệu lực không ?"
+                  onConfirm={() => handleChangeStatus(record)}
+                  okText="Thay đổi"
+                  cancelText="Hủy"
+                  okButtonProps={{ loading: loadingId === record._id }}
+                >
+                  <RetweetOutlined
+                    style={{
+                      border: "1px solid #404040",
+                      borderRadius: "20%",
+                      padding: 4,
+                      cursor: "pointer",
+                      opacity: loadingId === record._id ? 0.5 : 1,
+                    }}
+                  />
+                </Popconfirm>
+              </Tooltip>
+            </Space>
+          )}
+        />
+      )}
     </Table>
   );
 };

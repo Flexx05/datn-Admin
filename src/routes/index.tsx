@@ -1,8 +1,8 @@
-import { ThemedLayoutV2, ThemedSiderV2 } from "@refinedev/antd";
+import { ThemedLayoutV2 } from "@refinedev/antd";
 import { Authenticated, ErrorComponent } from "@refinedev/core";
 import { CatchAllNavigate, NavigateToResource } from "@refinedev/react-router";
 import { Outlet, Route, Routes } from "react-router";
-import { Header, TitleLogo } from "../components";
+import { CustomSider, Header } from "../components";
 import {
   AttributeCreate,
   AttributeEdit,
@@ -23,6 +23,7 @@ import { CommentList, CommentShow } from "../pages/comments";
 import { Dashboard } from "../pages/dashboard";
 import { Login } from "../pages/login";
 import { OrderList } from "../pages/order/list";
+import { ReturnRequestDetail } from "../pages/order/returnRequestDetail";
 import { OrderShow } from "../pages/order/show";
 import {
   ProductCreate,
@@ -33,14 +34,16 @@ import {
 import QuickChatCreate from "../pages/quick-chat/create";
 import QuickChatEdit from "../pages/quick-chat/edit";
 import QuickChatList from "../pages/quick-chat/list";
+import { StaffList, StaffShow } from "../pages/staff";
 import { UserList, UserShow } from "../pages/user";
 import VoucherCreate from "../pages/voucher/create";
 import VoucherEdit from "../pages/voucher/edit";
 import VoucherList from "../pages/voucher/list";
 import VoucherShow from "../pages/voucher/show";
-import { ReturnRequestDetail } from "../pages/order/returnRequestDetail";
+import { useAuth } from "../contexts/auth/AuthContext";
 
 const AppRoutes = () => {
+  const { user } = useAuth();
   return (
     <div>
       <Routes>
@@ -50,20 +53,21 @@ const AppRoutes = () => {
               key="authenticated-inner"
               fallback={<CatchAllNavigate to="/login" />}
             >
-              <ThemedLayoutV2
-                Header={Header}
-                Sider={(props) => <ThemedSiderV2 {...props} fixed />}
-                Title={({ collapsed }) => <TitleLogo collapsed={collapsed} />}
-              >
+              <ThemedLayoutV2 Header={Header} Sider={CustomSider}>
                 <Outlet />
               </ThemedLayoutV2>
             </Authenticated>
           }
         >
-          <Route index element={<NavigateToResource resource="dashboard" />} />
-          <Route path="/dashboard">
-            <Route index element={<Dashboard />} />
-          </Route>
+          <Route
+            index
+            element={
+              <NavigateToResource
+                resource={user?.role === "admin" ? "dashboard" : "product"}
+              />
+            }
+          />
+          <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/product">
             <Route index element={<ProductList />} />
             <Route path="add" element={<ProductCreate />} />
@@ -91,6 +95,10 @@ const AppRoutes = () => {
           <Route path="/users">
             <Route index element={<UserList />} />
             <Route path="show/:id" element={<UserShow />} />
+          </Route>
+          <Route path="/staffs">
+            <Route index element={<StaffList />} />
+            <Route path="show/:id" element={<StaffShow />} />
           </Route>
           <Route path="/comments">
             <Route index element={<CommentList />} />

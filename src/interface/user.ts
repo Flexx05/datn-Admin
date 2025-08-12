@@ -8,6 +8,7 @@ export interface IUser {
   countOrderNotSuccess: number;
   role: string;
   isActive: boolean;
+  isVerify: boolean;
   createdAt: string;
   updatedAt: string;
 }

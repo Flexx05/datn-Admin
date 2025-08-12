@@ -4,6 +4,7 @@ export const resources = [
     list: "/dashboard",
     meta: {
       label: "Trang chủ",
+      icon: "dashboard",
     },
   },
   {
@@ -13,8 +14,8 @@ export const resources = [
     edit: "/product/edit/:id",
     show: "/product/id/:id",
     meta: {
-      canDelete: true,
       label: "Quản lý sản phẩm",
+      icon: "product",
     },
   },
   {
@@ -24,8 +25,8 @@ export const resources = [
     edit: "/category/edit/:id",
     show: "/category/id/:id",
     meta: {
-      canDelete: true,
       label: "Quản lý danh mục",
+      icon: "category",
     },
   },
   {
@@ -35,8 +36,8 @@ export const resources = [
     edit: "/brand/edit/:id",
     show: "/brand/id/:id",
     meta: {
-      canDelete: true,
       label: "Quản lý thương hiệu",
+      icon: "brand",
     },
   },
   {
@@ -46,8 +47,8 @@ export const resources = [
     edit: "/attribute/edit/:id",
     show: "/attribute/id/:id",
     meta: {
-      canDelete: true,
       label: "Quản lý thuộc tính",
+      icon: "attribute",
     },
   },
   {
@@ -55,17 +56,26 @@ export const resources = [
     list: "/comments",
     show: "/comments/id/:id",
     meta: {
-      canDelete: true,
       label: "Quản lý đánh giá",
+      icon: "comment",
     },
   },
   {
     name: "admin/users",
     list: "/users",
     show: "/users/show/:id",
-    edit: "/users/edit/:id",
     meta: {
-      label: "Quản lý Khách hàng",
+      label: "Quản lý khách hàng",
+      icon: "user",
+    },
+  },
+  {
+    name: "staffs",
+    list: "/staffs",
+    show: "/staffs/show/:id",
+    meta: {
+      label: "Quản lý nhân viên",
+      icon: "staff",
     },
   },
   {
@@ -75,6 +85,7 @@ export const resources = [
     returnRequests: "/orders/return-requests/show/:id",
     meta: {
       label: "Quản lý đơn hàng",
+      icon: "order",
     },
   },
   {
@@ -84,8 +95,8 @@ export const resources = [
     edit: "/vouchers/edit/:id",
     show: "/vouchers/id/:id",
     meta: {
-      canDelete: true,
       label: "Quản lý voucher",
+      icon: "voucher",
     },
   },
   {
@@ -94,6 +105,7 @@ export const resources = [
     show: "/conversation/id/:id",
     meta: {
       label: "Chăm sóc khách hàng",
+      icon: "conversation",
     },
   },
   {
@@ -104,6 +116,7 @@ export const resources = [
     edit: "/quick-chat/edit/:id",
     meta: {
       label: "Quản lý tin nhắn nhanh",
+      icon: "quick-chat",
     },
   },
 ];

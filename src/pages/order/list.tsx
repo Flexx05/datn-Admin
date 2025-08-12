@@ -55,28 +55,6 @@ interface ReturnRequest {
   updatedAt: string;
 }
 
-// Định nghĩa interface cho yêu cầu hoàn hàng
-interface ReturnRequest {
-  _id: string;
-  orderId: {
-    _id: string;
-    orderCode: string;
-    totalAmount: number;
-    userId: string;
-  };
-  products: {
-    productId: string;
-    quantity: number;
-    price: number;
-    _id: string;
-  }[];
-  reason: string;
-  refundAmount: number;
-  status: number;
-  createdAt: string;
-  updatedAt: string;
-}
-
 const paymentStatusMap: Record<number, { text: string; color: string }> = {
   0: { text: "Chưa thanh toán", color: "orange" },
   1: { text: "Đã thanh toán", color: "green" },
@@ -213,7 +191,7 @@ const OrderActions: React.FC<{
   const isLoading = loadingId === record._id;
 
   switch (record.status) {
-    case 0:
+    case 0: // Chờ xác nhận
       return (
         <Space>
           <Popconfirm
@@ -232,51 +210,79 @@ const OrderActions: React.FC<{
               Xác nhận
             </Button>
           </Popconfirm>
-          <Button
-            size="small"
-            danger
-            icon={<CloseOutlined />}
-            onClick={() => onShowCancelModal(record._id)}
+          <Popconfirm
+            title="Hủy đơn hàng này?"
+            onConfirm={() => onShowCancelModal(record._id)}
+            okText="Hủy đơn"
+            cancelText="Hủy"
+            okButtonProps={{ loading: isLoading }}
           >
-            Hủy
-          </Button>
+            <Button
+              size="small"
+              danger
+              icon={<CloseOutlined />}
+              loading={isLoading}
+            >
+              Hủy
+            </Button>
+          </Popconfirm>
         </Space>
       );
 
-    case 1:
+    case 1: // Đã xác nhận
       return (
         <Space>
-          <Button
-            size="small"
-            icon={<TruckOutlined />}
-            onClick={() => onChangeStatus(record, 2)}
+          <Popconfirm
+            title="Xác nhận giao hàng cho đơn hàng này?"
+            onConfirm={() => onChangeStatus(record, 2)}
+            okText="Xác nhận"
+            cancelText="Hủy"
+            okButtonProps={{ loading: isLoading }}
           >
-            Giao hàng
-          </Button>
-          <Button
-            size="small"
-            danger
-            icon={<CloseOutlined />}
-            onClick={() => onShowCancelModal(record._id)}
+            <Button size="small" icon={<TruckOutlined />} loading={isLoading}>
+              Giao hàng
+            </Button>
+          </Popconfirm>
+          <Popconfirm
+            title="Hủy đơn hàng này?"
+            onConfirm={() => onShowCancelModal(record._id)}
+            okText="Hủy đơn"
+            cancelText="Hủy"
+            okButtonProps={{ loading: isLoading }}
           >
-            Hủy
-          </Button>
+            <Button
+              size="small"
+              danger
+              icon={<CloseOutlined />}
+              loading={isLoading}
+            >
+              Hủy
+            </Button>
+          </Popconfirm>
         </Space>
       );
 
-    case 2:
+    case 2: // Đang giao
       return (
-        <Button
-          size="small"
-          type="primary"
-          icon={<CheckOutlined />}
-          onClick={() => onChangeStatus(record, 3)}
+        <Popconfirm
+          title="Xác nhận đơn hàng đã giao thành công?"
+          onConfirm={() => onChangeStatus(record, 3)}
+          okText="Xác nhận"
+          cancelText="Hủy"
+          okButtonProps={{ loading: isLoading }}
         >
-          Đã giao
-        </Button>
+          <Button
+            size="small"
+            type="primary"
+            icon={<CheckOutlined />}
+            loading={isLoading}
+          >
+            Đã giao
+          </Button>
+        </Popconfirm>
       );
 
-    case 6:
+    case 6: // Yêu cầu hoàn hàng
       return (
         <Tag color="cyan" icon={<UndoOutlined />}>
           Hoàn hàng
@@ -323,23 +329,62 @@ export const OrderList: React.FC = () => {
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<"all" | "returnRequests">("all");
   const [returnRequests, setReturnRequests] = useState<ReturnRequest[]>([]);
+  const [ordersData, setOrdersData] = useState<Order[]>([
+    ...(tableProps.dataSource || []),
+  ]);
+  const [isCancelLoading, setIsCancelLoading] = useState(false);
 
   const [form] = Form.useForm();
 
+  // Đồng bộ ordersData khi tableProps.dataSource thay đổi
+  useEffect(() => {
+    setOrdersData([...(tableProps.dataSource || [])]);
+  }, [tableProps.dataSource]);
+
   // Fetch return requests từ API
+  const fetchReturnRequests = async () => {
+    try {
+      const response = await axiosInstance.get(`${API_URL}/return-requests`);
+      setReturnRequests(response.data.data?.returnRequests || []);
+    } catch (error: any) {
+      message.error("Lỗi khi tải danh sách yêu cầu hoàn hàng");
+      console.error(error);
+    }
+  };
+
   useEffect(() => {
     if (activeTab === "returnRequests") {
-      const fetchReturnRequests = async () => {
-        try {
-          const response = await axiosInstance.get(
-            `${API_URL}/return-requests`
-          );
-          setReturnRequests(response.data.data?.returnRequests || []);
-        } catch (error: any) {
-          message.error("Lỗi khi tải danh sách yêu cầu hoàn hàng");
-          console.error(error);
+      fetchReturnRequests();
+    }
+  }, [activeTab]);
+
+  // Lắng nghe sự kiện socket để cập nhật bảng realtime
+  useEffect(() => {
+    const handleChange = (data: any) => {
+      console.log("Received WebSocket event:", data);
+      if (data.order) {
+        setOrdersData((prevData) =>
+          prevData.map((order) =>
+            order._id === data.order._id ? { ...order, ...data.order } : order
+          )
+        );
+        invalidate({ resource: "order", invalidates: ["list"] });
+        if (activeTab === "returnRequests") {
+          fetchReturnRequests(); // Làm mới danh sách yêu cầu hoàn hàng
         }
-      };
+      }
+    };
+
+    socket.on("order-status-changed", handleChange);
+    socket.on("new-notification", handleChange);
+    return () => {
+      socket.off("order-status-changed", handleChange);
+      socket.off("new-notification", handleChange);
+    };
+  }, [invalidate, activeTab]);
+
+  useEffect(() => {
+    if (activeTab === "returnRequests") {
       fetchReturnRequests();
     }
   }, [activeTab]);
@@ -351,14 +396,25 @@ export const OrderList: React.FC = () => {
   ) => {
     setLoadingId(record._id);
     try {
+      const userRaw = localStorage.getItem("user");
+      const user = userRaw ? JSON.parse(userRaw) : null;
+
       // If status is 3 (Đã hoàn tiền), process refund and update order's totalAmount
       if (newStatus === 3) {
+        await axiosInstance.patch(
+          `${API_URL}/order/status/${record.orderId._id}`,
+          {
+            // status: 4,
+            paymentStatus: 2,
+            userId: user?._id,
+          }
+        );
         const refundResponse = await axiosInstance.post(
           `${API_URL}/wallet/cancel-refund`,
           {
             orderId: record.orderId._id,
-            type: "refund",
-            amount: record.refundAmount,
+            type: 0,
+            amount: record.refundAmount + 30000,
             status: 1,
             description: `Hoàn tiền cho yêu cầu hoàn hàng đơn ${record.orderId.orderCode}: ${record.reason}`,
             returnRequestId: record._id,
@@ -372,19 +428,34 @@ export const OrderList: React.FC = () => {
         }
 
         // Update order's totalAmount
-        const orderResponse = await axiosInstance.patch(
-          `${API_URL}/order/update-total/${record.orderId._id}`,
+        // const orderResponse = await axiosInstance.patch(
+        //   `${API_URL}/order/update-total/${record.orderId._id}`,
+        //   {
+        //     refundAmount: record.refundAmount,
+        //   },
+        //   {
+        //     headers: {
+        //       "Content-Type": "application/json",
+        //       Authorization: `Bearer ${localStorage.getItem("token")}`,
+        //     },
+        //   }
+        // );
+
+        //   if (!orderResponse.data.success) {
+        //     throw new Error(orderResponse.data.message || "Failed to update order totalAmount");
+        //   }
+      }
+      if (newStatus === 4) {
+        await axiosInstance.patch(
+          `${API_URL}/order/status/${record.orderId._id}`,
           {
-            refundAmount: record.refundAmount,
+            status: 3,
+            paymentStatus: 1,
+            userId: user?._id,
           }
         );
-
-        if (!orderResponse.data.success) {
-          throw new Error(
-            orderResponse.data.message || "Failed to update order totalAmount"
-          );
-        }
       }
+
       // Update return request status
       await axiosInstance.patch(
         `${API_URL}/return-requests/${record._id}/status`,
@@ -413,9 +484,7 @@ export const OrderList: React.FC = () => {
   // Lọc dữ liệu dựa trên tab đang chọn và các bộ lọc khác
   const filteredData = useMemo(() => {
     let data: any =
-      activeTab === "returnRequests"
-        ? returnRequests
-        : (tableProps.dataSource as Order[]) || [];
+      activeTab === "returnRequests" ? returnRequests : ordersData || [];
 
     const lowerSearch = searchText.toLowerCase();
 
@@ -457,7 +526,7 @@ export const OrderList: React.FC = () => {
         new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
     );
   }, [
-    tableProps.dataSource,
+    ordersData,
     returnRequests,
     searchText,
     orderStatusFilter,
@@ -468,8 +537,21 @@ export const OrderList: React.FC = () => {
 
   // Lắng nghe sự kiện socket để cập nhật bảng realtime
   useEffect(() => {
-    const handleChange = () => {
-      invalidate({ resource: "order", invalidates: ["list"] });
+    const handleChange = (data: any) => {
+      console.log("Received WebSocket event:", data); // Log để kiểm tra
+      if (data.order) {
+        // Cập nhật trực tiếp danh sách đơn hàng
+        setOrdersData((prevData) =>
+          prevData.map((order) =>
+            order._id === data.order._id ? { ...order, ...data.order } : order
+          )
+        );
+        if (activeTab === "returnRequests") {
+          fetchReturnRequests();
+        }
+      } else {
+        invalidate({ resource: "order", invalidates: ["list"] });
+      }
     };
     socket.on("order-status-changed", handleChange);
     socket.on("new-notification", handleChange);
@@ -477,7 +559,7 @@ export const OrderList: React.FC = () => {
       socket.off("order-status-changed", handleChange);
       socket.off("new-notification", handleChange);
     };
-  }, [invalidate]);
+  }, [invalidate, activeTab]);
 
   const handleChangeStatus = async (
     record: Order,
@@ -525,19 +607,48 @@ export const OrderList: React.FC = () => {
   }) => {
     if (!selectedOrderId) return;
 
-    const finalReason =
-      values.reason === "Khác" && values.customReason
-        ? values.customReason
-        : values.reason;
+    setIsCancelLoading(true); // Bật trạng thái loading
+    try {
+      const finalReason =
+        values.reason === "Khác" && values.customReason
+          ? values.customReason
+          : values.reason;
 
-    const record = filteredData.find(
-      (order: Order) => order._id === selectedOrderId
-    );
-    if (record) {
-      await handleChangeStatus(record, 5, finalReason, 3);
+      const record = filteredData.find(
+        (order: Order) => order._id === selectedOrderId
+      );
+      if (record) {
+        await handleChangeStatus(record, 5, finalReason, 3);
+        if (
+          record.paymentMethod === "VNPAY" ||
+          (record.paymentMethod === "VI" && record.paymentStatus === 1)
+        ) {
+          const refundResponse = await axiosInstance.post(
+            "http://localhost:8080/api/wallet/cancel-refund",
+            {
+              orderId: record._id,
+              type: 0,
+              amount: record.totalAmount,
+              status: 1,
+              description: `Trả lại tiền đơn hàng đã hủy ${record.orderCode}: ${finalReason}`,
+            }
+          );
+          const refundData = await refundResponse.data;
+          if (!refundData.success) {
+            message.error("Yêu cầu hoàn tiền thất bại");
+            return;
+          }
+        }
+      }
+      setIsModalVisible(false);
+      form.resetFields();
+      message.success("Hủy đơn hàng thành công");
+    } catch (error: any) {
+      message.error(error.message || "Hủy đơn hàng thất bại");
+      console.error(error);
+    } finally {
+      setIsCancelLoading(false); // Tắt trạng thái loading
     }
-    setIsModalVisible(false);
-    form.resetFields();
   };
 
   const handleModalCancel = () => {
@@ -628,10 +739,8 @@ export const OrderList: React.FC = () => {
         )}
         <div style={{ color: "#666", fontSize: 12 }}>
           Hiển thị {filteredData.length} /{" "}
-          {(activeTab === "returnRequests"
-            ? returnRequests
-            : tableProps.dataSource
-          )?.length || 0}{" "}
+          {(activeTab === "returnRequests" ? returnRequests : ordersData)
+            ?.length || 0}{" "}
           {activeTab === "returnRequests" ? "yêu cầu hoàn hàng" : "đơn hàng"}
         </div>
       </Space>
@@ -660,7 +769,7 @@ export const OrderList: React.FC = () => {
             fixed="left"
             render={(code) => (
               <Tag color="blue" style={{ fontWeight: "bold" }}>
-                #{code || "N/A"}
+                {code || "N/A"}
               </Tag>
             )}
           />
@@ -792,7 +901,7 @@ export const OrderList: React.FC = () => {
             fixed="left"
             render={(code) => (
               <Tag color="blue" style={{ fontWeight: "bold" }}>
-                #{code || "N/A"}
+                {code || "N/A"}
               </Tag>
             )}
           />
@@ -920,7 +1029,12 @@ export const OrderList: React.FC = () => {
               style={{ display: "flex", justifyContent: "flex-end", gap: 12 }}
             >
               <Button onClick={handleModalCancel}>Hủy bỏ</Button>
-              <Button type="primary" htmlType="submit" danger>
+              <Button
+                type="primary"
+                htmlType="submit"
+                danger
+                loading={isCancelLoading}
+              >
                 Xác nhận hủy
               </Button>
             </div>

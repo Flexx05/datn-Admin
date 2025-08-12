@@ -24,6 +24,7 @@ import { useCallback, useState } from "react";
 import { IBrand } from "../../interface/brand";
 import { axiosInstance } from "../../utils/axiosInstance";
 import Loader from "../../utils/loading";
+import { useAuth } from "../../contexts/auth/AuthContext";
 
 export const BrandList = () => {
   const [filterActive, setFilterActive] = useState<boolean>(true);
@@ -52,6 +53,7 @@ export const BrandList = () => {
 
   const invalidate = useInvalidate();
   const [loadingId, setLoadingId] = useState<string | number | null>(null);
+  const { user } = useAuth();
 
   const handleChangeStatus = async (record: IBrand) => {
     setLoadingId(record._id);
@@ -214,7 +216,7 @@ export const BrandList = () => {
                   loading={loadingId === record._id}
                   hidden={isUnknown}
                 />
-                {record.isActive === false && (
+                {record.isActive === false && user?.role === "admin" && (
                   <Popconfirm
                     title="Bạn chắc chắn kích hoạt hiệu lực không ?"
                     onConfirm={() => handleChangeStatus(record)}

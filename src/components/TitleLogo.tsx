@@ -18,6 +18,7 @@ export const TitleLogo = ({ collapsed, style }: TitleLogoProps) => {
           fontWeight: 700,
           fontSize: 32,
           cursor: "pointer",
+          display: "flex",
           ...style,
         }}
       >

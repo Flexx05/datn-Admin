@@ -17,14 +17,13 @@ import {
   Tooltip,
   Typography,
 } from "antd";
-import axios from "axios";
 import dayjs from "dayjs";
 import { useContext, useEffect, useMemo, useState } from "react";
-import { API_URL } from "../config/dataProvider";
+import { useAuth } from "../contexts/auth/AuthContext";
 import { ColorModeContext } from "../contexts/color-mode";
 import { INotification } from "../interface/notification";
 import { socket } from "../socket";
-import { useAuth } from "../contexts/auth/AuthContext";
+import { axiosInstance } from "../utils/axiosInstance";
 
 const ListNotification = ({
   item,
@@ -38,12 +37,12 @@ const ListNotification = ({
   const invalidate = useInvalidate();
 
   const handleChangReadingStatus = async () => {
-    await axios.patch(`${API_URL}/notification/${item._id}`);
+    await axiosInstance.patch(`/notification/${item._id}`);
     await invalidate({ resource: "notification", invalidates: ["list"] });
   };
 
   const handleDelete = async () => {
-    await axios.delete(`${API_URL}/notification/${item._id}`);
+    await axiosInstance.delete(`/notification/${item._id}`);
     await invalidate({ resource: "notification", invalidates: ["list"] });
   };
 
@@ -127,7 +126,7 @@ const Notification = () => {
 
   const handleDeleteSelected = async () => {
     await Promise.all(
-      selectedIds.map((id) => axios.delete(`${API_URL}/notification/${id}`))
+      selectedIds.map((id) => axiosInstance.delete(`/notification/${id}`))
     );
     setSelectedIds([]);
     await invalidate({ resource: "notification", invalidates: ["list"] });
@@ -143,7 +142,7 @@ const Notification = () => {
       const unreadIds = filtered.map((n) => n._id);
       if (unreadIds.length === 0) return;
 
-      await axios.patch(`${API_URL}/notification/mark-many-read`, {
+      await axiosInstance.patch(`/notification/mark-many-read`, {
         ids: unreadIds,
       });
 

@@ -21,6 +21,10 @@ import { useCallback, useState } from "react";
 import { API_URL } from "../../config/dataProvider";
 import { IUser } from "../../interface/user";
 import Loader from "../../utils/loading";
+import { axiosInstance } from "../../utils/axiosInstance";
+import { useAuth } from "../../contexts/auth/AuthContext";
+import { RoleTagWithPopover } from "../staff/RoleTagWithPopover";
+import { ArrowUpOutlined } from "@ant-design/icons";
 
 export const UserList = () => {
   const [filterActive, setFilterActive] = useState<boolean>(true);
@@ -57,6 +61,7 @@ export const UserList = () => {
   const [selectedUser, setSelectedUser] = useState<IUser | null>(null);
   const [lockReason, setLockReason] = useState("");
   const [loadingLock, setLoadingLock] = useState(false);
+  const { user } = useAuth();
 
   const setFiltersTyped = setFilters as (
     filters: CrudFilters,
@@ -65,7 +70,7 @@ export const UserList = () => {
 
   const handleChangeStatus = async (record: IUser) => {
     try {
-      await axios.patch(`${API_URL}/admin/users/${record._id}/status`, {
+      await axiosInstance.patch(`/admin/users/${record._id}/status`, {
         isActive: !record.isActive,
       });
       message.success("Cập nhật trạng thái thành công");
@@ -102,6 +107,20 @@ export const UserList = () => {
       message.error("Khóa tài khoản thất bại");
     } finally {
       setLoadingLock(false);
+    }
+  };
+
+  const handleChangeRole = async (id: string, role: string) => {
+    try {
+      await axiosInstance.patch(`/staffs/${id}/role`, {
+        role,
+      });
+      message.success("Cập nhật vai trò thành công");
+      invalidate({ resource: "admin/users", invalidates: ["list"] });
+    } catch (error: any) {
+      message.error(
+        "Cập nhật trạng thái thất bại " + error?.response?.data?.error
+      );
     }
   };
 
@@ -252,28 +271,59 @@ export const UserList = () => {
               <Tooltip title="Xem chi tiết" key="show">
                 <ShowButton hideText size="small" recordItemId={record._id} />
               </Tooltip>
-              {record.isActive ? (
-                <Button
-                  danger
-                  size="small"
-                  type="default"
-                  disabled={record.countOrderNotSuccess > 0}
-                  onClick={() => handleOpenLockModal(record)}
-                >
-                  Khóa
-                </Button>
-              ) : (
-                <Popconfirm
-                  title="Bạn chắc chắn muốn mở khoá tài khoản này?"
-                  onConfirm={() => handleChangeStatus(record)}
-                  okText="Mở khoá"
-                  cancelText="Huỷ"
-                >
-                  <Button size="small" type="primary">
-                    Mở khoá
-                  </Button>
-                </Popconfirm>
-              )}
+
+              {user?.role === "admin" ? (
+                record.isActive ? (
+                  <>
+                    <RoleTagWithPopover
+                      record={record}
+                      onRoleChange={handleChangeRole}
+                      renderTag={(role, label, onClick) => (
+                        <Tooltip
+                          title={
+                            record.countOrderNotSuccess > 0 ||
+                            record.isVerify === false
+                              ? "Tài khoản chưa kích hoạt hoặc đang có đơn hàng chưa hoàn thành"
+                              : "Đổi vai trò"
+                          }
+                          key={"role"}
+                        >
+                          <Button
+                            size="small"
+                            type="default"
+                            disabled={
+                              record.countOrderNotSuccess > 0 ||
+                              record.isVerify === false
+                            }
+                            icon={<ArrowUpOutlined />}
+                            onClick={onClick}
+                          />
+                        </Tooltip>
+                      )}
+                    />
+                    <Button
+                      danger
+                      size="small"
+                      type="default"
+                      disabled={record.countOrderNotSuccess > 0}
+                      onClick={() => handleOpenLockModal(record)}
+                    >
+                      Khóa
+                    </Button>
+                  </>
+                ) : (
+                  <Popconfirm
+                    title="Bạn chắc chắn muốn mở khoá tài khoản này?"
+                    onConfirm={() => handleChangeStatus(record)}
+                    okText="Mở khoá"
+                    cancelText="Huỷ"
+                  >
+                    <Button size="small" type="primary">
+                      Mở khoá
+                    </Button>
+                  </Popconfirm>
+                )
+              ) : null}
             </Space>
           )}
         />
