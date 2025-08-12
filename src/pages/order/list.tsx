@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import {
   CheckOutlined,
   CloseOutlined,
@@ -80,7 +81,10 @@ const cancelReasons = [
 const ReturnRequestActions: React.FC<{
   record: ReturnRequest;
   loadingId: string | null;
-  onChangeReturnStatus: (record: ReturnRequest, newStatus: number) => Promise<void>;
+  onChangeReturnStatus: (
+    record: ReturnRequest,
+    newStatus: number
+  ) => Promise<void>;
 }> = ({ record, loadingId, onChangeReturnStatus }) => {
   const isLoading = loadingId === record._id;
 
@@ -235,11 +239,7 @@ const OrderActions: React.FC<{
             cancelText="Hủy"
             okButtonProps={{ loading: isLoading }}
           >
-            <Button
-              size="small"
-              icon={<TruckOutlined />}
-              loading={isLoading}
-            >
+            <Button size="small" icon={<TruckOutlined />} loading={isLoading}>
               Giao hàng
             </Button>
           </Popconfirm>
@@ -299,7 +299,8 @@ export const OrderList: React.FC = () => {
     syncWithLocation: true,
     resource: "order",
     errorNotification: (error: any) => ({
-      message: "❌ Lỗi hệ thống " + (error.response?.data?.message || error.message),
+      message:
+        "❌ Lỗi hệ thống " + (error.response?.data?.message || error.message),
       description: "Có lỗi xảy ra trong quá trình xử lý.",
       type: "error",
     }),
@@ -315,15 +316,23 @@ export const OrderList: React.FC = () => {
 
   const [loadingId, setLoadingId] = useState<string | null>(null);
   const [searchText, setSearchText] = useState("");
-  const [orderStatusFilter, setOrderStatusFilter] = useState<number | undefined>();
-  const [paymentStatusFilter, setPaymentStatusFilter] = useState<number | undefined>();
-  const [returnStatusFilter, setReturnStatusFilter] = useState<number | undefined>();
+  const [orderStatusFilter, setOrderStatusFilter] = useState<
+    number | undefined
+  >();
+  const [paymentStatusFilter, setPaymentStatusFilter] = useState<
+    number | undefined
+  >();
+  const [returnStatusFilter, setReturnStatusFilter] = useState<
+    number | undefined
+  >();
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<"all" | "returnRequests">("all");
   const [returnRequests, setReturnRequests] = useState<ReturnRequest[]>([]);
-  const [ordersData, setOrdersData] = useState<Order[]>([...(tableProps.dataSource || [])]);
-  const [isCancelLoading, setIsCancelLoading] = useState(false)
+  const [ordersData, setOrdersData] = useState<Order[]>([
+    ...(tableProps.dataSource || []),
+  ]);
+  const [isCancelLoading, setIsCancelLoading] = useState(false);
 
   const [form] = Form.useForm();
 
@@ -359,17 +368,15 @@ export const OrderList: React.FC = () => {
             order._id === data.order._id ? { ...order, ...data.order } : order
           )
         );
-        message.success(data.message || "Cập nhật trạng thái đơn hàng thành công");
         if (activeTab === "returnRequests") {
           fetchReturnRequests(); // Làm mới danh sách yêu cầu hoàn hàng
         }
-      } else {
-        invalidate({ resource: "order", invalidates: ["list"] });
       }
     };
 
     socket.on("order-status-changed", handleChange);
     socket.on("new-notification", handleChange);
+    invalidate({ resource: "order", invalidates: ["list"] });
     return () => {
       socket.off("order-status-changed", handleChange);
       socket.off("new-notification", handleChange);
@@ -383,7 +390,10 @@ export const OrderList: React.FC = () => {
   }, [activeTab]);
 
   // Xử lý thay đổi trạng thái yêu cầu hoàn hàng
-  const handleChangeReturnStatus = async (record: ReturnRequest, newStatus: number) => {
+  const handleChangeReturnStatus = async (
+    record: ReturnRequest,
+    newStatus: number
+  ) => {
     setLoadingId(record._id);
     try {
       const userRaw = localStorage.getItem("user");
@@ -412,7 +422,9 @@ export const OrderList: React.FC = () => {
         );
 
         if (!refundResponse.data.success) {
-          throw new Error(refundResponse.data.message || "Refund request failed");
+          throw new Error(
+            refundResponse.data.message || "Refund request failed"
+          );
         }
 
         // Update order's totalAmount
@@ -460,7 +472,9 @@ export const OrderList: React.FC = () => {
       // Invalidate order list to refresh data
       await invalidate({ resource: "order", invalidates: ["list"] });
     } catch (error: any) {
-      message.error(error.message || "Cập nhật trạng thái yêu cầu hoàn hàng thất bại");
+      message.error(
+        error.message || "Cập nhật trạng thái yêu cầu hoàn hàng thất bại"
+      );
       console.error(error);
     } finally {
       setLoadingId(null);
@@ -482,7 +496,8 @@ export const OrderList: React.FC = () => {
           request.reason.toLowerCase().includes(lowerSearch);
 
         const matchReturnStatus =
-          returnStatusFilter === undefined || request.status === returnStatusFilter;
+          returnStatusFilter === undefined ||
+          request.status === returnStatusFilter;
 
         return matchSearch && matchReturnStatus;
       });
@@ -499,14 +514,26 @@ export const OrderList: React.FC = () => {
           orderStatusFilter === undefined || order.status === orderStatusFilter;
 
         const matchPayment =
-          paymentStatusFilter === undefined || order.paymentStatus === paymentStatusFilter;
+          paymentStatusFilter === undefined ||
+          order.paymentStatus === paymentStatusFilter;
 
         return matchSearch && matchStatus && matchPayment;
       });
     }
 
-    return data.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-  }, [ordersData, returnRequests, searchText, orderStatusFilter, paymentStatusFilter, returnStatusFilter, activeTab]);
+    return data.sort(
+      (a: any, b: any) =>
+        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    );
+  }, [
+    ordersData,
+    returnRequests,
+    searchText,
+    orderStatusFilter,
+    paymentStatusFilter,
+    returnStatusFilter,
+    activeTab,
+  ]);
 
   // Lắng nghe sự kiện socket để cập nhật bảng realtime
   useEffect(() => {
@@ -519,7 +546,6 @@ export const OrderList: React.FC = () => {
             order._id === data.order._id ? { ...order, ...data.order } : order
           )
         );
-        message.success(data.message || "Cập nhật trạng thái đơn hàng thành công");
         if (activeTab === "returnRequests") {
           fetchReturnRequests();
         }
@@ -553,15 +579,12 @@ export const OrderList: React.FC = () => {
         effectivePaymentStatus = 1;
       }
 
-      await axiosInstance.patch(
-        `${API_URL}/order/status/${record._id}`,
-        {
-          status: newStatus,
-          paymentStatus: effectivePaymentStatus,
-          ...(reason && { cancelReason: reason }),
-          userId: user?._id,
-        }
-      );
+      await axiosInstance.patch(`${API_URL}/order/status/${record._id}`, {
+        status: newStatus,
+        paymentStatus: effectivePaymentStatus,
+        ...(reason && { cancelReason: reason }),
+        userId: user?._id,
+      });
 
       await invalidate({ resource: "order", invalidates: ["list"] });
       message.success("Cập nhật trạng thái thành công");
@@ -578,25 +601,38 @@ export const OrderList: React.FC = () => {
     setIsModalVisible(true);
   };
 
-  const handleCancelOrder = async (values: { reason: string; customReason?: string }) => {
+  const handleCancelOrder = async (values: {
+    reason: string;
+    customReason?: string;
+  }) => {
     if (!selectedOrderId) return;
 
     setIsCancelLoading(true); // Bật trạng thái loading
     try {
       const finalReason =
-        values.reason === "Khác" && values.customReason ? values.customReason : values.reason;
+        values.reason === "Khác" && values.customReason
+          ? values.customReason
+          : values.reason;
 
-      const record = filteredData.find((order: Order) => order._id === selectedOrderId);
+      const record = filteredData.find(
+        (order: Order) => order._id === selectedOrderId
+      );
       if (record) {
         await handleChangeStatus(record, 5, finalReason, 3);
-        if (record.paymentMethod === "VNPAY" || (record.paymentMethod === "VI" && record.paymentStatus === 1)) {
-          const refundResponse = await axiosInstance.post('http://localhost:8080/api/wallet/cancel-refund', {
-            orderId: record._id,
-            type: 0,
-            amount: record.totalAmount,
-            status: 1,
-            description: `Trả lại tiền đơn hàng đã hủy ${record.orderCode}: ${finalReason}`,
-          });
+        if (
+          record.paymentMethod === "VNPAY" ||
+          (record.paymentMethod === "VI" && record.paymentStatus === 1)
+        ) {
+          const refundResponse = await axiosInstance.post(
+            "http://localhost:8080/api/wallet/cancel-refund",
+            {
+              orderId: record._id,
+              type: 0,
+              amount: record.totalAmount,
+              status: 1,
+              description: `Trả lại tiền đơn hàng đã hủy ${record.orderCode}: ${finalReason}`,
+            }
+          );
           const refundData = await refundResponse.data;
           if (!refundData.success) {
             message.error("Yêu cầu hoàn tiền thất bại");
@@ -695,11 +731,16 @@ export const OrderList: React.FC = () => {
             }))}
           />
         )}
-        {(searchText || orderStatusFilter !== undefined || paymentStatusFilter !== undefined || returnStatusFilter !== undefined) && (
+        {(searchText ||
+          orderStatusFilter !== undefined ||
+          paymentStatusFilter !== undefined ||
+          returnStatusFilter !== undefined) && (
           <Button onClick={handleClearAllFilters}>Xóa tất cả bộ lọc</Button>
         )}
         <div style={{ color: "#666", fontSize: 12 }}>
-          Hiển thị {filteredData.length} / {(activeTab === "returnRequests" ? returnRequests : ordersData)?.length || 0}{" "}
+          Hiển thị {filteredData.length} /{" "}
+          {(activeTab === "returnRequests" ? returnRequests : ordersData)
+            ?.length || 0}{" "}
           {activeTab === "returnRequests" ? "yêu cầu hoàn hàng" : "đơn hàng"}
         </div>
       </Space>
@@ -737,9 +778,15 @@ export const OrderList: React.FC = () => {
             width={180}
             render={(_, record) => (
               <div>
-                <div style={{ fontWeight: 500 }}>{record.recipientInfo?.name || "N/A"}</div>
-                <div style={{ fontSize: 12, color: "#888" }}>{record.recipientInfo?.phone}</div>
-                <div style={{ fontSize: 12, color: "#888" }}>{record.recipientInfo?.email}</div>
+                <div style={{ fontWeight: 500 }}>
+                  {record.recipientInfo?.name || "N/A"}
+                </div>
+                <div style={{ fontSize: 12, color: "#888" }}>
+                  {record.recipientInfo?.phone}
+                </div>
+                <div style={{ fontSize: 12, color: "#888" }}>
+                  {record.recipientInfo?.email}
+                </div>
               </div>
             )}
           />
@@ -747,7 +794,9 @@ export const OrderList: React.FC = () => {
             title="Địa chỉ"
             width={200}
             render={(_, record) => (
-              <div style={{ fontSize: 13, color: "#555" }}>{record.shippingAddress || "N/A"}</div>
+              <div style={{ fontSize: 13, color: "#555" }}>
+                {record.shippingAddress || "N/A"}
+              </div>
             )}
           />
           <Table.Column<Order>
@@ -758,7 +807,9 @@ export const OrderList: React.FC = () => {
               new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
             }
             render={(createdAt) => (
-              <div style={{ fontSize: 13, color: "#555" }}>{formatDate(createdAt)}</div>
+              <div style={{ fontSize: 13, color: "#555" }}>
+                {formatDate(createdAt)}
+              </div>
             )}
           />
           <Table.Column<Order>
@@ -773,7 +824,11 @@ export const OrderList: React.FC = () => {
             render={(status) => {
               const s = statusMap[status];
               return (
-                <Tag color={s?.color} icon={s?.icon} style={{ fontWeight: "bold" }}>
+                <Tag
+                  color={s?.color}
+                  icon={s?.icon}
+                  style={{ fontWeight: "bold" }}
+                >
                   {s?.text || status}
                 </Tag>
               );
@@ -802,7 +857,9 @@ export const OrderList: React.FC = () => {
             dataIndex="totalAmount"
             width={120}
             render={(value) => (
-              <span style={{ fontWeight: 500, color: "#d4380d" }}>{formatCurrency(value)}</span>
+              <span style={{ fontWeight: 500, color: "#d4380d" }}>
+                {formatCurrency(value)}
+              </span>
             )}
           />
           <Table.Column<Order>
@@ -861,7 +918,9 @@ export const OrderList: React.FC = () => {
             dataIndex="refundAmount"
             width={120}
             render={(value) => (
-              <span style={{ fontWeight: 500, color: "#d4380d" }}>{formatCurrency(value)}</span>
+              <span style={{ fontWeight: 500, color: "#d4380d" }}>
+                {formatCurrency(value)}
+              </span>
             )}
           />
           <Table.Column<ReturnRequest>
@@ -872,7 +931,9 @@ export const OrderList: React.FC = () => {
               new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
             }
             render={(createdAt) => (
-              <div style={{ fontSize: 13, color: "" }}>{formatDate(createdAt)}</div>
+              <div style={{ fontSize: 13, color: "" }}>
+                {formatDate(createdAt)}
+              </div>
             )}
           />
           <Table.Column<ReturnRequest>
@@ -923,7 +984,12 @@ export const OrderList: React.FC = () => {
         className="rounded-lg"
         destroyOnClose
       >
-        <Form form={form} onFinish={handleCancelOrder} layout="vertical" preserve={false}>
+        <Form
+          form={form}
+          onFinish={handleCancelOrder}
+          layout="vertical"
+          preserve={false}
+        >
           <Form.Item
             name="reason"
             label="Lý do hủy"
@@ -937,23 +1003,38 @@ export const OrderList: React.FC = () => {
               ))}
             </Select>
           </Form.Item>
-          <Form.Item noStyle shouldUpdate={(prev, current) => prev.reason !== current.reason}>
+          <Form.Item
+            noStyle
+            shouldUpdate={(prev, current) => prev.reason !== current.reason}
+          >
             {({ getFieldValue }) =>
               getFieldValue("reason") === "Khác" ? (
                 <Form.Item
                   name="customReason"
                   label="Lý do cụ thể"
-                  rules={[{ required: true, message: "Vui lòng nhập lý do cụ thể" }]}
+                  rules={[
+                    { required: true, message: "Vui lòng nhập lý do cụ thể" },
+                  ]}
                 >
-                  <AntInput.TextArea rows={3} placeholder="Nhập lý do hủy đơn hàng" />
+                  <AntInput.TextArea
+                    rows={3}
+                    placeholder="Nhập lý do hủy đơn hàng"
+                  />
                 </Form.Item>
               ) : null
             }
           </Form.Item>
           <Form.Item>
-            <div style={{ display: "flex", justifyContent: "flex-end", gap: 12 }}>
+            <div
+              style={{ display: "flex", justifyContent: "flex-end", gap: 12 }}
+            >
               <Button onClick={handleModalCancel}>Hủy bỏ</Button>
-              <Button type="primary" htmlType="submit" danger loading={isCancelLoading}>
+              <Button
+                type="primary"
+                htmlType="submit"
+                danger
+                loading={isCancelLoading}
+              >
                 Xác nhận hủy
               </Button>
             </div>
