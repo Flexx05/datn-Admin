@@ -89,7 +89,7 @@ const ChatList = () => {
 
     if (searchValue.trim()) {
       result.push({
-        field: "search", // 🔍 ví dụ bạn tìm theo tên khách hàng
+        field: "search",
         operator: "contains",
         value: searchValue.trim(),
       });
@@ -109,7 +109,11 @@ const ChatList = () => {
   });
 
   const invalidate = useInvalidate();
-  const chatData = data?.data.filter((item) => item.messages.length > 1) || [];
+  const chatData =
+    data?.data.filter(
+      (item) =>
+        item.messages.length > 1 || item.messages[0].senderRole !== "system"
+    ) || [];
 
   useEffect(() => {
     if (id) socket.emit("join-conversation", id);
