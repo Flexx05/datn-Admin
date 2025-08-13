@@ -92,7 +92,7 @@ const Messages = () => {
       );
       return {
         ...m,
-        senderRole: m.senderRole || sender?.userId.role,
+        senderRole: m.senderRole || sender?.userId.role || "",
         type: "user",
       };
     });

@@ -28,7 +28,6 @@ export const useNontificationSocket = () => {
     });
     socket.off("new-nontification");
     socket.on("new-nontification", (data) => {
-      console.log("[socket] Received new-nontification:", data);
       if (
         (data.recipientId === null || data.recipientId === user?._id) &&
         data.type !== 3

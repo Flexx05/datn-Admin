@@ -1,5 +1,13 @@
 import React, { useState, useEffect } from "react";
-import { Form, Input, InputNumber, DatePicker, Select, Tag } from "antd";
+import {
+  Form,
+  Input,
+  InputNumber,
+  DatePicker,
+  Select,
+  Tag,
+  message,
+} from "antd";
 import { HttpError } from "@refinedev/core";
 import { Edit, useForm } from "@refinedev/antd";
 import dayjs from "dayjs";
@@ -39,10 +47,17 @@ const VoucherEdit = () => {
   const [fetching, setFetching] = useState(false);
 
   const record = queryResult?.data?.data?.data;
+  const [initialQuantity, setInitialQuantity] = useState<number>(
+    record?.quantity || 1
+  );
 
   useEffect(() => {
     if (record) {
       setDiscountType(record.discountType);
+
+      if (record.quantity) {
+        setInitialQuantity(record.quantity);
+      }
 
       if (record.discountType === "fixed") {
         setFixedValue(record.discountValue);
@@ -111,12 +126,12 @@ const VoucherEdit = () => {
         return;
       }
 
-      if (end.diff(start, "minute") < 1) {
+      if (end.diff(start, "minute") < 5) {
         formProps.form?.setFields([
           {
             name: "dateRange",
             errors: [
-              "Thời gian kết thúc phải sau thời gian bắt đầu ít nhất 1 phút",
+              "Thời gian kết thúc phải sau thời gian bắt đầu ít nhất 5 phút",
             ],
           },
         ]);
@@ -156,9 +171,99 @@ const VoucherEdit = () => {
     }
   }, [userIds, formProps.form]);
 
+  const [currentStatus, setCurrentStatus] = useState<string | undefined>(
+    undefined
+  );
+  const [isFormDisabled, setIsFormDisabled] = useState(false);
+
+  useEffect(() => {
+    if (record?.voucherStatus) {
+      setCurrentStatus(record.voucherStatus);
+
+      // Nếu voucher đã hết hạn
+      if (record.voucherStatus === "expired") {
+        setIsFormDisabled(true);
+      }
+    }
+  }, [record?.voucherStatus]);
+
+  useEffect(() => {
+    if (!record?._id || !currentStatus) return;
+
+    let timeoutId: NodeJS.Timeout;
+    let intervalId: NodeJS.Timeout;
+
+    const fetchLatestStatus = async () => {
+      try {
+        const res = await axiosInstance.get(`/vouchers/id/${record._id}`);
+        const latest = res.data?.data;
+        if (!latest) return;
+
+        if (latest.voucherStatus !== currentStatus) {
+          message.warning(
+            `Trạng thái voucher đã thay đổi từ "${currentStatus}" sang "${latest.voucherStatus}"`
+          );
+
+          if (latest.voucherStatus === "expired") {
+            message.warning("Voucher đã hết hạn, không thể chỉnh sửa");
+            setIsFormDisabled(true);
+          }
+
+          // Update form
+          formProps.form?.setFieldsValue({
+            dateRange: [dayjs(latest.startDate), dayjs(latest.endDate)],
+            quantity: latest.quantity,
+            userIds: latest.userIds || [],
+          });
+
+          // Refetch UI
+          queryResult?.refetch();
+
+          // Update state
+          setCurrentStatus(latest.voucherStatus);
+        }
+      } catch (err) {
+        console.error("Lỗi khi kiểm tra trạng thái voucher:", err);
+      }
+    };
+
+    // Check lần đầu
+    fetchLatestStatus();
+
+    // Đặt giờ thay đổi tiếp theo
+    const now = dayjs();
+    const nextChangeTime =
+      currentStatus === "inactive"
+        ? dayjs(record.startDate)
+        : currentStatus === "active"
+        ? dayjs(record.endDate)
+        : null;
+
+    if (nextChangeTime && nextChangeTime.isAfter(now)) {
+      const msUntilChange = nextChangeTime.diff(now, "millisecond");
+      timeoutId = setTimeout(fetchLatestStatus, msUntilChange);
+    }
+
+    // Polling dự phòng
+    intervalId = setInterval(fetchLatestStatus, 60000);
+
+    return () => {
+      clearTimeout(timeoutId);
+      clearInterval(intervalId);
+    };
+  }, [record?._id, currentStatus]);
+
   return (
-    <Edit saveButtonProps={saveButtonProps} title="Cập nhật Voucher">
-      <Form {...formProps} layout="vertical" onFinish={handleFinish}>
+    <Edit
+      saveButtonProps={{ ...saveButtonProps, disabled: isFormDisabled }}
+      title="Cập nhật Voucher"
+    >
+      <Form
+        {...formProps}
+        layout="vertical"
+        onFinish={handleFinish}
+        disabled={isFormDisabled}
+      >
         <Form.Item
           label="Loại voucher"
           name="voucherType"
@@ -413,10 +518,34 @@ const VoucherEdit = () => {
               min: 1,
               message: "Số lượng voucher phải lớn hơn hoặc bằng 1",
             },
+            {
+              validator: (_, value) => {
+                const isPublic = userIds.length === 0;
+                const wasPublicInitially =
+                  !record?.userIds || record.userIds.length === 0;
+                const isActive = record?.voucherStatus === "active";
+
+                // Nếu trước đó là công khai, vẫn đang công khai, và đang active
+                if (
+                  wasPublicInitially &&
+                  isPublic &&
+                  isActive &&
+                  typeof value === "number" &&
+                  value < initialQuantity
+                ) {
+                  return Promise.reject(
+                    new Error(
+                      `Không thể giảm số lượng voucher công khai khi đang hoạt động (hiện tại: ${initialQuantity})`
+                    )
+                  );
+                }
+                return Promise.resolve();
+              },
+            },
           ]}
         >
           <InputNumber
-            disabled={userIds.length > 0}
+            disabled={isFormDisabled || userIds.length > 0}
             style={{ width: "100%" }}
             placeholder="Nhập số lượng voucher"
           />
@@ -452,17 +581,19 @@ const VoucherEdit = () => {
                   disabledMinutes: (selectedHour) =>
                     selectedHour === currentHour
                       ? Array.from({ length: 60 }, (_, i) => i).filter(
-                          (m) => m <= currentMinute
+                          (m) => m < currentMinute
                         )
                       : [],
                 };
               }
               return {};
             }}
+            // Khi voucher đã hết hạn thì disable toàn bộ, còn khi đang hoạt động thì chỉ disable ngày bắt đầu
             disabled={[
-              record?.voucherStatus === "active" ||
-                dayjs(record?.startDate).isBefore(dayjs(), "minute"), // disable startDate
-              false, // endDate vẫn cho chỉnh
+              isFormDisabled ||
+                record?.voucherStatus === "active" ||
+                dayjs(record?.startDate).isBefore(dayjs(), "minute"),
+              isFormDisabled,
             ]}
           />
         </Form.Item>

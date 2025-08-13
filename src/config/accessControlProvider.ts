@@ -5,7 +5,6 @@ const staffPermissions: Record<string, string[]> = {
   category: ["list", "show"],
   brand: ["list", "show"],
   attribute: ["list", "show"],
-  voucher: ["list", "show"],
   "admin/users": ["list", "show"],
   orders: ["list", "show", "returnRequests"],
   conversation: ["list", "show"],

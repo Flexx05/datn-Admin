@@ -31,13 +31,14 @@ import { API_URL } from "../../config/dataProvider";
 import { IOrderDetail, Order } from "../../interface/order";
 import { formatCurrency } from "./formatCurrency";
 import Loader from "../../utils/loading";
+import { axiosInstance } from "../../utils/axiosInstance";
 
 const { Text } = Typography;
 
 const cancelReasons = [
-  "Bão lũ giao hàng không được",
-  "Shipper ốm",
-  "Hết hàng",
+  "Bão lũ giao hàng không được",
+  "Shipper ốm",
+  "Hết hàng",
   "Khác",
 ];
 
@@ -64,6 +65,7 @@ export const OrderShow = () => {
 
   const [loadingAction, setLoadingAction] = useState<number | null>(null);
   const [isModalVisible, setIsModalVisible] = useState(false);
+  const [isCancelLoading, setIsCancelLoading] = useState(false); // Thêm state cho loading nút hủy
   const [form] = Form.useForm();
 
   // Hàm cập nhật trạng thái đơn hàng
@@ -103,13 +105,42 @@ export const OrderShow = () => {
     reason: string;
     customReason?: string;
   }) => {
-    const finalReason =
-      values.reason === "Khác" && values.customReason
-        ? values.customReason
-        : values.reason;
-    await handleUpdateStatus(5, finalReason);
-    setIsModalVisible(false);
-    form.resetFields();
+    setIsCancelLoading(true); // Bật trạng thái loading
+    try {
+      const finalReason =
+        values.reason === "Khác" && values.customReason
+          ? values.customReason
+          : values.reason;
+      await handleUpdateStatus(5, finalReason);
+      if (
+        orderData.paymentMethod === "VNPAY" ||
+        (orderData.paymentMethod === "VI" && orderData.paymentStatus === 1)
+      ) {
+        const refundResponse = await axiosInstance.post(
+          "http://localhost:8080/api/wallet/cancel-refund",
+          {
+            orderId: orderData._id,
+            type: 0,
+            amount: orderData.totalAmount,
+            status: 1,
+            description: `Trả lại tiền đơn hàng đã hủy ${orderData.orderCode}: ${finalReason}`,
+          }
+        );
+        const refundData = await refundResponse.data;
+        if (!refundData.success) {
+          message.error("Yêu cầu hoàn tiền thất bại");
+          return;
+        }
+      }
+      setIsModalVisible(false);
+      form.resetFields();
+      message.success("Hủy đơn hàng thành công");
+    } catch (error: any) {
+      message.error(error.message || "Hủy đơn hàng thất bại");
+      console.error(error);
+    } finally {
+      setIsCancelLoading(false); // Tắt trạng thái loading
+    }
   };
 
   const handleModalCancel = () => {
@@ -359,8 +390,8 @@ export const OrderShow = () => {
                     </Descriptions.Item>
                     <Descriptions.Item label="Ngày giao hàng">
                       <Text>
-                        {orderData?.status === 4 && orderData?.updatedAt
-                          ? formatDate(orderData?.updatedAt)
+                        {orderData?.deliveryDate
+                          ? formatDate(orderData?.deliveryDate)
                           : "Chưa xác định"}
                       </Text>
                     </Descriptions.Item>
@@ -510,20 +541,20 @@ export const OrderShow = () => {
                       title="Xác nhận đơn hàng này?"
                       onConfirm={() => handleUpdateStatus(1)}
                       okText="Xác nhận"
-                      cancelText="Huỷ"
+                      cancelText="Hủy"
                     >
                       <Button type="primary" loading={loadingAction === 1}>
                         Xác nhận đơn hàng
                       </Button>
                     </Popconfirm>
                     <Popconfirm
-                      title="Huỷ đơn hàng này?"
+                      title="Hủy đơn hàng này?"
                       onConfirm={showCancelModal}
-                      okText="Huỷ đơn"
+                      okText="Hủy đơn"
                       cancelText="Không"
                     >
                       <Button danger loading={loadingAction === 5}>
-                        Huỷ đơn hàng
+                        Hủy đơn hàng
                       </Button>
                     </Popconfirm>
                   </>
@@ -534,20 +565,20 @@ export const OrderShow = () => {
                       title="Chuyển đơn hàng sang trạng thái đang giao?"
                       onConfirm={() => handleUpdateStatus(2)}
                       okText="Giao hàng"
-                      cancelText="Huỷ"
+                      cancelText="Hủy"
                     >
                       <Button type="primary" loading={loadingAction === 2}>
                         Bắt đầu giao hàng
                       </Button>
                     </Popconfirm>
                     <Popconfirm
-                      title="Huỷ đơn hàng này?"
+                      title="Hủy đơn hàng này?"
                       onConfirm={showCancelModal}
-                      okText="Huỷ đơn"
+                      okText="Hủy đơn"
                       cancelText="Không"
                     >
                       <Button danger loading={loadingAction === 5}>
-                        Huỷ đơn hàng
+                        Hủy đơn hàng
                       </Button>
                     </Popconfirm>
                   </>
@@ -557,7 +588,7 @@ export const OrderShow = () => {
                     title="Xác nhận đã giao hàng thành công?"
                     onConfirm={() => handleUpdateStatus(3)}
                     okText="Đã giao"
-                    cancelText="Huỷ"
+                    cancelText="Hủy"
                   >
                     <Button type="primary" loading={loadingAction === 3}>
                       Xác nhận đã giao
@@ -570,7 +601,7 @@ export const OrderShow = () => {
 
           <Modal
             title="Hủy đơn hàng"
-            visible={isModalVisible}
+            open={isModalVisible}
             onCancel={handleModalCancel}
             footer={null}
             className="rounded-lg"
@@ -623,7 +654,12 @@ export const OrderShow = () => {
                   >
                     Hủy bỏ
                   </Button>
-                  <Button type="primary" htmlType="submit" danger>
+                  <Button
+                    type="primary"
+                    htmlType="submit"
+                    danger
+                    loading={isCancelLoading}
+                  >
                     Xác nhận hủy
                   </Button>
                 </div>

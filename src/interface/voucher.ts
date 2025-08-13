@@ -16,4 +16,5 @@ export interface IVoucher {
   createdAt: string;
   updatedAt: string;
   userIds?: string[]; // Thêm trường này để hỗ trợ voucher dùng riêng
+  isAuto: boolean; // Thêm trường này để đánh dấu voucher tự động
 }
