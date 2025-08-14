@@ -158,19 +158,9 @@ export const VariationItem: React.FC<VariationItemProps> = ({
                   pattern: /^[1-9]\d*$/,
                   message: "Giá phải là số nguyên dương!",
                 },
-                {
-                  type: "number",
-                  min: 1000,
-                  message: "Giá phải lớn hơn hoặc bằng 1000!",
-                },
-                {
-                  type: "number",
-                  max: 1000000000,
-                  message: "Giá không được lớn hơn 1 tỷ!",
-                },
               ]}
             >
-              <InputNumber placeholder="Nhập giá" />
+              <InputNumber placeholder="Nhập giá" min={1000} max={1000000000} />
             </Form.Item>
 
             <Form.Item
@@ -180,16 +170,6 @@ export const VariationItem: React.FC<VariationItemProps> = ({
                 {
                   pattern: /^[1-9]\d*$/,
                   message: "Giá phải là số nguyên dương!",
-                },
-                {
-                  type: "number",
-                  min: 1000,
-                  message: "Giá phải lớn hơn hoặc bằng 1000!",
-                },
-                {
-                  type: "number",
-                  max: 1000000000,
-                  message: "Giá không được lớn hơn 1 tỷ!",
                 },
                 {
                   validator: (_, value) => {
@@ -206,7 +186,11 @@ export const VariationItem: React.FC<VariationItemProps> = ({
                 },
               ]}
             >
-              <InputNumber placeholder="Nhập giá giảm (nếu có)" />
+              <InputNumber
+                placeholder="Nhập giá giảm"
+                min={1000}
+                max={1000000000}
+              />
             </Form.Item>
           </div>
         </div>
