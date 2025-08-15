@@ -415,7 +415,7 @@ export const OrderList: React.FC = () => {
           {
             orderId: record.orderId._id,
             type: 0,
-            amount: record.refundAmount + 30000,
+            amount: record.refundAmount,
             status: 1,
             description: `Hoàn tiền cho yêu cầu hoàn hàng đơn ${record.orderId.orderCode}: ${record.reason}`,
             returnRequestId: record._id,
