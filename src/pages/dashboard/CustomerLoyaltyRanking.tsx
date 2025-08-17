@@ -20,18 +20,20 @@ const CustomerLoyaltyRanking = () => {
   const ranking = useMemo(() => {
     if (!ordersData?.data) return [];
 
-    const recentOrders = ordersData.data.filter((order: any) => {
-      const createdAt = dayjs(order.createdAt);
-      return (
-        order.status === 4 &&
-        order.paymentStatus === 1 &&
-        createdAt.isAfter(dayjs().subtract(90, "day"))
-      );
-    });
+    // lọc đơn hợp lệ
+    const validOrders = ordersData.data.filter(
+      (order: any) => order.status === 4 && order.paymentStatus === 1
+    );
+
+    // đơn trong 90 ngày gần nhất
+    const recentOrders = validOrders.filter((order: any) =>
+      dayjs(order.createdAt).isAfter(dayjs().subtract(90, "day"))
+    );
 
     const customerMap: Record<string, any> = {};
 
-    recentOrders.forEach((order: any) => {
+    // lifetime (toàn bộ đơn)
+    validOrders.forEach((order: any) => {
       const userId = order.userId?._id || order.userId;
       if (!customerMap[userId]) {
         customerMap[userId] = {
@@ -40,10 +42,27 @@ const CustomerLoyaltyRanking = () => {
           email: order.userId?.email || "N/A",
           avatar: order.userId?.avatar,
           rank: order.userId?.rank ?? null,
-          total: 0,
-          count: 0,
+          total: 0, // 90 ngày
+          count: 0, // 90 ngày
+          lastOrderDate: null, // toàn bộ
+          lifetimeTotal: 0,
         };
       }
+      customerMap[userId].lifetimeTotal += order.totalAmount;
+
+      // cập nhật đơn gần nhất (toàn bộ)
+      const createdAt = new Date(order.createdAt);
+      if (
+        !customerMap[userId].lastOrderDate ||
+        createdAt > customerMap[userId].lastOrderDate
+      ) {
+        customerMap[userId].lastOrderDate = createdAt;
+      }
+    });
+
+    // tính 90 ngày
+    recentOrders.forEach((order: any) => {
+      const userId = order.userId?._id || order.userId;
       customerMap[userId].total += order.totalAmount;
       customerMap[userId].count += 1;
     });
@@ -54,21 +73,35 @@ const CustomerLoyaltyRanking = () => {
   }, [ordersData]);
 
   return (
-    <Card title="Xếp hạng khách hàng thân thiết (theo 90 ngày gần nhất)" loading={isLoading}>
+    <Card
+      title="Xếp hạng khách hàng thân thiết (90 ngày gần nhất)"
+      loading={isLoading}
+    >
       <Table
         dataSource={ranking}
         rowKey="userId"
         pagination={false}
+        scroll={{ x: true }}
         columns={[
           {
             title: "Khách hàng",
             dataIndex: "name",
+            width: 250,
             render: (_, record) => (
               <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                 <Avatar src={record.avatar} />
-                <div>
+                <div style={{ minWidth: 0 }}>
                   <strong>{record.name}</strong>
-                  <div style={{ fontSize: 12, color: "#999" }}>
+                  <div
+                    style={{
+                      fontSize: 12,
+                      color: "#999",
+                      whiteSpace: "nowrap",
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      maxWidth: 180,
+                    }}
+                  >
                     {record.email}
                   </div>
                 </div>
@@ -76,21 +109,51 @@ const CustomerLoyaltyRanking = () => {
             ),
           },
           {
-            title: "Số đơn",
+            title: "Số đơn (90 ngày)",
             dataIndex: "count",
             align: "center",
+            width: 120,
           },
           {
-            title: "Tổng chi tiêu",
+            title: "Tổng chi tiêu (90 ngày)",
             dataIndex: "total",
+            width: 160,
             render: (val) => val.toLocaleString("vi-VN") + "₫",
             align: "right",
-            sorter: (a, b) => a.total - b.total,
-            defaultSortOrder: "descend", // mặc định sắp giảm dần
+          },
+          {
+            title: "Tổng chi tiêu (toàn bộ)",
+            dataIndex: "lifetimeTotal",
+            width: 180,
+            render: (val) => val.toLocaleString("vi-VN") + "₫",
+            align: "right",
+            sorter: (a, b) => a.lifetimeTotal - b.lifetimeTotal,
+          },
+          {
+            title: "Đơn gần nhất",
+            dataIndex: "lastOrderDate",
+            width: 180,
+            render: (val) => {
+              if (!val) return "Chưa có";
+              const formatted = dayjs(val).format("DD/MM/YYYY");
+              const isOld = dayjs(val).isBefore(dayjs().subtract(90, "day"));
+              return (
+                <span>
+                  {formatted}
+                  {isOld && (
+                    <span style={{ color: "red", marginLeft: 4, fontSize: 12 }}>
+                      (ngoài 90 ngày)
+                    </span>
+                  )}
+                </span>
+              );
+            },
+            align: "center",
           },
           {
             title: "Hạng",
             dataIndex: "rank",
+            width: 120,
             render: (val) => getRank(val),
             align: "center",
             filters: [

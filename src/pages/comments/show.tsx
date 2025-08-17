@@ -112,6 +112,8 @@ export const CommentShow = () => {
     );
   };
 
+  const isDisabled = isLoading || replyLoading;
+
   return (
     <Show isLoading={isLoading} canDelete={false} title="Chi tiết đánh giá">
       <Spin spinning={isLoading} indicator={<Loader />}>
@@ -205,16 +207,24 @@ export const CommentShow = () => {
                         alt={`Ảnh ${index + 1}`}
                         width={150}
                         height={150}
-                        style={{ objectFit: "cover" }}
-                        preview
+                        style={{
+                          objectFit: "cover",
+                          pointerEvents: isDisabled ? "none" : "auto", // chặn click
+                          opacity: isDisabled ? 0.5 : 1, // làm mờ khi loading
+                        }}
+                        preview={!isDisabled} // tắt preview khi loading
                       />
                     ) : isVideo ? (
                       <video
                         key={index}
                         width={200}
                         height={200}
-                        controls
-                        style={{ objectFit: "cover" }}
+                        controls={!isDisabled} // khi loading thì tắt controls
+                        style={{
+                          objectFit: "cover",
+                          pointerEvents: isDisabled ? "none" : "auto", // chặn thao tác khi loading
+                          opacity: isDisabled ? 0.5 : 1, // thêm mờ đi cho user dễ nhận biết
+                        }}
                       >
                         <source src={media} type="video/mp4" />
                         Trình duyệt của bạn không hỗ trợ video.
@@ -241,14 +251,14 @@ export const CommentShow = () => {
             <Popconfirm
               title="Bạn có chắc muốn ẩn bình luận này không?"
               onConfirm={() => handleToggleStatus(false)}
-              disabled={record?.status !== "visible"}
+              disabled={isDisabled || record?.status !== "visible"}
             >
               <Switch
                 checked={record?.status === "visible"}
                 checkedChildren="Hiện"
                 unCheckedChildren="Ẩn"
                 loading={status === String(record?._id)}
-                disabled={!record?.productId}
+                disabled={isDisabled || !record?.productId}
                 onChange={(checked) => {
                   if (!checked && record?.status === "visible") {
                     // Nếu chuyển từ hiện sang ẩn thì show Popconfirm (không làm gì ở đây)
@@ -277,6 +287,7 @@ export const CommentShow = () => {
               layout="vertical"
               onFinish={handleReply}
               style={{ marginTop: "10px" }}
+              disabled={isDisabled}
             >
               <Form.Item
                 name="adminReply"
@@ -286,7 +297,7 @@ export const CommentShow = () => {
                 <Input.TextArea
                   rows={4}
                   placeholder="Nhập phản hồi của bạn tại đây..."
-                  disabled={record?.status !== "visible"}
+                  disabled={isDisabled || record?.status !== "visible"}
                 />
               </Form.Item>
 
@@ -297,7 +308,7 @@ export const CommentShow = () => {
               )}
 
               <Form.Item name="sendEmail" valuePropName="checked">
-                <Checkbox disabled={record?.status !== "visible"}>
+                <Checkbox disabled={isDisabled || record?.status !== "visible"}>
                   Gửi email thông báo cho khách hàng
                 </Checkbox>
               </Form.Item>
@@ -307,7 +318,7 @@ export const CommentShow = () => {
                   type="primary"
                   htmlType="submit"
                   loading={replyLoading}
-                  disabled={record?.status !== "visible"}
+                  disabled={isDisabled || record?.status !== "visible"}
                   style={{ marginTop: "10px" }}
                 >
                   {record?.adminReply ? "Cập nhật phản hồi" : "Gửi phản hồi"}
