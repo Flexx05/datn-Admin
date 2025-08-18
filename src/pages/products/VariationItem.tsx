@@ -191,7 +191,7 @@ export const VariationItem: React.FC<VariationItemProps> = ({
                       field.name,
                       "regularPrice",
                     ]);
-                    if (value > price) {
+                    if (value >= price) {
                       return Promise.reject("Giá giảm không lớn hơn giá gốc!");
                     }
                     return Promise.resolve();
