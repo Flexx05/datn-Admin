@@ -363,10 +363,6 @@ export const ProductEdit = () => {
                 min: 3,
                 message: "Tên sản phẩm phải có ít nhất 3 ký tự",
               },
-              {
-                pattern: /^[\p{L}0-9\s]+$/u,
-                message: "Tên sản phẩm không được chứa ký tự đặc biệt",
-              },
             ]}
           >
             <Input />

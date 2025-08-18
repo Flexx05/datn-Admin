@@ -28,6 +28,7 @@ import { AttributeItem } from "./AttributeItem";
 import { VariationItem } from "./VariationItem";
 import "./variation-animations.css";
 import Loader from "../../utils/loading";
+import { SaveButton } from "../../utils/ButtonForManagement";
 
 export const ProductCreate = () => {
   const { formProps, saveButtonProps, formLoading } = useForm({
@@ -264,7 +265,7 @@ export const ProductCreate = () => {
 
   return (
     <Create
-      saveButtonProps={saveButtonProps}
+      saveButtonProps={SaveButton("Lưu sản phẩm", saveButtonProps)}
       title="Tạo sản phẩm"
       isLoading={false}
     >
@@ -287,10 +288,6 @@ export const ProductCreate = () => {
               {
                 max: 100,
                 message: "Tên sản phẩm không được vượt quá 100 ký tự",
-              },
-              {
-                pattern: /^[\p{L}0-9\s]+$/u,
-                message: "Tên sản phẩm không được chứa ký tự đặc biệt",
               },
             ]}
           >
@@ -395,7 +392,7 @@ export const ProductCreate = () => {
                       })
                     );
 
-                    await formProps.form?.setFieldsValue({
+                    formProps.form?.setFieldsValue({
                       variation: generatedVariations,
                     });
 
@@ -417,6 +414,7 @@ export const ProductCreate = () => {
                 <InputNumber
                   placeholder="Giá gốc"
                   min={1000}
+                  max={1000000000}
                   style={{ width: 120 }}
                   value={bulkRegularPrice}
                   onChange={(value) =>
@@ -426,6 +424,7 @@ export const ProductCreate = () => {
                 <InputNumber
                   placeholder="Giá giảm"
                   min={1000}
+                  max={1000000000}
                   style={{ width: 120 }}
                   value={bulkSalePrice}
                   onChange={(value) =>
@@ -435,6 +434,7 @@ export const ProductCreate = () => {
                 <InputNumber
                   placeholder="Tồn kho"
                   min={0}
+                  max={10000}
                   style={{ width: 120 }}
                   value={bulkStock}
                   onChange={(value) =>
@@ -444,6 +444,14 @@ export const ProductCreate = () => {
                 <Button
                   type="primary"
                   onClick={() => {
+                    if (
+                      bulkRegularPrice !== undefined &&
+                      bulkSalePrice !== undefined &&
+                      bulkSalePrice >= bulkRegularPrice
+                    ) {
+                      message.error("Giá giảm phải nhỏ hơn giá gốc");
+                      return;
+                    }
                     const variation =
                       formProps.form?.getFieldValue("variation");
                     if (!variation || variation.length === 0) {
@@ -452,9 +460,15 @@ export const ProductCreate = () => {
                     }
                     const updated = variation.map((item: any) => ({
                       ...item,
-                      regularPrice: bulkRegularPrice ?? item.regularPrice,
-                      salePrice: bulkSalePrice ?? item.salePrice,
-                      stock: bulkStock ?? item.stock,
+                      regularPrice:
+                        bulkRegularPrice !== undefined
+                          ? bulkRegularPrice
+                          : item.regularPrice,
+                      salePrice:
+                        bulkSalePrice !== undefined
+                          ? bulkSalePrice
+                          : item.salePrice,
+                      stock: bulkStock !== undefined ? bulkStock : item.stock,
                     }));
                     formProps.form?.setFieldsValue({ variation: updated });
                     message.success("✅ Đã áp dụng cho tất cả biến thể!");

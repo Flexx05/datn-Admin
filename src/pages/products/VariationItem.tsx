@@ -17,8 +17,12 @@ export const VariationItem: React.FC<VariationItemProps> = ({
   form,
 }) => {
   const handleImageChange = async (info: any) => {
-    const fileList = Array.isArray(info?.fileList) ? info.fileList : [];
-
+    let fileList = Array.isArray(info?.fileList) ? info.fileList : [];
+    // Giới hạn 1 ảnh
+    fileList = fileList.slice(0, 1).map((file: any) => ({
+      ...file,
+      status: file.status || "uploading",
+    }));
     // Nếu xóa ảnh (fileList rỗng)
     if (!fileList.length) {
       const currentVariations = form.getFieldValue("variation") || [];
@@ -26,30 +30,34 @@ export const VariationItem: React.FC<VariationItemProps> = ({
       form.setFieldsValue({ variation: currentVariations });
       return;
     }
-
     const file = fileList[0];
-
-    if (file && file.originFileObj) {
-      const formData = new FormData();
-      formData.append("file", file.originFileObj);
-      formData.append("upload_preset", "Binova_Upload");
-
+    if (file && file.originFileObj && !file.url) {
       try {
-        const res = await axios.post(CLOUDINARY_URL, formData);
-
-        const url = res.data.secure_url;
+        const formData = new FormData();
+        formData.append("file", file.originFileObj);
+        formData.append("upload_preset", "Binova_Upload");
+        const { data } = await axios.post(CLOUDINARY_URL, formData);
+        let fileUrl = data.secure_url;
+        if (file.originFileObj.type.startsWith("image/")) {
+          fileUrl = fileUrl.replace("/upload/", "/upload/f_webp/");
+        }
+        fileList[0] = {
+          ...fileList[0],
+          url: fileUrl,
+          status: "done",
+        };
         const currentVariations = form.getFieldValue("variation") || [];
-        currentVariations[field.name]["image"] = [
-          {
-            uid: new Date().getTime().toString(),
-            name: file.name,
-            status: "done",
-            url,
-          },
-        ];
+        currentVariations[field.name]["image"] = fileList;
         form.setFieldsValue({ variation: currentVariations });
         message.success("🎉 Tải ảnh biến thể thành công!");
       } catch (error) {
+        fileList[0] = {
+          ...fileList[0],
+          status: "error",
+        };
+        const currentVariations = form.getFieldValue("variation") || [];
+        currentVariations[field.name]["image"] = fileList;
+        form.setFieldsValue({ variation: currentVariations });
         message.error("❌ Lỗi khi upload ảnh biến thể.");
       }
     } else {
@@ -136,14 +144,29 @@ export const VariationItem: React.FC<VariationItemProps> = ({
             fileList={
               form.getFieldValue(["variation", field.name, "image"]) || []
             }
+            showUploadList={{
+              showPreviewIcon: true,
+              showRemoveIcon: true,
+            }}
+            disabled={(
+              form.getFieldValue(["variation", field.name, "image"]) || []
+            ).some((img: any) => img.status === "uploading")}
           >
-            {(form.getFieldValue(["variation", field.name, "image"]) || [])
-              .length >= 1 ? null : (
-              <div>
-                <PlusOutlined />
-                <div style={{ marginTop: 8 }}>Tải ảnh</div>
-              </div>
-            )}
+            {(() => {
+              const images =
+                form.getFieldValue(["variation", field.name, "image"]) || [];
+              const isUploading = images.some(
+                (img: any) => img.status === "uploading"
+              );
+              if (isUploading) return null;
+              if (images.length >= 1) return null;
+              return (
+                <div>
+                  <PlusOutlined />
+                  <div style={{ marginTop: 8 }}>Tải ảnh</div>
+                </div>
+              );
+            })()}
           </Upload>
         </Form.Item>
 
@@ -152,13 +175,7 @@ export const VariationItem: React.FC<VariationItemProps> = ({
             <Form.Item
               label="Giá"
               name={[field.name, "regularPrice"]}
-              rules={[
-                { required: true, message: "Vui lòng nhập giá!" },
-                {
-                  pattern: /^[1-9]\d*$/,
-                  message: "Giá phải là số nguyên dương!",
-                },
-              ]}
+              rules={[{ required: true, message: "Vui lòng nhập giá!" }]}
             >
               <InputNumber placeholder="Nhập giá" min={1000} max={1000000000} />
             </Form.Item>
@@ -167,10 +184,6 @@ export const VariationItem: React.FC<VariationItemProps> = ({
               label="Giá giảm"
               name={[field.name, "salePrice"]}
               rules={[
-                {
-                  pattern: /^[1-9]\d*$/,
-                  message: "Giá phải là số nguyên dương!",
-                },
                 {
                   validator: (_, value) => {
                     const price = form.getFieldValue([
@@ -198,20 +211,9 @@ export const VariationItem: React.FC<VariationItemProps> = ({
         <Form.Item
           label="Tồn kho"
           name={[field.name, "stock"]}
-          rules={[
-            { required: true, message: "Vui lòng nhập tồn kho!" },
-            {
-              pattern: /^[0-9]\d*$/,
-              message: "Tồn kho phải là số nguyên dương!",
-            },
-            {
-              type: "number",
-              max: 10000,
-              message: "Tồn kho không được lớn hơn 10.000!",
-            },
-          ]}
+          rules={[{ required: true, message: "Vui lòng nhập tồn kho!" }]}
         >
-          <InputNumber placeholder="Nhập tồn kho" />
+          <InputNumber placeholder="Nhập tồn kho" min={0} max={10000} />
         </Form.Item>
       </div>
     </div>

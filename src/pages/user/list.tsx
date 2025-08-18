@@ -1,30 +1,28 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import { ArrowUpOutlined } from "@ant-design/icons";
 import { List, ShowButton, useTable } from "@refinedev/antd";
 import { CrudFilters, useInvalidate } from "@refinedev/core";
 import {
   Avatar,
   Button,
+  Form,
   Input,
+  message,
+  Modal,
   Popconfirm,
   Space,
   Table,
   Tabs,
   Tag,
   Tooltip,
-  message,
-  Modal,
-  Form,
 } from "antd";
-import axios from "axios";
 import dayjs from "dayjs";
 import { useCallback, useState } from "react";
-import { API_URL } from "../../config/dataProvider";
-import { IUser } from "../../interface/user";
-import Loader from "../../utils/loading";
-import { axiosInstance } from "../../utils/axiosInstance";
 import { useAuth } from "../../contexts/auth/AuthContext";
+import { IUser } from "../../interface/user";
+import { axiosInstance } from "../../utils/axiosInstance";
+import Loader from "../../utils/loading";
 import { RoleTagWithPopover } from "../staff/RoleTagWithPopover";
-import { ArrowUpOutlined } from "@ant-design/icons";
 
 export const UserList = () => {
   const [filterActive, setFilterActive] = useState<boolean>(true);
@@ -94,7 +92,7 @@ export const UserList = () => {
     }
     setLoadingLock(true);
     try {
-      await axios.patch(`${API_URL}/admin/users/${selectedUser._id}/status`, {
+      await axiosInstance.patch(`/admin/users/${selectedUser._id}/status`, {
         isActive: false,
         reason: lockReason,
       });
