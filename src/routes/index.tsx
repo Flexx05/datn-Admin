@@ -63,7 +63,7 @@ const AppRoutes = () => {
             index
             element={
               <NavigateToResource
-                resource={user?.role === "admin" ? "dashboard" : "product"}
+                resource={user?.role === "admin" ? "dashboard" : "orders"}
               />
             }
           />
