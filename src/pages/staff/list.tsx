@@ -20,6 +20,7 @@ import { IUser } from "../../interface/user";
 import { axiosInstance } from "../../utils/axiosInstance";
 import Loader from "../../utils/loading";
 import { RoleTagWithPopover } from "./RoleTagWithPopover";
+import { useAuth } from "../../contexts/auth/AuthContext";
 
 export const StaffList = () => {
   const [filterActive, setFilterActive] = useState<boolean>(true);
@@ -28,6 +29,7 @@ export const StaffList = () => {
   const [lockReason, setLockReason] = useState("");
   const [loadingLock, setLoadingLock] = useState(false);
   const invalidate = useInvalidate();
+  const { user } = useAuth();
   const { tableProps, setFilters } = useTable<IUser>({
     resource: "staffs",
     syncWithLocation: true,
@@ -245,15 +247,23 @@ export const StaffList = () => {
                 <ShowButton hideText size="small" recordItemId={record._id} />
               </Tooltip>
               {record.isActive ? (
-                <Button
-                  danger
-                  size="small"
-                  type="default"
-                  disabled={record.countOrderNotSuccess > 0}
-                  onClick={() => handleOpenLockModal(record)}
+                <Tooltip
+                  title={
+                    record._id === user?._id
+                      ? "Không thể khóa tài khoản của chính mình"
+                      : "Khóa tài khoản"
+                  }
                 >
-                  Khóa
-                </Button>
+                  <Button
+                    danger
+                    size="small"
+                    type="default"
+                    disabled={record._id === user?._id}
+                    onClick={() => handleOpenLockModal(record)}
+                  >
+                    Khóa
+                  </Button>
+                </Tooltip>
               ) : (
                 <Popconfirm
                   title="Bạn chắc chắn muốn mở khoá tài khoản này?"

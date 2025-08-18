@@ -5,7 +5,6 @@ export interface IUser {
   email: string;
   phone?: string;
   address?: string;
-  countOrderNotSuccess: number;
   role: string;
   isActive: boolean;
   isVerify: boolean;

@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { Button, message, Popconfirm, Popover, Space, Tooltip } from "antd";
+import { Button, message, Popconfirm, Popover, Space } from "antd";
 import { useEffect, useState } from "react";
 
 type RoleTagWithPopoverProps = {
@@ -61,41 +61,39 @@ export const RoleTagWithPopover = ({
     roles.find((r) => r.value === currentRole)?.label || currentRole;
 
   return (
-    <Tooltip title="Chọn vai trò mới">
-      <Popover
-        content={
-          <Space direction="vertical">
-            {roles
-              .filter((r) => r.value !== currentRole)
-              .map((role) => (
-                <Button
-                  key={role.value}
-                  type="text"
-                  size="small"
-                  onClick={() => handleSelectRole(role.value)}
-                  disabled={currentRole === "admin" && role.value === "user"}
-                >
-                  {role.label}
-                </Button>
-              ))}
-          </Space>
-        }
-        title="Chọn vai trò"
-        trigger="click"
-        open={popoverVisible}
-        onOpenChange={(visible) => setPopoverVisible(visible)}
+    <Popover
+      content={
+        <Space direction="vertical">
+          {roles
+            .filter((r) => r.value !== currentRole)
+            .map((role) => (
+              <Button
+                key={role.value}
+                type="text"
+                size="small"
+                onClick={() => handleSelectRole(role.value)}
+                disabled={currentRole === "admin" && role.value === "user"}
+              >
+                {role.label}
+              </Button>
+            ))}
+        </Space>
+      }
+      title="Chọn vai trò"
+      trigger="click"
+      open={popoverVisible}
+      onOpenChange={(visible) => setPopoverVisible(visible)}
+    >
+      <Popconfirm
+        title="Bạn có chắc chắn muốn thay đổi vai trò?"
+        open={confirmVisible}
+        onConfirm={handleConfirm}
+        onCancel={handleCancel}
       >
-        <Popconfirm
-          title="Bạn có chắc chắn muốn thay đổi vai trò?"
-          open={confirmVisible}
-          onConfirm={handleConfirm}
-          onCancel={handleCancel}
-        >
-          {renderTag(currentRole, currentRoleLabel, () =>
-            setPopoverVisible(true)
-          )}
-        </Popconfirm>
-      </Popover>
-    </Tooltip>
+        {renderTag(currentRole, currentRoleLabel, () =>
+          setPopoverVisible(true)
+        )}
+      </Popconfirm>
+    </Popover>
   );
 };

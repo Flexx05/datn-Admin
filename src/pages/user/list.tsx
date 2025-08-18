@@ -250,10 +250,6 @@ export const UserList = () => {
           )}
         />
         <Table.Column
-          dataIndex={"countOrderNotSuccess"}
-          title="Đơn hàng chưa hoàn thành"
-        />
-        <Table.Column
           dataIndex="createdAt"
           title="Ngày đăng ký"
           sorter={(a: IUser, b: IUser) =>
@@ -279,9 +275,8 @@ export const UserList = () => {
                       renderTag={(role, label, onClick) => (
                         <Tooltip
                           title={
-                            record.countOrderNotSuccess > 0 ||
                             record.isVerify === false
-                              ? "Tài khoản chưa kích hoạt hoặc đang có đơn hàng chưa hoàn thành"
+                              ? "Tài khoản chưa kích hoạt"
                               : "Đổi vai trò"
                           }
                           key={"role"}
@@ -289,10 +284,7 @@ export const UserList = () => {
                           <Button
                             size="small"
                             type="default"
-                            disabled={
-                              record.countOrderNotSuccess > 0 ||
-                              record.isVerify === false
-                            }
+                            disabled={record.isVerify === false}
                             icon={<ArrowUpOutlined />}
                             onClick={onClick}
                           />
@@ -303,7 +295,6 @@ export const UserList = () => {
                       danger
                       size="small"
                       type="default"
-                      disabled={record.countOrderNotSuccess > 0}
                       onClick={() => handleOpenLockModal(record)}
                     >
                       Khóa
