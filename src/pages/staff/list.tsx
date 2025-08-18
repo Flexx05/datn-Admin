@@ -129,7 +129,7 @@ export const StaffList = () => {
   );
 
   return (
-    <List>
+    <List title="Quản lý nhân viên">
       <Modal
         title="Nhập lý do khóa tài khoản"
         open={modalVisible}
@@ -202,7 +202,7 @@ export const StaffList = () => {
         />
         <Table.Column
           dataIndex={"role"}
-          title="Vai trò"
+          title="Vai trò (Có thể thay đổi)"
           render={(_: unknown, record) => (
             <RoleTagWithPopover
               record={record}
