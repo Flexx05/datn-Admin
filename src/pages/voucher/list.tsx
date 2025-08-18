@@ -307,26 +307,37 @@ const VoucherList = () => {
               </Popconfirm>
             );
 
-            const permanentDeleteButton = (
-              <Popconfirm
-                title="Bạn có chắc chắn muốn xóa vĩnh viễn voucher này? Hành động này không thể hoàn tác."
-                onConfirm={() => handleDelete(record._id)}
-                okText="Xóa vĩnh viễn"
-                cancelText="Hủy"
-                okButtonProps={{
-                  danger: true,
-                  loading: loadingId === record._id,
-                }}
-              >
-                <Button
-                  icon={<DeleteOutlined />}
-                  danger
-                  size="small"
-                  loading={loadingId === record._id}
-                  disabled={loadingId === record._id}
-                />
-              </Popconfirm>
-            );
+           const permanentDeleteButton = record.isAuto ? (
+             <Tooltip title="Không thể xóa vĩnh viễn voucher tự động">
+               <span>
+                 <Button
+                   icon={<DeleteOutlined />}
+                   danger
+                   size="small"
+                   disabled
+                 />
+               </span>
+             </Tooltip>
+           ) : (
+             <Popconfirm
+               title="Bạn có chắc chắn muốn xóa vĩnh viễn voucher này? Hành động này không thể hoàn tác."
+               onConfirm={() => handleDelete(record._id)}
+               okText="Xóa vĩnh viễn"
+               cancelText="Hủy"
+               okButtonProps={{
+                 danger: true,
+                 loading: loadingId === record._id,
+               }}
+             >
+               <Button
+                 icon={<DeleteOutlined />}
+                 danger
+                 size="small"
+                 loading={loadingId === record._id}
+                 disabled={loadingId === record._id}
+               />
+             </Popconfirm>
+           );
 
             const editButton = (() => {
               if (record.voucherStatus === "expired") {

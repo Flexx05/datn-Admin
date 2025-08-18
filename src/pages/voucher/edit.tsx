@@ -94,7 +94,7 @@ const VoucherEdit = () => {
       .get(
         `/admin/users?search=${encodeURIComponent(
           search
-        )}&isActive=true&limit=10`
+        )}&isActive=true&limit=off`
       )
       .then((res) => {
         const users = res.data?.docs || res.data || [];
@@ -345,7 +345,22 @@ const VoucherEdit = () => {
             <Input placeholder="Nhập mã giảm giá" />
           </Form.Item>
 
-          <Form.Item label="Danh sách người dùng" name={"userIds"}>
+          <Form.Item
+            label="Danh sách người dùng"
+            name="userIds"
+            rules={[
+              {
+                validator: (_, value) => {
+                  if (Array.isArray(value) && value.length > 10000) {
+                    return Promise.reject(
+                      new Error("Danh sách user không được vượt quá 10.000")
+                    );
+                  }
+                  return Promise.resolve();
+                },
+              },
+            ]}
+          >
             <Select
               mode="multiple"
               showSearch
@@ -448,7 +463,13 @@ const VoucherEdit = () => {
                       message: "Phần trăm giảm không được vượt quá 100%",
                     },
                   ]
-                : []),
+                : [
+                    {
+                      type: "number" as const,
+                      max: 10000000,
+                      message: "Số tiền giảm không được vượt quá 10.000.000VNĐ",
+                    },
+                  ]),
             ]}
           >
             <InputNumber
@@ -469,6 +490,11 @@ const VoucherEdit = () => {
                   type: "number",
                   min: 1,
                   message: "Giảm tối đa phải lớn hơn hoặc bằng 1",
+                },
+                {
+                  type: "number",
+                  max: 10000000,
+                  message: "Giảm tối đa không được vượt quá 10.000.000VNĐ",
                 },
               ]}
             >
@@ -491,6 +517,12 @@ const VoucherEdit = () => {
                 type: "number",
                 min: 0,
                 message: "Giá trị đơn tối thiểu phải lớn hơn hoặc bằng 0",
+              },
+              {
+                type: "number",
+                max: 100000000,
+                message:
+                  "Giá trị đơn tối thiểu không được vượt quá 100.000.000VNĐ",
               },
               {
                 validator: (_, value) => {
@@ -550,6 +582,11 @@ const VoucherEdit = () => {
                 type: "number",
                 min: 1,
                 message: "Số lượng voucher phải lớn hơn hoặc bằng 1",
+              },
+              {
+                type: "number",
+                max: 100000,
+                message: "Số lượng voucher không được vượt quá 100000",
               },
               {
                 validator: (_, value) => {

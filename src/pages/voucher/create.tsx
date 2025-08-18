@@ -44,7 +44,7 @@ const VoucherCreate = () => {
       .get(
         `/admin/users?search=${encodeURIComponent(
           search
-        )}&isActive=true&limit=10`
+        )}&isActive=true&limit=off`
       )
       .then((res) => {
         const users = res.data?.docs || res.data || [];
@@ -209,7 +209,22 @@ const VoucherCreate = () => {
             <Input placeholder="Nhập mã giảm giá" />
           </Form.Item>
 
-          <Form.Item label="Danh sách người dùng" name={"userIds"}>
+          <Form.Item
+            label="Danh sách người dùng"
+            name="userIds"
+            rules={[
+              {
+                validator: (_, value) => {
+                  if (Array.isArray(value) && value.length > 10000) {
+                    return Promise.reject(
+                      new Error("Danh sách người dùng không được vượt quá 10.000")
+                    );
+                  }
+                  return Promise.resolve();
+                },
+              },
+            ]}
+          >
             <Select
               mode="multiple"
               showSearch
@@ -312,7 +327,13 @@ const VoucherCreate = () => {
                       message: "Phần trăm giảm không được vượt quá 100%",
                     },
                   ]
-                : []),
+                : [
+                    {
+                      type: "number" as const,
+                      max: 10000000,
+                      message: "Số tiền giảm không được vượt quá 10.000.000VNĐ",
+                    },
+                  ]),
             ]}
           >
             <InputNumber
@@ -334,6 +355,11 @@ const VoucherCreate = () => {
                   min: 1,
                   message: "Giảm tối đa phải lớn hơn hoặc bằng 1",
                 },
+                {
+                  type: "number",
+                  max: 10000000,
+                  message: "Giảm tối đa không được vượt quá 10.000.000VNĐ",
+                },
               ]}
             >
               <InputNumber
@@ -342,6 +368,7 @@ const VoucherCreate = () => {
               />
             </Form.Item>
           )}
+
           <Form.Item
             label="Đơn tối thiểu (VNĐ)"
             name="minOrderValues"
@@ -354,6 +381,12 @@ const VoucherCreate = () => {
                 type: "number",
                 min: 0,
                 message: "Giá trị đơn tối thiểu phải lớn hơn hoặc bằng 0",
+              },
+              {
+                type: "number",
+                max: 100000000,
+                message:
+                  "Giá trị đơn tối thiểu không được vượt quá 100.000.000VNĐ",
               },
               {
                 validator: (_, value) => {
@@ -410,6 +443,11 @@ const VoucherCreate = () => {
                 type: "number",
                 min: 1,
                 message: "Số lượng voucher phải lớn hơn hoặc bằng 1",
+              },
+              {
+                type: "number",
+                max: 100000,
+                message: "Số lượng voucher không được vượt quá 100000",
               },
             ]}
           >
