@@ -1,10 +1,12 @@
-import React, { useState, useEffect } from "react";
-import { Form, Input, InputNumber, DatePicker, Select, Space, Tag } from "antd";
-import { HttpError } from "@refinedev/core";
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Create, useForm } from "@refinedev/antd";
+import { HttpError } from "@refinedev/core";
+import { DatePicker, Form, Input, InputNumber, Select, Tag } from "antd";
 import dayjs from "dayjs";
-import { axiosInstance } from "../../utils/axiosInstance";
 import debounce from "lodash/debounce";
+import { useEffect, useState } from "react";
+import { axiosInstance } from "../../utils/axiosInstance";
+import { SaveButton } from "../../utils/ButtonForManagement";
 
 const { RangePicker } = DatePicker;
 
@@ -37,7 +39,6 @@ const VoucherCreate = () => {
     { label: string; value: string }[]
   >([]);
   const [fetching, setFetching] = useState(false);
-
 
   const fetchUser = debounce((search: string) => {
     setFetching(true);
@@ -134,7 +135,10 @@ const VoucherCreate = () => {
   }, [userIds, form]);
 
   return (
-    <Create saveButtonProps={saveButtonProps} title="Thêm mới Voucher">
+    <Create
+      saveButtonProps={SaveButton("Lưu Voucher", saveButtonProps)}
+      title="Thêm mới Voucher"
+    >
       <Form {...formProps} layout="vertical" onFinish={handleFinish}>
         <Form.Item
           label="Loại voucher"
@@ -408,7 +412,7 @@ const VoucherCreate = () => {
               // Disable ngày trước hôm nay
               return current && current < dayjs().startOf("day");
             }}
-            disabledTime={(date, type) => {
+            disabledTime={(date) => {
               if (!date) return {};
               const isToday = date.isSame(dayjs(), "day");
 

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState, useEffect } from "react";
 import {
   Form,
@@ -13,6 +14,7 @@ import { Edit, useForm } from "@refinedev/antd";
 import dayjs from "dayjs";
 import { axiosInstance } from "../../utils/axiosInstance";
 import debounce from "lodash/debounce";
+import { SaveButton } from "../../utils/ButtonForManagement";
 
 const { RangePicker } = DatePicker;
 
@@ -255,7 +257,10 @@ const VoucherEdit = () => {
 
   return (
     <Edit
-      saveButtonProps={{ ...saveButtonProps, disabled: isFormDisabled }}
+      saveButtonProps={SaveButton("Cập nhật Voucher", {
+        ...saveButtonProps,
+        disabled: isFormDisabled,
+      })}
       title="Cập nhật Voucher"
     >
       <Form

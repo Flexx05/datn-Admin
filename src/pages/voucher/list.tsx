@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { EditButton, List, ShowButton, useTable } from "@refinedev/antd";
 import { useInvalidate } from "@refinedev/core";
 import {
@@ -17,6 +18,7 @@ import { useCallback, useEffect, useState } from "react";
 import dayjs from "dayjs";
 import { axiosInstance } from "../../utils/axiosInstance";
 import { socket } from "../../socket/socket";
+import { CreateButton } from "../../utils/ButtonForManagement";
 
 const VoucherList = () => {
   const [filterIsDeleted, setFilterIsDeleted] = useState<boolean>(true);
@@ -174,7 +176,10 @@ const VoucherList = () => {
   );
 
   return (
-    <List title="Quản lý Voucher">
+    <List
+      title="Quản lý Voucher"
+      createButtonProps={CreateButton("Tạo voucher")}
+    >
       <Tabs
         activeKey={filterIsDeleted ? "active" : "trash"}
         onChange={handleTabChange}

@@ -4,6 +4,7 @@ import { Create, useForm } from "@refinedev/antd";
 import { Button, Form, Input, Space, Spin, Switch, message } from "antd";
 import { useState } from "react";
 import Loader from "../../utils/loading";
+import { SaveButton } from "../../utils/ButtonForManagement";
 
 export const AttributeCreate = () => {
   const { formProps, saveButtonProps, formLoading } = useForm({
@@ -23,7 +24,7 @@ export const AttributeCreate = () => {
   return (
     <Create
       title="Tạo thuộc tính"
-      saveButtonProps={saveButtonProps}
+      saveButtonProps={SaveButton("Lưu thuộc tính", saveButtonProps)}
       isLoading={false}
     >
       <Spin spinning={formLoading} indicator={<Loader />}>

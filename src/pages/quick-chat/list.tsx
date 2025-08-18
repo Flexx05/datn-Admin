@@ -7,6 +7,7 @@ import { useState } from "react";
 import { IQuickChat } from "../../interface/conversation";
 import { QuickChatShow } from "./show";
 import Loader from "../../utils/loading";
+import { CreateButton } from "../../utils/ButtonForManagement";
 
 const QuickChatList = () => {
   const { tableProps, setFilters } = useTable<IQuickChat>({
@@ -44,7 +45,10 @@ const QuickChatList = () => {
 
   return (
     <>
-      <List title={"Quản lý tin nhắn nhanh"}>
+      <List
+        title={"Quản lý tin nhắn nhanh"}
+        createButtonProps={CreateButton("Tạo tin nhắn nhanh")}
+      >
         <Input.Search
           placeholder="Tìm kiếm tin nhắn"
           allowClear

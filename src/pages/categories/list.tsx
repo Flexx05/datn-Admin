@@ -25,6 +25,7 @@ import { API_URL } from "../../config/dataProvider";
 import { ICategory } from "../../interface/category";
 import Loader from "../../utils/loading";
 import { useAuth } from "../../contexts/auth/AuthContext";
+import { CreateButton } from "../../utils/ButtonForManagement";
 
 export const CategoryList = () => {
   const [filterActive, setFilterActive] = useState<boolean>(true);
@@ -213,7 +214,10 @@ export const CategoryList = () => {
   ];
 
   return (
-    <List title={"Quản lý danh mục"}>
+    <List
+      title={"Quản lý danh mục"}
+      createButtonProps={CreateButton("Tạo danh mục")}
+    >
       <Tabs
         activeKey={filterActive ? "active" : "trash"}
         onChange={handleTabChange}

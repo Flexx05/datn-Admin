@@ -26,6 +26,7 @@ import { IAttribute } from "../../interface/attribute";
 import { ColorDots } from "../products/ColorDots";
 import Loader from "../../utils/loading";
 import { useAuth } from "../../contexts/auth/AuthContext";
+import { CreateButton } from "../../utils/ButtonForManagement";
 
 export const AttributeList = () => {
   const [filterActive, setFilterActive] = useState<boolean>(true);
@@ -126,7 +127,10 @@ export const AttributeList = () => {
   );
 
   return (
-    <List title={"Quản lý thuộc tính"}>
+    <List
+      title={"Quản lý thuộc tính"}
+      createButtonProps={CreateButton("Tạo thuộc tính")}
+    >
       <Tabs
         activeKey={filterActive ? "active" : "trash"}
         onChange={handleTabChange}

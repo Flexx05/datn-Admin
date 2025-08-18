@@ -4,6 +4,7 @@ import { Form, Input, Select, Spin, message } from "antd";
 import { useMemo } from "react";
 import { ICategory } from "../../interface/category";
 import Loader from "../../utils/loading";
+import { SaveButton } from "../../utils/ButtonForManagement";
 
 export const CategoryEdit = () => {
   const {
@@ -83,7 +84,7 @@ export const CategoryEdit = () => {
 
   return (
     <Edit
-      saveButtonProps={saveButtonProps}
+      saveButtonProps={SaveButton("Cập nhật danh mục", saveButtonProps)}
       title="Cập nhật danh mục"
       canDelete={false}
       isLoading={false}
