@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { List, ShowButton, useTable } from "@refinedev/antd";
-import { LogicalFilter, useUpdate } from "@refinedev/core";
+import { LogicalFilter, useInvalidate, useUpdate } from "@refinedev/core";
 import {
   Button,
   DatePicker,
@@ -14,9 +14,10 @@ import {
   Table,
   Tooltip,
 } from "antd";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { IComment } from "../../interface/comment";
 import Loader from "../../utils/loading";
+import { socket } from "../../socket";
 
 const { RangePicker } = DatePicker;
 
@@ -33,6 +34,7 @@ export const CommentList = () => {
 
   const { mutate } = useUpdate();
   const [status, setStatus] = useState<string | null>(null);
+  const invalidate = useInvalidate();
 
   // Hàm xử lý lọc
   const handleSearch = () => {
@@ -64,6 +66,17 @@ export const CommentList = () => {
 
     setFilters(filters, "replace");
   };
+
+  // Lắng nghe sự kiện socket
+  useEffect(() => {
+    const handleChange = () => {
+      invalidate({ resource: "comments", invalidates: ["list"] });
+    };
+    socket.on("comment-added", handleChange);
+    return () => {
+      socket.off("comment-added", handleChange);
+    };
+  });
 
   return (
     <List>

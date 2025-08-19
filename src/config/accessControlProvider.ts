@@ -5,7 +5,6 @@ const staffPermissions: Record<string, string[]> = {
   category: ["list", "show"],
   brand: ["list", "show"],
   attribute: ["list", "show"],
-  voucher: ["list", "show"],
   "admin/users": ["list", "show"],
   orders: ["list", "show", "returnRequests"],
   conversation: ["list", "show"],
@@ -30,7 +29,7 @@ export const AccesControlProvider: AccessControlProvider = {
       const allowedActions = staffPermissions[resource as string] ?? [];
       return {
         can: allowedActions.includes(action),
-        reason: `Bạn chỉ có quyền ${allowedActions.join(", ")} với ${resource}`,
+        reason: `Bạn không có quyền thực hiện hành động này`,
       };
     }
 

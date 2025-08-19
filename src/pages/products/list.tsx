@@ -31,6 +31,7 @@ import { VariationTable } from "./VariationTable";
 import Loader from "../../utils/loading";
 import { useAuth } from "../../contexts/auth/AuthContext";
 import ExportDataProduct from "./ExportDataProduct";
+import { CreateButton } from "../../utils/ButtonForManagement";
 
 export const ProductList = () => {
   const [filterActive, setFilterActive] = useState<boolean>(true);
@@ -137,7 +138,10 @@ export const ProductList = () => {
   );
 
   return (
-    <List title={"Quản lý sản phẩm"}>
+    <List
+      title={"Quản lý sản phẩm"}
+      createButtonProps={CreateButton("Tạo sản phẩm")}
+    >
       <Tabs
         activeKey={filterActive ? "active" : "trash"}
         onChange={handleTabChange}

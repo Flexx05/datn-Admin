@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { Show } from "@refinedev/antd";
-import { Button, Card, Descriptions, List, message, Popconfirm, Space, Tag } from "antd";
+import { Button, Card, Descriptions, List, message, Popconfirm, Modal, Empty, Space, Tag } from "antd";
 import { CheckOutlined, CloseOutlined } from "@ant-design/icons";
 import axios from "axios";
 
@@ -34,6 +34,7 @@ interface ReturnRequest {
   status: number;
   createdAt: string;
   updatedAt: string;
+  images?: string[];
 }
 
 // Trạng thái yêu cầu hoàn hàng
@@ -48,18 +49,19 @@ export const ReturnRequestDetail: React.FC = () => {
   const [returnRequest, setReturnRequest] = useState<ReturnRequest | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [actionLoading, setActionLoading] = useState<boolean>(false);
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
 
   // Lấy dữ liệu chi tiết yêu cầu hoàn hàng
   useEffect(() => {
     const fetchReturnRequest = async () => {
       try {
-        const response = await axios.get(`${ API_URL }/return-requests/${ id } `, {
+        const response = await axios.get(`${API_URL}/return-requests/${id}`, {
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${ localStorage.getItem("token") } `,
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
           },
         });
-        console.log(" Request Data:", response.data);
+        console.log("Request Data:", response.data);
         setReturnRequest(response.data.data);
         setLoading(false);
       } catch (error: any) {
@@ -74,16 +76,15 @@ export const ReturnRequestDetail: React.FC = () => {
   // Lắng nghe sự kiện socket để cập nhật realtime
   useEffect(() => {
     const handleChange = () => {
-      // Gọi lại API để cập nhật dữ liệu khi có sự kiện
       const fetchReturnRequest = async () => {
         try {
-          const response = await axios.get(`${ API_URL }/return-requests/${ id }`, {
+          const response = await axios.get(`${API_URL}/return-requests/${id}`, {
             headers: {
               "Content-Type": "application/json",
-              Authorization: `Bearer ${ localStorage.getItem("token") } `,
+              Authorization: `Bearer ${localStorage.getItem("token")}`,
             },
           });
-          setReturnRequest(response.data);
+          setReturnRequest(response.data.data);
         } catch (error: any) {
           console.error(error);
         }
@@ -101,12 +102,12 @@ export const ReturnRequestDetail: React.FC = () => {
     setActionLoading(true);
     try {
       await axios.patch(
-        `${ API_URL }/return-requests/${ id }/status`,
+        `${API_URL}/return-requests/${id}/status`,
         { status: newStatus },
         {
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${ localStorage.getItem("token") } `,
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
           },
         }
       );
@@ -142,12 +143,10 @@ export const ReturnRequestDetail: React.FC = () => {
   if (!returnRequest) {
     return <div>Không tìm thấy yêu cầu hoàn hàng</div>;
   }
-  console.log("Return Request Data:", returnRequest);
-  
 
   return (
     <Show
-      title={`Chi tiết yêu cầu hoàn hàng #${ returnRequest.orderId.orderCode } `}
+      title={`Chi tiết yêu cầu hoàn hàng #${returnRequest.orderId.orderCode}`}
       breadcrumb={false}
     >
       <Space direction="vertical" size="middle" style={{ display: "flex" }}>
@@ -209,7 +208,7 @@ export const ReturnRequestDetail: React.FC = () => {
             renderItem={(product) => (
               <List.Item>
                 <List.Item.Meta
-                  title={`Mã sản phẩm: ${ product.productId } `}
+                  title={`Mã sản phẩm: ${product.productId}`}
                   description={
                     <Space direction="vertical" size="small">
                       <span>Số lượng: {product.quantity}</span>
@@ -222,6 +221,64 @@ export const ReturnRequestDetail: React.FC = () => {
               </List.Item>
             )}
           />
+        </Card>
+
+        {/* Hiển thị hình ảnh minh chứng */}
+        <Card title="Hình ảnh minh chứng" bordered>
+          {returnRequest.images && returnRequest.images.length > 0 ? (
+            <List
+              grid={{ gutter: 16, xs: 1, sm: 3, md: 4, lg: 5 }}
+              dataSource={returnRequest.images}
+              renderItem={(url, index) => (
+                <List.Item>
+                  <div
+                    className="relative w-full h-20 rounded-lg overflow-hidden cursor-pointer flex items-center justify-center bg-gray-100"
+                    onClick={() => setPreviewImage(url)}
+                  >
+                    <img
+                      src={url}
+                      alt={`Evidence ${index + 1}`}
+                      className="max-w-full max-h-full object-contain"
+                      style={{ width: '80px', height: '80px' }}
+                    />
+                  </div>
+                </List.Item>
+              )}
+            />
+          ) : (
+            <Empty
+              image={Empty.PRESENTED_IMAGE_SIMPLE}
+              description="Không có hình ảnh minh chứng"
+            />
+          )}
+          <style>
+            {`
+              .image-list .ant-list-item {
+                margin-bottom: 16px;
+              }
+              .image-list .ant-list-item img {
+                transition: transform 0.3s ease;
+              }
+              .image-list .ant-list-item img:hover {
+                transform: scale(1.05);
+              }
+              .image-list .ant-list-grid {
+                max-height: 400px;
+                overflow-y: auto;
+                padding-right: 8px;
+              }
+              .image-list .ant-list-grid::-webkit-scrollbar {
+                width: 6px;
+              }
+              .image-list .ant-list-grid::-webkit-scrollbar-thumb {
+                background-color: #ccc;
+                border-radius: 3px;
+              }
+              .image-list .ant-list-grid::-webkit-scrollbar-track {
+                background-color: #f1f1f1;
+              }
+            `}
+          </style>
         </Card>
 
         {/* Hành động */}
@@ -258,6 +315,25 @@ export const ReturnRequestDetail: React.FC = () => {
           </Card>
         )}
       </Space>
+
+      {/* Modal xem trước ảnh */}
+      <Modal
+        title="Xem trước hình ảnh"
+        open={!!previewImage}
+        onCancel={() => setPreviewImage(null)}
+        footer={null}
+        width={760}
+      >
+        {previewImage && (
+          <div className="flex justify-center">
+            <img
+              src={previewImage}
+              alt="Image preview"
+              className="w-full max-h-[500px] object-contain"
+            />
+          </div>
+        )}
+      </Modal>
     </Show>
   );
 };

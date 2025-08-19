@@ -31,7 +31,6 @@ const VoucherCreate = () => {
     undefined
   );
   const [maxDiscount, setMaxDiscount] = useState<number | undefined>(undefined);
-
   const [userIds, setUserIds] = useState<string[]>([]);
   const [userOptions, setUserOptions] = useState<
     { label: string; value: string }[]
@@ -41,11 +40,7 @@ const VoucherCreate = () => {
   const fetchUser = debounce((search: string) => {
     setFetching(true);
     axiosInstance
-      .get(
-        `/admin/users?search=${encodeURIComponent(
-          search
-        )}&isActive=true&limit=off`
-      )
+      .get(`/admin/users?search=${encodeURIComponent(search)}&isActive=true`)
       .then((res) => {
         const users = res.data?.docs || res.data || [];
         setUserOptions(
@@ -217,7 +212,9 @@ const VoucherCreate = () => {
                 validator: (_, value) => {
                   if (Array.isArray(value) && value.length > 10000) {
                     return Promise.reject(
-                      new Error("Danh sách người dùng không được vượt quá 10.000")
+                      new Error(
+                        "Danh sách người dùng không được vượt quá 10.000"
+                      )
                     );
                   }
                   return Promise.resolve();
@@ -238,6 +235,21 @@ const VoucherCreate = () => {
               onChange={(value) => {
                 setUserIds(value);
                 form?.setFieldsValue({ userIds: value });
+
+                // Nếu danh sách userIds rỗng thì reset lại danh sách mặc định
+                if (value.length === 0) {
+                  axiosInstance
+                    .get("/admin/users?isActive=true")
+                    .then((res) => {
+                      const users = res.data?.docs || res.data || [];
+                      setUserOptions(
+                        users.map((u: any) => ({
+                          label: `${u.fullName || u.email} (${u.email})`,
+                          value: u._id,
+                        }))
+                      );
+                    });
+                }
               }}
               placeholder="Nhập theo tên hoặc email"
               style={{ width: "100%" }}

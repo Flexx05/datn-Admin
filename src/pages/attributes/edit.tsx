@@ -5,6 +5,7 @@ import { Button, Form, Input, Space, Spin, Switch } from "antd";
 import { useEffect, useState } from "react";
 import { IAttribute } from "../../interface/attribute";
 import Loader from "../../utils/loading";
+import { SaveButton } from "../../utils/ButtonForManagement";
 
 export const AttributeEdit = () => {
   const { formProps, saveButtonProps, formLoading } = useForm<IAttribute>({
@@ -32,7 +33,7 @@ export const AttributeEdit = () => {
   return (
     <Edit
       title="Chỉnh sửa thuộc tính"
-      saveButtonProps={saveButtonProps}
+      saveButtonProps={SaveButton("Cập nhật thuộc tính", saveButtonProps)}
       canDelete={false}
       isLoading={false}
     >

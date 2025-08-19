@@ -31,6 +31,7 @@ import { Order } from "../../interface/order";
 import { socket } from "../../socket";
 import { axiosInstance } from "../../utils/axiosInstance";
 import { statusMap } from "../dashboard/statusMap";
+import ButtonChat from "./ButtonChat";
 import { formatCurrency } from "./formatCurrency";
 
 // Định nghĩa interface cho yêu cầu hoàn hàng
@@ -66,6 +67,7 @@ const returnStatusMap: Record<number, { text: string; color: string }> = {
   0: { text: "Chờ duyệt", color: "orange" },
   1: { text: "Đã chấp nhận", color: "green" },
   2: { text: "Đã nhận hàng", color: "blue" },
+  // 2: { text: "Đã nhận hàng", color: "blue" },
   3: { text: "Đã hoàn tiền", color: "green" },
   4: { text: "Đã từ chối", color: "red" },
 };
@@ -87,6 +89,9 @@ const ReturnRequestActions: React.FC<{
   ) => Promise<void>;
 }> = ({ record, loadingId, onChangeReturnStatus }) => {
   const isLoading = loadingId === record._id;
+
+  // Nút chat
+  const chatButton = <ButtonChat record={record.orderId} />;
 
   switch (record.status) {
     case 0: // Chờ duyệt
@@ -124,30 +129,10 @@ const ReturnRequestActions: React.FC<{
               Từ chối
             </Button>
           </Popconfirm>
+          {chatButton}
         </Space>
       );
-    case 1: // Đã chấp nhận
-      return (
-        <Space>
-          <Popconfirm
-            title="Xác nhận đã nhận hàng hoàn?"
-            onConfirm={() => onChangeReturnStatus(record, 2)}
-            okText="Xác nhận"
-            cancelText="Hủy"
-            okButtonProps={{ loading: isLoading }}
-          >
-            <Button
-              size="small"
-              type="primary"
-              icon={<TruckOutlined />}
-              loading={isLoading}
-            >
-              Đã nhận hàng
-            </Button>
-          </Popconfirm>
-        </Space>
-      );
-    case 2: // Đã nhận hàng
+    case 1: // Đã nhận hàng
       return (
         <Space>
           <Popconfirm
@@ -163,16 +148,18 @@ const ReturnRequestActions: React.FC<{
               icon={<CheckOutlined />}
               loading={isLoading}
             >
-              Đã hoàn tiền
+              Hoàn tiền
             </Button>
           </Popconfirm>
+          {chatButton}
         </Space>
       );
+    case 2: // Đã nhận hàng
     case 3: // Đã hoàn tiền
     case 4: // Đã từ chối
-      return null;
+      return <Space>{chatButton}</Space>;
     default:
-      return null;
+      return <Space>{chatButton}</Space>;
   }
 };
 
@@ -189,6 +176,9 @@ const OrderActions: React.FC<{
   onShowCancelModal: (id: string) => void;
 }> = ({ record, loadingId, onChangeStatus, onShowCancelModal }) => {
   const isLoading = loadingId === record._id;
+
+  // Nút chat
+  const chatButton = <ButtonChat record={record} />;
 
   switch (record.status) {
     case 0: // Chờ xác nhận
@@ -282,11 +272,23 @@ const OrderActions: React.FC<{
         </Popconfirm>
       );
 
+    // case 3:
+    //   return <Space>{chatButton}</Space>;
+
+    case 4: // Hoàn thành
+      return <Space>{chatButton}</Space>;
+
+    case 5: // Đã hủy
+      return <Space>{record.completedBy !== "system" && chatButton}</Space>;
+
     case 6: // Yêu cầu hoàn hàng
       return (
-        <Tag color="cyan" icon={<UndoOutlined />}>
-          Hoàn hàng
-        </Tag>
+        <Space>
+          <Tag color="cyan" icon={<UndoOutlined />}>
+            Hoàn hàng
+          </Tag>
+          {chatButton}
+        </Space>
       );
 
     default:
@@ -404,7 +406,6 @@ export const OrderList: React.FC = () => {
         await axiosInstance.patch(
           `${API_URL}/order/status/${record.orderId._id}`,
           {
-            // status: 4,
             paymentStatus: 2,
             userId: user?._id,
           }
@@ -414,7 +415,7 @@ export const OrderList: React.FC = () => {
           {
             orderId: record.orderId._id,
             type: 0,
-            amount: record.refundAmount + 30000,
+            amount: record.refundAmount,
             status: 1,
             description: `Hoàn tiền cho yêu cầu hoàn hàng đơn ${record.orderId.orderCode}: ${record.reason}`,
             returnRequestId: record._id,
@@ -426,24 +427,6 @@ export const OrderList: React.FC = () => {
             refundResponse.data.message || "Refund request failed"
           );
         }
-
-        // Update order's totalAmount
-        // const orderResponse = await axiosInstance.patch(
-        //   `${API_URL}/order/update-total/${record.orderId._id}`,
-        //   {
-        //     refundAmount: record.refundAmount,
-        //   },
-        //   {
-        //     headers: {
-        //       "Content-Type": "application/json",
-        //       Authorization: `Bearer ${localStorage.getItem("token")}`,
-        //     },
-        //   }
-        // );
-
-        //   if (!orderResponse.data.success) {
-        //     throw new Error(orderResponse.data.message || "Failed to update order totalAmount");
-        //   }
       }
       if (newStatus === 4) {
         await axiosInstance.patch(

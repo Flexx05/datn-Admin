@@ -97,21 +97,24 @@ export const ProductEdit = () => {
   const handleUpload = async (newFileList: UploadFile[]) => {
     // Tách file đã có URL (đã upload trước đó)
     const existingFiles = newFileList.filter((file) => file.url);
-
     // Tách file chưa có URL (tức là mới thêm vào, cần upload)
     const newFiles = newFileList.filter((file) => !file.url);
-
     // Gán trạng thái "uploading" cho file mới
     const uploadingFiles = newFiles.map((file) => ({
       ...file,
       status: "uploading" as const,
     }));
-
     // Cập nhật fileList hiển thị (gồm file cũ + file mới đang upload)
     const updatedFileList = [...existingFiles, ...uploadingFiles];
     setFileList(updatedFileList);
 
-    const newUploadedUrls: string[] = [...uploadedImageUrls]; // giữ lại ảnh cũ
+    // Cập nhật uploadedImageUrls đúng với fileList hiện tại
+    const currentUrls = updatedFileList
+      .filter((file) => file.status === "done" && file.url)
+      .map((file) => file.url);
+    setUploadedImageUrls(
+      currentUrls.filter((url): url is string => typeof url === "string")
+    );
 
     for (let i = 0; i < uploadingFiles.length; i++) {
       const file = uploadingFiles[i];
@@ -134,14 +137,19 @@ export const ProductEdit = () => {
           fileUrl = fileUrl.replace("/upload/", "/upload/f_webp/");
         }
 
-        // Cập nhật trạng thái "done" sau khi upload thành công
         updatedFileList[i + existingFiles.length] = {
           ...updatedFileList[i + existingFiles.length],
           url: fileUrl,
           status: "done" as const,
         };
 
-        newUploadedUrls.push(fileUrl);
+        // Cập nhật lại uploadedImageUrls khi upload xong
+        const newUrls = updatedFileList
+          .filter((file) => file.status === "done" && file.url)
+          .map((file) => file.url);
+        setUploadedImageUrls(
+          newUrls.filter((url): url is string => typeof url === "string")
+        );
       } catch (error) {
         updatedFileList[i + existingFiles.length] = {
           ...updatedFileList[i + existingFiles.length],
@@ -150,10 +158,6 @@ export const ProductEdit = () => {
         message.error(`❌ Lỗi khi upload file: ${file.name}`);
       }
     }
-
-    // Cập nhật state
-    setFileList(updatedFileList);
-    setUploadedImageUrls(newUploadedUrls);
   };
 
   const { queryResult: category } = useSelect({
@@ -314,12 +318,20 @@ export const ProductEdit = () => {
         variation: normalizedVariations,
       };
 
-      await formProps?.onFinish?.(payload);
+      formProps?.onFinish?.(payload);
     } catch (error) {
       message.error("Lỗi khi cập nhật sản phẩm!");
       console.error(error);
     }
   };
+
+  const [bulkRegularPrice, setBulkRegularPrice] = useState<number | undefined>(
+    undefined
+  );
+  const [bulkSalePrice, setBulkSalePrice] = useState<number | undefined>(
+    undefined
+  );
+  const [bulkStock, setBulkStock] = useState<number | undefined>(undefined);
 
   return (
     <Edit
@@ -350,10 +362,6 @@ export const ProductEdit = () => {
               {
                 min: 3,
                 message: "Tên sản phẩm phải có ít nhất 3 ký tự",
-              },
-              {
-                pattern: /^[\p{L}0-9\s]+$/u,
-                message: "Tên sản phẩm không được chứa ký tự đặc biệt",
               },
             ]}
           >
@@ -475,56 +483,48 @@ export const ProductEdit = () => {
 
             <Form.Item label="Áp dụng hàng loạt cho biến thể">
               <Space.Compact style={{ display: "flex", gap: 12 }}>
-                <Form.Item name="regularPrice" noStyle>
-                  <InputNumber
-                    placeholder="Giá gốc"
-                    min={1000}
-                    style={{ width: 120 }}
-                  />
-                </Form.Item>
-                <Form.Item name="salePrice" noStyle>
-                  <InputNumber
-                    placeholder="Giá giảm"
-                    min={1000}
-                    style={{ width: 120 }}
-                  />
-                </Form.Item>
-                <Form.Item name="stock" noStyle>
-                  <InputNumber
-                    placeholder="Tồn kho"
-                    min={0}
-                    style={{ width: 120 }}
-                  />
-                </Form.Item>
+                <InputNumber
+                  placeholder="Giá gốc"
+                  min={1000}
+                  style={{ width: 120 }}
+                  value={bulkRegularPrice}
+                  onChange={(value) =>
+                    setBulkRegularPrice(value === null ? undefined : value)
+                  }
+                />
+                <InputNumber
+                  placeholder="Giá giảm"
+                  min={1000}
+                  style={{ width: 120 }}
+                  value={bulkSalePrice}
+                  onChange={(value) =>
+                    setBulkSalePrice(value === null ? undefined : value)
+                  }
+                />
+                <InputNumber
+                  placeholder="Tồn kho"
+                  min={0}
+                  style={{ width: 120 }}
+                  value={bulkStock}
+                  onChange={(value) =>
+                    setBulkStock(value === null ? undefined : value)
+                  }
+                />
                 <Button
                   type="primary"
                   onClick={() => {
-                    const values = formProps.form?.getFieldsValue([
-                      "defaultPrice",
-                      "defaultSalePrice",
-                      "defaultStock",
-                      "variation",
-                    ]);
-
-                    const {
-                      defaultPrice,
-                      defaultSalePrice,
-                      defaultStock,
-                      variation,
-                    } = values;
-
+                    const variation =
+                      formProps.form?.getFieldValue("variation");
                     if (!variation || variation.length === 0) {
                       message.warning("Chưa có biến thể để áp dụng.");
                       return;
                     }
-
                     const updated = variation.map((item: any) => ({
                       ...item,
-                      regularPrice: defaultPrice ?? item.regularPrice,
-                      salePrice: defaultSalePrice ?? item.salePrice,
-                      stock: defaultStock ?? item.stock,
+                      regularPrice: bulkRegularPrice ?? item.regularPrice,
+                      salePrice: bulkSalePrice ?? item.salePrice,
+                      stock: bulkStock ?? item.stock,
                     }));
-
                     formProps.form?.setFieldsValue({ variation: updated });
                     message.success("✅ Đã áp dụng cho tất cả biến thể!");
                   }}

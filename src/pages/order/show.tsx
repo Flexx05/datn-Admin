@@ -65,7 +65,7 @@ export const OrderShow = () => {
 
   const [loadingAction, setLoadingAction] = useState<number | null>(null);
   const [isModalVisible, setIsModalVisible] = useState(false);
-  const [isCancelLoading, setIsCancelLoading] = useState(false); // Thêm state cho loading nút hủy
+  const [isCancelLoading, setIsCancelLoading] = useState(false);
   const [form] = Form.useForm();
 
   // Hàm cập nhật trạng thái đơn hàng
@@ -79,8 +79,8 @@ export const OrderShow = () => {
     try {
       const payload: any = { status: newStatus, userId: parsedUser?._id };
       if (newStatus === 5) {
-        payload.paymentStatus = 3; // Update paymentStatus to 3 when canceling
-        if (cancelReason) payload.cancelReason = cancelReason; // Include cancel reason if provided
+        payload.paymentStatus = 3;
+        if (cancelReason) payload.cancelReason = cancelReason;
       }
       await axios.patch(`${API_URL}/order/status/${orderData?._id}`, payload, {
         headers: {
@@ -105,21 +105,27 @@ export const OrderShow = () => {
     reason: string;
     customReason?: string;
   }) => {
-    setIsCancelLoading(true); // Bật trạng thái loading
+    setIsCancelLoading(true);
     try {
       const finalReason =
         values.reason === "Khác" && values.customReason
           ? values.customReason
           : values.reason;
       await handleUpdateStatus(5, finalReason);
-      if (orderData.paymentMethod === "VNPAY" || (orderData.paymentMethod === "VI" && orderData.paymentStatus === 1)) {
-        const refundResponse = await axiosInstance.post('http://localhost:8080/api/wallet/cancel-refund', {
-          orderId: orderData._id,
-          type: 0,
-          amount: orderData.totalAmount,
-          status: 1,
-          description: `Trả lại tiền đơn hàng đã hủy ${orderData.orderCode}: ${finalReason}`,
-        });
+      if (
+        orderData.paymentMethod === "VNPAY" ||
+        (orderData.paymentMethod === "VI" && orderData.paymentStatus === 1)
+      ) {
+        const refundResponse = await axiosInstance.post(
+          "http://localhost:8080/api/wallet/cancel-refund",
+          {
+            orderId: orderData._id,
+            type: 0,
+            amount: orderData.totalAmount,
+            status: 1,
+            description: `Trả lại tiền đơn hàng đã hủy ${orderData.orderCode}: ${finalReason}`,
+          }
+        );
         const refundData = await refundResponse.data;
         if (!refundData.success) {
           message.error("Yêu cầu hoàn tiền thất bại");
@@ -133,7 +139,7 @@ export const OrderShow = () => {
       message.error(error.message || "Hủy đơn hàng thất bại");
       console.error(error);
     } finally {
-      setIsCancelLoading(false); // Tắt trạng thái loading
+      setIsCancelLoading(false);
     }
   };
 
@@ -168,6 +174,7 @@ export const OrderShow = () => {
   const handlePrintOrder = () => {
     window.print();
   };
+
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleString("vi-VN");
   };
@@ -207,28 +214,33 @@ export const OrderShow = () => {
     {
       title: "Chờ xác nhận",
       description: "Đơn hàng đang chờ xác nhận",
+      status: 0,
     },
     {
       title: "Đã xác nhận",
       description: "Đơn hàng đã được xác nhận",
+      status: 1,
     },
     {
       title: "Đang giao hàng",
       description: "Đơn hàng đang được vận chuyển",
+      status: 2,
     },
     {
       title: "Đã giao hàng",
       description: "Đơn hàng đã giao thành công",
+      status: 3,
     },
     {
       title: "Hoàn thành",
       description: "Đơn hàng đã hoàn thành",
+      status: 4,
     },
   ];
 
   const getCurrentStep = (status: number) => {
-    if (status === 5) return -1; // Đã hủy không hiển thị trong quy trình
-    return Math.min(status, 4); // Giới hạn bước tối đa là 4 (Hoàn thành)
+    if (status === 5) return -1;
+    return Math.min(status, 4);
   };
 
   const productColumns = [
@@ -348,14 +360,61 @@ export const OrderShow = () => {
                       fontStyle: "italic",
                     }}
                   >
-                    Lý do hủy: {orderData?.cancelReason || "Không có lý do cụ thể"}
+                    Lý do hủy:{" "}
+                    {orderData?.cancelReason || "Không có lý do cụ thể"}
                   </p>
+                  {orderData?.statusHistory?.find((h: any) => h.status === 5) && (
+                    <p style={{ marginTop: 8, color: "#666", fontSize: "12px" }}>
+                      Thời gian hủy:{" "}
+                      {formatDate(
+                        orderData.statusHistory.find((h: any) => h.status === 5)
+                          .changedAt
+                      )}
+                    </p>
+                  )}
                 </>
               ) : (
                 <Steps
                   current={getCurrentStep(orderData?.status)}
-                  items={deliverySteps}
+                  items={deliverySteps.map((step, index) => {
+                    const currentStep = getCurrentStep(orderData?.status);
+                    const isActive = currentStep === index;
+                    const isCompleted = currentStep > index;
+                    const history = orderData?.statusHistory?.find(
+                      (h: any) => h.status === step.status
+                    );
+
+                    return {
+                      ...step,
+                      icon: (
+                        <div
+                          className={`w-9 h-9 flex items-center justify-center rounded-full text-white text-xs font-medium
+                            ${isCompleted || isActive ? 'bg-green-500' : 'bg-gray-300'}`}
+                        >
+                          {index + 1}
+                        </div>
+                      ),
+                      title: <span className="text-base">{step.title}</span>,
+                      description: (
+                        <div>
+                          <span>{step.description}</span>
+                          {history && (
+                            <p
+                              style={{
+                                color: "#666",
+                                fontSize: "12px",
+                                marginTop: 4,
+                              }}
+                            >
+                              {formatDate(history.changedAt)}
+                            </p>
+                          )}
+                        </div>
+                      ),
+                    };
+                  })}
                   style={{ marginTop: 16 }}
+                  direction={window.innerWidth < 768 ? 'vertical' : 'horizontal'}
                 />
               )}
             </Card>
@@ -383,8 +442,8 @@ export const OrderShow = () => {
                     </Descriptions.Item>
                     <Descriptions.Item label="Ngày giao hàng">
                       <Text>
-                        {orderData?.status === 4 && orderData?.updatedAt
-                          ? formatDate(orderData?.updatedAt)
+                        {orderData?.deliveryDate
+                          ? formatDate(orderData?.deliveryDate)
                           : "Chưa xác định"}
                       </Text>
                     </Descriptions.Item>
@@ -647,7 +706,12 @@ export const OrderShow = () => {
                   >
                     Hủy bỏ
                   </Button>
-                  <Button type="primary" htmlType="submit" danger loading={isCancelLoading}>
+                  <Button
+                    type="primary"
+                    htmlType="submit"
+                    danger
+                    loading={isCancelLoading}
+                  >
                     Xác nhận hủy
                   </Button>
                 </div>

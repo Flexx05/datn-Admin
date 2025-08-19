@@ -123,10 +123,8 @@ export const AttributeItem = ({
               await Promise.resolve();
               return;
             }
-            await form.setFieldValue(
-              ["attributes", field.name, "values"],
-              selectedAttr?.values || []
-            );
+            // Không tự động fill values nữa
+            await form.setFieldValue(["attributes", field.name, "values"], []);
             await form.setFieldValue(
               ["attributes", field.name, "isColor"],
               selectedAttr?.isColor ?? false
