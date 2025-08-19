@@ -1,13 +1,13 @@
+import { CheckOutlined, CloseOutlined } from "@ant-design/icons";
+import { Show } from "@refinedev/antd";
+import { Button, Card, Descriptions, Empty, List, message, Modal, Popconfirm, Space, Tag } from "antd";
 import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import { Show } from "@refinedev/antd";
-import { Button, Card, Descriptions, List, message, Popconfirm, Modal, Empty, Space, Tag } from "antd";
-import { CheckOutlined, CloseOutlined } from "@ant-design/icons";
-import axios from "axios";
 
 import { API_URL } from "../../config/dataProvider";
-import { formatCurrency } from "./formatCurrency";
 import { socket } from "../../socket";
+import { axiosInstance } from "../../utils/axiosInstance";
+import { formatCurrency } from "./formatCurrency";
 
 // Định nghĩa interface cho yêu cầu hoàn hàng
 interface ReturnRequest {
@@ -37,16 +37,26 @@ interface ReturnRequest {
   images?: string[];
 }
 
+// Định nghĩa interface cho sản phẩm
+interface Product {
+  _id: string;
+  name: string;
+  image: string[]; // API trả về mảng ảnh
+}
+
 // Trạng thái yêu cầu hoàn hàng
 const returnStatusMap: Record<number, { text: string; color: string }> = {
-  0: { text: "Chờ xử lý", color: "orange" },
-  1: { text: "Đã chấp nhận", color: "green" },
-  2: { text: "Đã từ chối", color: "red" },
+  0: { text: "ĐANG CHỜ", color: "orange" },
+  1: { text: "ĐÃ DUYỆT", color: "blue" },
+  2: { text: "Đã nhận hàng", color: "cyan" },
+  3: { text: "ĐÃ HOÀN TIỀN", color: "green" },
+  4: { text: "ĐÃ TỪ CHỐI", color: "red" },
 };
 
 export const ReturnRequestDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const [returnRequest, setReturnRequest] = useState<ReturnRequest | null>(null);
+  const [products, setProducts] = useState<Record<string, Product>>({});
   const [loading, setLoading] = useState<boolean>(true);
   const [actionLoading, setActionLoading] = useState<boolean>(false);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
@@ -55,12 +65,7 @@ export const ReturnRequestDetail: React.FC = () => {
   useEffect(() => {
     const fetchReturnRequest = async () => {
       try {
-        const response = await axios.get(`${API_URL}/return-requests/${id}`, {
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
-        });
+        const response = await axiosInstance.get(`${API_URL}/return-requests/${id}`);
         console.log("Request Data:", response.data);
         setReturnRequest(response.data.data);
         setLoading(false);
@@ -73,17 +78,36 @@ export const ReturnRequestDetail: React.FC = () => {
     fetchReturnRequest();
   }, [id]);
 
+  // Lấy thông tin sản phẩm theo productId
+  useEffect(() => {
+    if (returnRequest?.products) {
+      const fetchProducts = async () => {
+        try {
+          const productPromises = returnRequest.products.map(async (product) => {
+            const response = await axiosInstance.get(`${API_URL}/product/id/${product.productId}`);
+            return { _id: product.productId, ...response.data.data };
+          });
+          const productResults = await Promise.all(productPromises);
+          const productMap = productResults.reduce((acc, product) => {
+            acc[product._id] = product;
+            return acc;
+          }, {} as Record<string, Product>);
+          setProducts(productMap);
+        } catch (error: any) {
+          message.error("Lỗi khi tải thông tin sản phẩm");
+          console.error(error);
+        }
+      };
+      fetchProducts();
+    }
+  }, [returnRequest]);
+
   // Lắng nghe sự kiện socket để cập nhật realtime
   useEffect(() => {
     const handleChange = () => {
       const fetchReturnRequest = async () => {
         try {
-          const response = await axios.get(`${API_URL}/return-requests/${id}`, {
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${localStorage.getItem("token")}`,
-            },
-          });
+          const response = await axiosInstance.get(`${API_URL}/return-requests/${id}`);
           setReturnRequest(response.data.data);
         } catch (error: any) {
           console.error(error);
@@ -101,15 +125,9 @@ export const ReturnRequestDetail: React.FC = () => {
   const handleChangeStatus = async (newStatus: number) => {
     setActionLoading(true);
     try {
-      await axios.patch(
+      await axiosInstance.patch(
         `${API_URL}/return-requests/${id}/status`,
-        { status: newStatus },
-        {
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
-        }
+        { status: newStatus }
       );
       message.success("Cập nhật trạng thái yêu cầu hoàn hàng thành công");
       setReturnRequest((prev) => (prev ? { ...prev, status: newStatus } : prev));
@@ -143,6 +161,8 @@ export const ReturnRequestDetail: React.FC = () => {
   if (!returnRequest) {
     return <div>Không tìm thấy yêu cầu hoàn hàng</div>;
   }
+  console.log(products);
+  
 
   return (
     <Show
@@ -205,21 +225,40 @@ export const ReturnRequestDetail: React.FC = () => {
         <Card title="Sản phẩm yêu cầu hoàn" bordered>
           <List
             dataSource={returnRequest.products}
-            renderItem={(product) => (
-              <List.Item>
-                <List.Item.Meta
-                  title={`Mã sản phẩm: ${product.productId}`}
-                  description={
-                    <Space direction="vertical" size="small">
-                      <span>Số lượng: {product.quantity}</span>
-                      <span>
-                        Giá: <span style={{ color: "#d4380d" }}>{formatCurrency(product.price)}</span>
-                      </span>
-                    </Space>
-                  }
-                />
-              </List.Item>
-            )}
+            renderItem={(product) => {
+              const productDetails = products[product.productId];
+              const imageUrl = productDetails?.image?.[0] || "";
+              return (
+                <List.Item>
+                  <List.Item.Meta
+                    avatar={
+                      imageUrl ? (
+                        <img
+                          src={imageUrl}
+                          alt={productDetails?.name || "Sản phẩm"}
+                          style={{ width: 50, height: 50, objectFit: "contain" }}
+                        />
+                      ) : (
+                        <Empty
+                          image={Empty.PRESENTED_IMAGE_SIMPLE}
+                          description={null}
+                          style={{ width: 50, height: 50 }}
+                        />
+                      )
+                    }
+                    title={productDetails?.name || `Mã sản phẩm: ${product.productId}`}
+                    description={
+                      <Space direction="vertical" size="small">
+                        <span>Số lượng: {product.quantity}</span>
+                        <span>
+                          Giá: <span style={{ color: "#d4380d" }}>{formatCurrency(product.price)}</span>
+                        </span>
+                      </Space>
+                    }
+                  />
+                </List.Item>
+              );
+            }}
           />
         </Card>
 
@@ -302,7 +341,7 @@ export const ReturnRequestDetail: React.FC = () => {
               </Popconfirm>
               <Popconfirm
                 title="Từ chối yêu cầu hoàn hàng?"
-                onConfirm={() => handleChangeStatus(2)}
+                onConfirm={() => handleChangeStatus(4)}
                 okText="Từ chối"
                 cancelText="Hủy"
                 okButtonProps={{ loading: actionLoading }}
