@@ -14,6 +14,7 @@ import { Edit, useForm } from "@refinedev/antd";
 import dayjs from "dayjs";
 import { axiosInstance } from "../../utils/axiosInstance";
 import debounce from "lodash/debounce";
+import { SaveButton } from "../../utils/ButtonForManagement";
 
 const { RangePicker } = DatePicker;
 
@@ -264,10 +265,10 @@ const VoucherEdit = () => {
 
   return (
     <Edit
-      saveButtonProps={{
+      saveButtonProps={SaveButton("Cập nhật Voucher", {
         ...saveButtonProps,
-        disabled: isFormDisabled || isLoading,
-      }}
+        disabled: isFormDisabled,
+      })}
       title="Cập nhật Voucher"
     >
       <Spin spinning={isLoading}>

@@ -5,6 +5,7 @@ import { Create, useForm } from "@refinedev/antd";
 import dayjs from "dayjs";
 import { axiosInstance } from "../../utils/axiosInstance";
 import debounce from "lodash/debounce";
+import { SaveButton } from "../../utils/ButtonForManagement";
 
 const { RangePicker } = DatePicker;
 
@@ -130,7 +131,10 @@ const VoucherCreate = () => {
   const isLoading = saveButtonProps.loading;
 
   return (
-    <Create saveButtonProps={saveButtonProps} title="Thêm mới Voucher">
+    <Create
+      saveButtonProps={SaveButton("Lưu Voucher", saveButtonProps)}
+      title="Thêm mới Voucher"
+    >
       <Spin spinning={!!isLoading}>
         <Form
           {...formProps}
