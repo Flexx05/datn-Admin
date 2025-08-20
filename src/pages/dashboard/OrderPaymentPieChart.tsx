@@ -16,14 +16,11 @@ interface Props {
   filter: DashboardFilterValue;
 }
 
-const PAYMENT_COLORS = ["#1890ff", "#fa541c"];
+const PAYMENT_COLORS = ["#1890ff", "#fa541c", "#82ca9d"];
 const paymentMethodMap: Record<string, string> = {
-  cod: "Thanh toán khi nhận hàng",
-  vnpay: "VNPAY",
-  momo: "Momo",
   COD: "Thanh toán khi nhận hàng",
   VNPAY: "VNPAY",
-  MOMO: "Momo",
+  VI: "Ví Binova",
 };
 
 const OrderPaymentPieChart = ({ filter }: Props) => {
