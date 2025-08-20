@@ -196,15 +196,17 @@ const VoucherEdit = () => {
   useEffect(() => {
     if (!record?._id || !currentStatus) return;
 
-    let timeoutId: NodeJS.Timeout;
     let intervalId: NodeJS.Timeout;
+    let timeoutId: NodeJS.Timeout;
+    let retryTimeoutId: NodeJS.Timeout;
 
-    const fetchLatestStatus = async () => {
+    const fetchLatestStatus = async (isRetry = false) => {
       try {
         const res = await axiosInstance.get(`/vouchers/id/${record._id}`);
         const latest = res.data?.data;
         if (!latest) return;
 
+        // 👉 Chỉ xử lý khi trạng thái thay đổi
         if (latest.voucherStatus !== currentStatus) {
           message.warning(
             `Trạng thái voucher đã thay đổi từ "${currentStatus}" sang "${latest.voucherStatus}"`
@@ -222,7 +224,7 @@ const VoucherEdit = () => {
             userIds: latest.userIds || [],
           });
 
-          // Refetch UI
+          // Refetch UI (chỉ khi thay đổi)
           queryResult?.refetch();
 
           // Update state
@@ -230,32 +232,31 @@ const VoucherEdit = () => {
         }
       } catch (err) {
         console.error("Lỗi khi kiểm tra trạng thái voucher:", err);
+        if (!isRetry) {
+          retryTimeoutId = setTimeout(() => {
+            fetchLatestStatus(true);
+          }, 5000);
+        }
       }
     };
 
-    // Check lần đầu
+    // Gọi lần đầu khi mount
     fetchLatestStatus();
 
-    // Đặt giờ thay đổi tiếp theo
+    // Tính thời gian còn lại đến đầu phút
     const now = dayjs();
-    const nextChangeTime =
-      currentStatus === "inactive"
-        ? dayjs(record.startDate)
-        : currentStatus === "active"
-        ? dayjs(record.endDate)
-        : null;
+    const msToNextMinute = 60000 - (now.second() * 1000 + now.millisecond());
 
-    if (nextChangeTime && nextChangeTime.isAfter(now)) {
-      const msUntilChange = nextChangeTime.diff(now, "millisecond");
-      timeoutId = setTimeout(fetchLatestStatus, msUntilChange);
-    }
-
-    // Polling dự phòng
-    intervalId = setInterval(fetchLatestStatus, 60000);
+    // Delay thêm 500ms để chắc chắn BE update xong
+    timeoutId = setTimeout(() => {
+      fetchLatestStatus();
+      intervalId = setInterval(fetchLatestStatus, 60000);
+    }, msToNextMinute + 500);
 
     return () => {
       clearTimeout(timeoutId);
       clearInterval(intervalId);
+      clearTimeout(retryTimeoutId);
     };
   }, [record?._id, currentStatus]);
 
