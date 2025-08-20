@@ -432,7 +432,7 @@ export const OrderList: React.FC = () => {
         await axiosInstance.patch(
           `${API_URL}/order/status/${record.orderId._id}`,
           {
-            status: 3,
+            status: 4,
             paymentStatus: 1,
             userId: user?._id,
           }
