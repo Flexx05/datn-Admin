@@ -1,30 +1,28 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import { ArrowUpOutlined } from "@ant-design/icons";
 import { List, ShowButton, useTable } from "@refinedev/antd";
 import { CrudFilters, useInvalidate } from "@refinedev/core";
 import {
   Avatar,
   Button,
+  Form,
   Input,
+  message,
+  Modal,
   Popconfirm,
   Space,
   Table,
   Tabs,
   Tag,
   Tooltip,
-  message,
-  Modal,
-  Form,
 } from "antd";
-import axios from "axios";
 import dayjs from "dayjs";
 import { useCallback, useState } from "react";
-import { API_URL } from "../../config/dataProvider";
-import { IUser } from "../../interface/user";
-import Loader from "../../utils/loading";
-import { axiosInstance } from "../../utils/axiosInstance";
 import { useAuth } from "../../contexts/auth/AuthContext";
+import { IUser } from "../../interface/user";
+import { axiosInstance } from "../../utils/axiosInstance";
+import Loader from "../../utils/loading";
 import { RoleTagWithPopover } from "../staff/RoleTagWithPopover";
-import { ArrowUpOutlined } from "@ant-design/icons";
 
 export const UserList = () => {
   const [filterActive, setFilterActive] = useState<boolean>(true);
@@ -94,7 +92,7 @@ export const UserList = () => {
     }
     setLoadingLock(true);
     try {
-      await axios.patch(`${API_URL}/admin/users/${selectedUser._id}/status`, {
+      await axiosInstance.patch(`/admin/users/${selectedUser._id}/status`, {
         isActive: false,
         reason: lockReason,
       });
@@ -252,10 +250,6 @@ export const UserList = () => {
           )}
         />
         <Table.Column
-          dataIndex={"countOrderNotSuccess"}
-          title="Đơn hàng chưa hoàn thành"
-        />
-        <Table.Column
           dataIndex="createdAt"
           title="Ngày đăng ký"
           sorter={(a: IUser, b: IUser) =>
@@ -281,9 +275,8 @@ export const UserList = () => {
                       renderTag={(role, label, onClick) => (
                         <Tooltip
                           title={
-                            record.countOrderNotSuccess > 0 ||
                             record.isVerify === false
-                              ? "Tài khoản chưa kích hoạt hoặc đang có đơn hàng chưa hoàn thành"
+                              ? "Tài khoản chưa kích hoạt"
                               : "Đổi vai trò"
                           }
                           key={"role"}
@@ -291,10 +284,7 @@ export const UserList = () => {
                           <Button
                             size="small"
                             type="default"
-                            disabled={
-                              record.countOrderNotSuccess > 0 ||
-                              record.isVerify === false
-                            }
+                            disabled={record.isVerify === false}
                             icon={<ArrowUpOutlined />}
                             onClick={onClick}
                           />
@@ -305,7 +295,6 @@ export const UserList = () => {
                       danger
                       size="small"
                       type="default"
-                      disabled={record.countOrderNotSuccess > 0}
                       onClick={() => handleOpenLockModal(record)}
                     >
                       Khóa

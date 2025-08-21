@@ -3,6 +3,7 @@ import { Edit, useForm } from "@refinedev/antd";
 import { Form, Input, message, Select, Spin } from "antd";
 import { IQuickChat } from "../../interface/conversation";
 import Loader from "../../utils/loading";
+import { SaveButton } from "../../utils/ButtonForManagement";
 
 const QuickChatEdit = () => {
   const { formProps, saveButtonProps, formLoading } = useForm<IQuickChat>({
@@ -30,7 +31,7 @@ const QuickChatEdit = () => {
   return (
     <Edit
       title="Chỉnh sửa tin nhắn nhanh"
-      saveButtonProps={saveButtonProps}
+      saveButtonProps={SaveButton("Lưu tin nhắn", saveButtonProps)}
       isLoading={formLoading}
     >
       <Spin spinning={formLoading} indicator={<Loader />}>

@@ -28,6 +28,7 @@ import { AttributeItem } from "./AttributeItem";
 import { VariationItem } from "./VariationItem";
 import "./variation-animations.css";
 import Loader from "../../utils/loading";
+import { SaveButton } from "../../utils/ButtonForManagement";
 
 export const ProductCreate = () => {
   const { formProps, saveButtonProps, formLoading } = useForm({
@@ -236,7 +237,6 @@ export const ProductCreate = () => {
           return {
             ...variation,
             image: imageUrl,
-            // Đã xóa xử lý saleFrom và saleTo
           };
         }
       );
@@ -247,16 +247,25 @@ export const ProductCreate = () => {
         variation: normalizedVariations,
       };
 
-      await formProps?.onFinish?.(payload);
+      formProps?.onFinish?.(payload);
     } catch (error) {
       message.error("Lỗi khi tạo sản phẩm!");
       console.error(error);
     }
   };
 
+  // State tạm cho áp dụng hàng loạt
+  const [bulkRegularPrice, setBulkRegularPrice] = useState<number | undefined>(
+    undefined
+  );
+  const [bulkSalePrice, setBulkSalePrice] = useState<number | undefined>(
+    undefined
+  );
+  const [bulkStock, setBulkStock] = useState<number | undefined>(undefined);
+
   return (
     <Create
-      saveButtonProps={saveButtonProps}
+      saveButtonProps={SaveButton("Lưu sản phẩm", saveButtonProps)}
       title="Tạo sản phẩm"
       isLoading={false}
     >
@@ -279,10 +288,6 @@ export const ProductCreate = () => {
               {
                 max: 100,
                 message: "Tên sản phẩm không được vượt quá 100 ký tự",
-              },
-              {
-                pattern: /^[\p{L}0-9\s]+$/u,
-                message: "Tên sản phẩm không được chứa ký tự đặc biệt",
               },
             ]}
           >
@@ -387,7 +392,7 @@ export const ProductCreate = () => {
                       })
                     );
 
-                    await formProps.form?.setFieldsValue({
+                    formProps.form?.setFieldsValue({
                       variation: generatedVariations,
                     });
 
@@ -406,56 +411,65 @@ export const ProductCreate = () => {
 
             <Form.Item label="Áp dụng hàng loạt cho biến thể">
               <Space.Compact style={{ display: "flex", gap: 12 }}>
-                <Form.Item name="regularPrice" noStyle>
-                  <InputNumber
-                    placeholder="Giá gốc"
-                    min={1000}
-                    style={{ width: 120 }}
-                  />
-                </Form.Item>
-                <Form.Item name="salePrice" noStyle>
-                  <InputNumber
-                    placeholder="Giá giảm"
-                    min={1000}
-                    style={{ width: 120 }}
-                  />
-                </Form.Item>
-                <Form.Item name="stock" noStyle>
-                  <InputNumber
-                    placeholder="Tồn kho"
-                    min={0}
-                    style={{ width: 120 }}
-                  />
-                </Form.Item>
+                <InputNumber
+                  placeholder="Giá gốc"
+                  min={1000}
+                  max={1000000000}
+                  style={{ width: 120 }}
+                  value={bulkRegularPrice}
+                  onChange={(value) =>
+                    setBulkRegularPrice(value === null ? undefined : value)
+                  }
+                />
+                <InputNumber
+                  placeholder="Giá giảm"
+                  min={1000}
+                  max={1000000000}
+                  style={{ width: 120 }}
+                  value={bulkSalePrice}
+                  onChange={(value) =>
+                    setBulkSalePrice(value === null ? undefined : value)
+                  }
+                />
+                <InputNumber
+                  placeholder="Tồn kho"
+                  min={0}
+                  max={10000}
+                  style={{ width: 120 }}
+                  value={bulkStock}
+                  onChange={(value) =>
+                    setBulkStock(value === null ? undefined : value)
+                  }
+                />
                 <Button
                   type="primary"
                   onClick={() => {
-                    const values = formProps.form?.getFieldsValue([
-                      "defaultPrice",
-                      "defaultSalePrice",
-                      "defaultStock",
-                      "variation",
-                    ]);
-
-                    const {
-                      defaultPrice,
-                      defaultSalePrice,
-                      defaultStock,
-                      variation,
-                    } = values;
-
+                    if (
+                      bulkRegularPrice !== undefined &&
+                      bulkSalePrice !== undefined &&
+                      bulkSalePrice >= bulkRegularPrice
+                    ) {
+                      message.error("Giá giảm phải nhỏ hơn giá gốc");
+                      return;
+                    }
+                    const variation =
+                      formProps.form?.getFieldValue("variation");
                     if (!variation || variation.length === 0) {
                       message.warning("Chưa có biến thể để áp dụng.");
                       return;
                     }
-
                     const updated = variation.map((item: any) => ({
                       ...item,
-                      regularPrice: defaultPrice ?? item.regularPrice,
-                      salePrice: defaultSalePrice ?? item.salePrice,
-                      stock: defaultStock ?? item.stock,
+                      regularPrice:
+                        bulkRegularPrice !== undefined
+                          ? bulkRegularPrice
+                          : item.regularPrice,
+                      salePrice:
+                        bulkSalePrice !== undefined
+                          ? bulkSalePrice
+                          : item.salePrice,
+                      stock: bulkStock !== undefined ? bulkStock : item.stock,
                     }));
-
                     formProps.form?.setFieldsValue({ variation: updated });
                     message.success("✅ Đã áp dụng cho tất cả biến thể!");
                   }}

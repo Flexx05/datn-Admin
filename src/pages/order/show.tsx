@@ -2,6 +2,10 @@ import {
   CalendarOutlined,
   EnvironmentOutlined,
   PrinterOutlined,
+  CheckOutlined,
+  CloseOutlined,
+  TruckOutlined,
+  UndoOutlined,
 } from "@ant-design/icons";
 import { Show } from "@refinedev/antd";
 import { useShow } from "@refinedev/core";
@@ -32,6 +36,7 @@ import { IOrderDetail, Order } from "../../interface/order";
 import { formatCurrency } from "./formatCurrency";
 import Loader from "../../utils/loading";
 import { axiosInstance } from "../../utils/axiosInstance";
+import ButtonChat from "./ButtonChat"; // Import ButtonChat
 
 const { Text } = Typography;
 
@@ -41,6 +46,141 @@ const cancelReasons = [
   "Hết hàng",
   "Khác",
 ];
+
+// Component xử lý hành động (tái sử dụng từ OrderList)
+const OrderActions: React.FC<{
+  record: Order;
+  loadingId: number | null;
+  onChangeStatus: (
+    record: Order,
+    newStatus: number,
+    reason?: string,
+    paymentStatus?: number
+  ) => Promise<void>;
+  onShowCancelModal: (id: string) => void;
+}> = ({ record, loadingId, onChangeStatus, onShowCancelModal }) => {
+  const isLoading = loadingId === record.status;
+
+  // Nút chat
+  const chatButton = <ButtonChat record={record} />;
+
+  switch (record.status) {
+    case 0: // Chờ xác nhận
+      return (
+        <Space>
+          <Popconfirm
+            title="Xác nhận đơn hàng này?"
+            onConfirm={() => onChangeStatus(record, 1)}
+            okText="Xác nhận"
+            cancelText="Hủy"
+            okButtonProps={{ loading: isLoading }}
+          >
+            <Button
+              size="small"
+              type="primary"
+              icon={<CheckOutlined />}
+              loading={isLoading}
+            >
+              Xác nhận
+            </Button>
+          </Popconfirm>
+          <Popconfirm
+            title="Hủy đơn hàng này?"
+            onConfirm={() => onShowCancelModal(record._id)}
+            okText="Hủy đơn"
+            cancelText="Hủy"
+            okButtonProps={{ loading: isLoading }}
+          >
+            <Button
+              size="small"
+              danger
+              icon={<CloseOutlined />}
+              loading={isLoading}
+            >
+              Hủy
+            </Button>
+          </Popconfirm>
+          {chatButton}
+        </Space>
+      );
+
+    case 1: // Đã xác nhận
+      return (
+        <Space>
+          <Popconfirm
+            title="Xác nhận giao hàng cho đơn hàng này?"
+            onConfirm={() => onChangeStatus(record, 2)}
+            okText="Xác nhận"
+            cancelText="Hủy"
+            okButtonProps={{ loading: isLoading }}
+          >
+            <Button size="small" icon={<TruckOutlined />} loading={isLoading}>
+              Giao hàng
+            </Button>
+          </Popconfirm>
+          <Popconfirm
+            title="Hủy đơn hàng này?"
+            onConfirm={() => onShowCancelModal(record._id)}
+            okText="Hủy đơn"
+            cancelText="Hủy"
+            okButtonProps={{ loading: isLoading }}
+          >
+            <Button
+              size="small"
+              danger
+              icon={<CloseOutlined />}
+              loading={isLoading}
+            >
+              Hủy
+            </Button>
+          </Popconfirm>
+          {chatButton}
+        </Space>
+      );
+
+    case 2: // Đang giao
+      return (
+        <Space>
+          <Popconfirm
+            title="Xác nhận đơn hàng đã giao thành công?"
+            onConfirm={() => onChangeStatus(record, 3)}
+            okText="Xác nhận"
+            cancelText="Hủy"
+            okButtonProps={{ loading: isLoading }}
+          >
+            <Button
+              size="small"
+              type="primary"
+              icon={<CheckOutlined />}
+              loading={isLoading}
+            >
+              Đã giao
+            </Button>
+          </Popconfirm>
+          {chatButton}
+        </Space>
+      );
+
+    case 4: // Hoàn thành
+      return <Space>{chatButton}</Space>;
+
+    case 5: // Đã hủy
+      return <Space>{record.completedBy !== "system" && chatButton}</Space>;
+
+    case 6: // Yêu cầu hoàn hàng
+      return (
+        <Space>
+          <Tag color="cyan" icon={<UndoOutlined />}>
+            Hoàn hàng
+          </Tag>
+          {chatButton}
+        </Space>
+      );
+
+    default:
+      return null;
+  }
+};
 
 export const OrderShow = () => {
   const { id } = useParams();
@@ -65,39 +205,46 @@ export const OrderShow = () => {
 
   const [loadingAction, setLoadingAction] = useState<number | null>(null);
   const [isModalVisible, setIsModalVisible] = useState(false);
-  const [isCancelLoading, setIsCancelLoading] = useState(false); // Thêm state cho loading nút hủy
+  const [isCancelLoading, setIsCancelLoading] = useState(false);
   const [form] = Form.useForm();
 
   // Hàm cập nhật trạng thái đơn hàng
-  const handleUpdateStatus = async (
+  const handleChangeStatus = async (
+    record: Order,
     newStatus: number,
-    cancelReason?: string
+    reason?: string,
+    paymentStatus?: number
   ) => {
     setLoadingAction(newStatus);
-    const user = localStorage.getItem("user");
-    const parsedUser = user ? JSON.parse(user) : null;
     try {
-      const payload: any = { status: newStatus, userId: parsedUser?._id };
-      if (newStatus === 5) {
-        payload.paymentStatus = 3; // Update paymentStatus to 3 when canceling
-        if (cancelReason) payload.cancelReason = cancelReason; // Include cancel reason if provided
+      const userRaw = localStorage.getItem("user");
+      const user = userRaw ? JSON.parse(userRaw) : null;
+
+      let effectivePaymentStatus =
+        paymentStatus !== undefined ? paymentStatus : record.paymentStatus;
+
+      if (newStatus === 3) {
+        effectivePaymentStatus = 1;
       }
-      await axios.patch(`${API_URL}/order/status/${orderData?._id}`, payload, {
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
+
+      await axiosInstance.patch(`${API_URL}/order/status/${record._id}`, {
+        status: newStatus,
+        paymentStatus: effectivePaymentStatus,
+        ...(reason && { cancelReason: reason }),
+        userId: user?._id,
       });
-      message.success(`Cập nhật trạng thái đơn hàng thành công`);
+
       await refetch();
-    } catch (error) {
-      message.error("Cập nhật trạng thái đơn hàng thất bại");
+      message.success("Cập nhật trạng thái thành công");
+    } catch (error: any) {
+      console.error(error);
+      message.error("Cập nhật trạng thái thất bại");
     } finally {
       setLoadingAction(null);
     }
   };
 
-  const showCancelModal = () => {
+  const showCancelModal = (id: string) => {
     setIsModalVisible(true);
   };
 
@@ -105,31 +252,34 @@ export const OrderShow = () => {
     reason: string;
     customReason?: string;
   }) => {
-    setIsCancelLoading(true); // Bật trạng thái loading
+    setIsCancelLoading(true);
     try {
       const finalReason =
         values.reason === "Khác" && values.customReason
           ? values.customReason
           : values.reason;
-      await handleUpdateStatus(5, finalReason);
-      if (
-        orderData.paymentMethod === "VNPAY" ||
-        (orderData.paymentMethod === "VI" && orderData.paymentStatus === 1)
-      ) {
-        const refundResponse = await axiosInstance.post(
-          "http://localhost:8080/api/wallet/cancel-refund",
-          {
-            orderId: orderData._id,
-            type: 0,
-            amount: orderData.totalAmount,
-            status: 1,
-            description: `Trả lại tiền đơn hàng đã hủy ${orderData.orderCode}: ${finalReason}`,
+
+      if (orderData) {
+        await handleChangeStatus(orderData, 5, finalReason, 3);
+        if (
+          orderData.paymentMethod === "VNPAY" ||
+          (orderData.paymentMethod === "VI" && orderData.paymentStatus === 1)
+        ) {
+          const refundResponse = await axiosInstance.post(
+            "http://localhost:8080/api/wallet/cancel-refund",
+            {
+              orderId: orderData._id,
+              type: 0,
+              amount: orderData.totalAmount,
+              status: 1,
+              description: `Trả lại tiền đơn hàng đã hủy ${orderData.orderCode}: ${finalReason}`,
+            }
+          );
+          const refundData = await refundResponse.data;
+          if (!refundData.success) {
+            message.error("Yêu cầu hoàn tiền thất bại");
+            return;
           }
-        );
-        const refundData = await refundResponse.data;
-        if (!refundData.success) {
-          message.error("Yêu cầu hoàn tiền thất bại");
-          return;
         }
       }
       setIsModalVisible(false);
@@ -139,7 +289,7 @@ export const OrderShow = () => {
       message.error(error.message || "Hủy đơn hàng thất bại");
       console.error(error);
     } finally {
-      setIsCancelLoading(false); // Tắt trạng thái loading
+      setIsCancelLoading(false);
     }
   };
 
@@ -156,6 +306,7 @@ export const OrderShow = () => {
       3: "Đã giao hàng",
       4: "Hoàn thành",
       5: "Đã hủy",
+      6: "Yêu cầu hoàn hàng", // Thêm trạng thái hoàn hàng
     };
     return statusMap[status] || status?.toString();
   };
@@ -170,10 +321,10 @@ export const OrderShow = () => {
     return statusMap[status] || status?.toString();
   };
 
-  // Hàm in đơn hàng
   const handlePrintOrder = () => {
     window.print();
   };
+
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleString("vi-VN");
   };
@@ -185,6 +336,7 @@ export const OrderShow = () => {
     if (status === 3) return "green";
     if (status === 4) return "cyan";
     if (status === 5) return "red";
+    if (status === 6) return "cyan"; // Màu cho trạng thái hoàn hàng
     return "default";
   };
 
@@ -208,33 +360,37 @@ export const OrderShow = () => {
     }
   };
 
-  // Quy trình giao hàng
   const deliverySteps = [
     {
       title: "Chờ xác nhận",
       description: "Đơn hàng đang chờ xác nhận",
+      status: 0,
     },
     {
       title: "Đã xác nhận",
       description: "Đơn hàng đã được xác nhận",
+      status: 1,
     },
     {
       title: "Đang giao hàng",
       description: "Đơn hàng đang được vận chuyển",
+      status: 2,
     },
     {
       title: "Đã giao hàng",
       description: "Đơn hàng đã giao thành công",
+      status: 3,
     },
     {
       title: "Hoàn thành",
       description: "Đơn hàng đã hoàn thành",
+      status: 4,
     },
   ];
 
   const getCurrentStep = (status: number) => {
-    if (status === 5) return -1; // Đã hủy không hiển thị trong quy trình
-    return Math.min(status, 4); // Giới hạn bước tối đa là 4 (Hoàn thành)
+    if (status === 5 || status === 6) return -1; // Xử lý cả trạng thái hoàn hàng
+    return Math.min(status, 4);
   };
 
   const productColumns = [
@@ -344,25 +500,75 @@ export const OrderShow = () => {
           {/* Quy trình giao hàng */}
           <Col span={24}>
             <Card title="Quy trình giao hàng" size="small">
-              {orderData?.status === 5 ? (
+              {orderData?.status === 5 || orderData?.status === 6 ? (
                 <>
-                  <Tag color="red">Đơn hàng đã bị hủy</Tag>
-                  <p
-                    style={{
-                      marginTop: 8,
-                      color: "#ff4d4f",
-                      fontStyle: "italic",
-                    }}
-                  >
-                    Lý do hủy:{" "}
-                    {orderData?.cancelReason || "Không có lý do cụ thể"}
-                  </p>
+                  <Tag color={orderData?.status === 5 ? "red" : "cyan"}>
+                    {orderData?.status === 5 ? "Đơn hàng đã bị hủy" : "Yêu cầu hoàn hàng"}
+                  </Tag>
+                  {orderData?.status === 5 && (
+                    <p
+                      style={{
+                        marginTop: 8,
+                        color: "#ff4d4f",
+                        fontStyle: "italic",
+                      }}
+                    >
+                      Lý do hủy:{" "}
+                      {orderData?.cancelReason || "Không có lý do cụ thể"}
+                    </p>
+                  )}
+                  {orderData?.statusHistory?.find((h: any) => h.status === 5) && (
+                    <p style={{ marginTop: 8, color: "#666", fontSize: "12px" }}>
+                      Thời gian hủy:{" "}
+                      {formatDate(
+                        orderData.statusHistory.find((h: any) => h.status === 5)
+                          .changedAt
+                      )}
+                    </p>
+                  )}
                 </>
               ) : (
                 <Steps
                   current={getCurrentStep(orderData?.status)}
-                  items={deliverySteps}
+                  items={deliverySteps.map((step, index) => {
+                    const currentStep = getCurrentStep(orderData?.status);
+                    const isActive = currentStep === index;
+                    const isCompleted = currentStep > index;
+                    const history = orderData?.statusHistory?.find(
+                      (h: any) => h.status === step.status
+                    );
+
+                    return {
+                      ...step,
+                      icon: (
+                        <div
+                          className={`w-9 h-9 flex items-center justify-center rounded-full text-white text-xs font-medium
+                            ${isCompleted || isActive ? 'bg-green-500' : 'bg-gray-300'}`}
+                        >
+                          {index + 1}
+                        </div>
+                      ),
+                      title: <span className="text-base">{step.title}</span>,
+                      description: (
+                        <div>
+                          <span>{step.description}</span>
+                          {history && (
+                            <p
+                              style={{
+                                color: "#666",
+                                fontSize: "12px",
+                                marginTop: 4,
+                              }}
+                            >
+                              {formatDate(history.changedAt)}
+                            </p>
+                          )}
+                        </div>
+                      ),
+                    };
+                  })}
                   style={{ marginTop: 16 }}
+                  direction={window.innerWidth < 768 ? 'vertical' : 'horizontal'}
                 />
               )}
             </Card>
@@ -434,6 +640,9 @@ export const OrderShow = () => {
                 </div>
                 <div>
                   <strong>{orderData?.shippingAddress}</strong>
+                </div>
+                <div>
+                  <strong>Ghi chú:</strong><p>{orderData?.note}</p>
                 </div>
               </Space>
             </Card>
@@ -534,68 +743,14 @@ export const OrderShow = () => {
           {/* Hành động */}
           <Col span={24}>
             <Card title="Hành động" size="small">
-              <Space>
-                {orderData?.status === 0 && (
-                  <>
-                    <Popconfirm
-                      title="Xác nhận đơn hàng này?"
-                      onConfirm={() => handleUpdateStatus(1)}
-                      okText="Xác nhận"
-                      cancelText="Hủy"
-                    >
-                      <Button type="primary" loading={loadingAction === 1}>
-                        Xác nhận đơn hàng
-                      </Button>
-                    </Popconfirm>
-                    <Popconfirm
-                      title="Hủy đơn hàng này?"
-                      onConfirm={showCancelModal}
-                      okText="Hủy đơn"
-                      cancelText="Không"
-                    >
-                      <Button danger loading={loadingAction === 5}>
-                        Hủy đơn hàng
-                      </Button>
-                    </Popconfirm>
-                  </>
-                )}
-                {orderData?.status === 1 && (
-                  <>
-                    <Popconfirm
-                      title="Chuyển đơn hàng sang trạng thái đang giao?"
-                      onConfirm={() => handleUpdateStatus(2)}
-                      okText="Giao hàng"
-                      cancelText="Hủy"
-                    >
-                      <Button type="primary" loading={loadingAction === 2}>
-                        Bắt đầu giao hàng
-                      </Button>
-                    </Popconfirm>
-                    <Popconfirm
-                      title="Hủy đơn hàng này?"
-                      onConfirm={showCancelModal}
-                      okText="Hủy đơn"
-                      cancelText="Không"
-                    >
-                      <Button danger loading={loadingAction === 5}>
-                        Hủy đơn hàng
-                      </Button>
-                    </Popconfirm>
-                  </>
-                )}
-                {orderData?.status === 2 && (
-                  <Popconfirm
-                    title="Xác nhận đã giao hàng thành công?"
-                    onConfirm={() => handleUpdateStatus(3)}
-                    okText="Đã giao"
-                    cancelText="Hủy"
-                  >
-                    <Button type="primary" loading={loadingAction === 3}>
-                      Xác nhận đã giao
-                    </Button>
-                  </Popconfirm>
-                )}
-              </Space>
+              {orderData && (
+                <OrderActions
+                  record={orderData}
+                  loadingId={loadingAction}
+                  onChangeStatus={handleChangeStatus}
+                  onShowCancelModal={showCancelModal}
+                />
+              )}
             </Card>
           </Col>
 

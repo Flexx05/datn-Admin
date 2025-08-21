@@ -3,6 +3,7 @@ import { Authenticated, ErrorComponent } from "@refinedev/core";
 import { CatchAllNavigate, NavigateToResource } from "@refinedev/react-router";
 import { Outlet, Route, Routes } from "react-router";
 import { CustomSider, Header } from "../components";
+import { useAuth } from "../contexts/auth/AuthContext";
 import {
   AttributeCreate,
   AttributeEdit,
@@ -40,7 +41,7 @@ import VoucherCreate from "../pages/voucher/create";
 import VoucherEdit from "../pages/voucher/edit";
 import VoucherList from "../pages/voucher/list";
 import VoucherShow from "../pages/voucher/show";
-import { useAuth } from "../contexts/auth/AuthContext";
+import { ProtectRouter } from "./ProtectRouter";
 
 const AppRoutes = () => {
   const { user } = useAuth();
@@ -63,33 +64,96 @@ const AppRoutes = () => {
             index
             element={
               <NavigateToResource
-                resource={user?.role === "admin" ? "dashboard" : "product"}
+                resource={user?.role === "admin" ? "dashboard" : "orders"}
               />
             }
           />
-          <Route path="/dashboard" element={<Dashboard />} />
+          <Route
+            path="/dashboard"
+            element={
+              <ProtectRouter>
+                <Dashboard />
+              </ProtectRouter>
+            }
+          />
           <Route path="/product">
             <Route index element={<ProductList />} />
-            <Route path="add" element={<ProductCreate />} />
-            <Route path="edit/:id" element={<ProductEdit />} />
+            <Route
+              path="add"
+              element={
+                <ProtectRouter>
+                  <ProductCreate />
+                </ProtectRouter>
+              }
+            />
+            <Route
+              path="edit/:id"
+              element={
+                <ProtectRouter>
+                  <ProductEdit />
+                </ProtectRouter>
+              }
+            />
             <Route path="id/:id" element={<ProductShow />} />
           </Route>
           <Route path="/attribute">
             <Route index element={<AttributeList />} />
-            <Route path="add" element={<AttributeCreate />} />
-            <Route path="edit/:id" element={<AttributeEdit />} />
+            <Route
+              path="add"
+              element={
+                <ProtectRouter>
+                  <AttributeCreate />
+                </ProtectRouter>
+              }
+            />
+            <Route
+              path="edit/:id"
+              element={
+                <ProtectRouter>
+                  <AttributeEdit />
+                </ProtectRouter>
+              }
+            />
             <Route path="id/:id" element={<AttributeShow />} />
           </Route>
           <Route path="/category">
             <Route index element={<CategoryList />} />
-            <Route path="add" element={<CategoryCreate />} />
-            <Route path="edit/:id" element={<CategoryEdit />} />
+            <Route
+              path="add"
+              element={
+                <ProtectRouter>
+                  <CategoryCreate />
+                </ProtectRouter>
+              }
+            />
+            <Route
+              path="edit/:id"
+              element={
+                <ProtectRouter>
+                  <CategoryEdit />
+                </ProtectRouter>
+              }
+            />
             <Route path="id/:id" element={<CategoryShow />} />
           </Route>
           <Route path="/brand">
             <Route index element={<BrandList />} />
-            <Route path="add" element={<BrandCreate />} />
-            <Route path="edit/:id" element={<BrandEdit />} />
+            <Route
+              path="add"
+              element={
+                <ProtectRouter>
+                  <BrandCreate />
+                </ProtectRouter>
+              }
+            />
+            <Route
+              path="edit/:id"
+              element={
+                <ProtectRouter>
+                  <BrandEdit />
+                </ProtectRouter>
+              }
+            />
             <Route path="id/:id" element={<BrandShow />} />
           </Route>
           <Route path="/users">
@@ -97,12 +161,40 @@ const AppRoutes = () => {
             <Route path="show/:id" element={<UserShow />} />
           </Route>
           <Route path="/staffs">
-            <Route index element={<StaffList />} />
-            <Route path="show/:id" element={<StaffShow />} />
+            <Route
+              index
+              element={
+                <ProtectRouter>
+                  <StaffList />
+                </ProtectRouter>
+              }
+            />
+            <Route
+              path="show/:id"
+              element={
+                <ProtectRouter>
+                  <StaffShow />
+                </ProtectRouter>
+              }
+            />
           </Route>
           <Route path="/comments">
-            <Route index element={<CommentList />} />
-            <Route path="id/:id" element={<CommentShow />} />
+            <Route
+              index
+              element={
+                <ProtectRouter>
+                  <CommentList />
+                </ProtectRouter>
+              }
+            />
+            <Route
+              path="id/:id"
+              element={
+                <ProtectRouter>
+                  <CommentShow />
+                </ProtectRouter>
+              }
+            />
           </Route>
           <Route path="/conversation" element={<ChatList />}>
             <Route path="id/:id" element={<ChatShow />} />
@@ -117,17 +209,44 @@ const AppRoutes = () => {
             />
           </Route>
           <Route path="/vouchers">
-            <Route index element={<VoucherList />} />
-            <Route path="add" element={<VoucherCreate />} />
-            <Route path="edit/:id" element={<VoucherEdit />} />
-            <Route path="id/:id" element={<VoucherShow />} />
+            <Route
+              index
+              element={
+                <ProtectRouter>
+                  <VoucherList />
+                </ProtectRouter>
+              }
+            />
+            <Route
+              path="add"
+              element={
+                <ProtectRouter>
+                  <VoucherCreate />
+                </ProtectRouter>
+              }
+            />
+            <Route
+              path="edit/:id"
+              element={
+                <ProtectRouter>
+                  <VoucherEdit />
+                </ProtectRouter>
+              }
+            />
+            <Route
+              path="id/:id"
+              element={
+                <ProtectRouter>
+                  <VoucherShow />
+                </ProtectRouter>
+              }
+            />
           </Route>
           <Route path="/quick-chat">
             <Route index element={<QuickChatList />} />
             <Route path="add" element={<QuickChatCreate />} />
             <Route path="edit/:id" element={<QuickChatEdit />} />
           </Route>
-          {/* Cấm xóa */}
           <Route path="*" element={<ErrorComponent />} />
         </Route>
         <Route

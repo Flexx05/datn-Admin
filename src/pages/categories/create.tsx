@@ -5,6 +5,7 @@ import { useMemo } from "react";
 import { ICategory } from "../../interface/category";
 import { HttpError } from "@refinedev/core";
 import Loader from "../../utils/loading";
+import { SaveButton } from "../../utils/ButtonForManagement";
 
 export const CategoryCreate = () => {
   const { formProps, saveButtonProps, formLoading } = useForm({
@@ -75,7 +76,7 @@ export const CategoryCreate = () => {
 
   return (
     <Create
-      saveButtonProps={saveButtonProps}
+      saveButtonProps={SaveButton("Lưu danh mục", saveButtonProps)}
       title="Tạo danh mục"
       isLoading={false}
     >

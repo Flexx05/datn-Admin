@@ -29,7 +29,7 @@ export const AccesControlProvider: AccessControlProvider = {
       const allowedActions = staffPermissions[resource as string] ?? [];
       return {
         can: allowedActions.includes(action),
-        reason: `Bạn chỉ có quyền ${allowedActions.join(", ")} với ${resource}`,
+        reason: `Bạn không có quyền thực hiện hành động này`,
       };
     }
 
