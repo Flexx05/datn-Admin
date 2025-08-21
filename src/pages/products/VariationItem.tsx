@@ -1,6 +1,14 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { MinusCircleOutlined, PlusOutlined } from "@ant-design/icons";
-import { Button, Form, InputNumber, message, Popconfirm, Upload } from "antd";
+import {
+  Button,
+  Form,
+  InputNumber,
+  message,
+  Popconfirm,
+  Upload,
+  UploadFile,
+} from "antd";
 import axios from "axios";
 import { ColorDots } from "./ColorDots";
 import { CLOUDINARY_URL } from "../../config/dataProvider";
@@ -16,10 +24,9 @@ export const VariationItem: React.FC<VariationItemProps> = ({
   remove,
   form,
 }) => {
-  const handleImageChange = async (info: any) => {
-    let fileList = Array.isArray(info?.fileList) ? info.fileList : [];
+  const handleImageChange = async (newFileList: UploadFile[]) => {
     // Giới hạn 1 ảnh
-    fileList = fileList.slice(0, 1).map((file: any) => ({
+    const fileList = newFileList.slice(0, 1).map((file: any) => ({
       ...file,
       status: file.status || "uploading",
     }));
@@ -32,6 +39,8 @@ export const VariationItem: React.FC<VariationItemProps> = ({
     }
     const file = fileList[0];
     if (file && file.originFileObj && !file.url) {
+      if (!file.originFileObj.type.startsWith("image/"))
+        message.error("Vui lòng tải lên ảnh hợp lệ.");
       try {
         const formData = new FormData();
         formData.append("file", file.originFileObj);
@@ -136,38 +145,38 @@ export const VariationItem: React.FC<VariationItemProps> = ({
           name={[field.name, "image"]}
           rules={[{ required: true, message: "Vui lòng chọn ảnh" }]}
         >
-          <Upload
-            listType="picture-card"
-            maxCount={1}
-            beforeUpload={() => false}
-            onChange={handleImageChange}
-            fileList={
-              form.getFieldValue(["variation", field.name, "image"]) || []
-            }
-            showUploadList={{
-              showPreviewIcon: true,
-              showRemoveIcon: true,
-            }}
-            disabled={(
-              form.getFieldValue(["variation", field.name, "image"]) || []
-            ).some((img: any) => img.status === "uploading")}
-          >
-            {(() => {
-              const images =
-                form.getFieldValue(["variation", field.name, "image"]) || [];
-              const isUploading = images.some(
-                (img: any) => img.status === "uploading"
-              );
-              if (isUploading) return null;
-              if (images.length >= 1) return null;
-              return (
-                <div>
-                  <PlusOutlined />
-                  <div style={{ marginTop: 8 }}>Tải ảnh</div>
-                </div>
-              );
-            })()}
-          </Upload>
+          {(() => {
+            const images = form.getFieldValue([
+              "variation",
+              field.name,
+              "image",
+            ]);
+            const imageList = Array.isArray(images) ? images : [];
+            const isUploading = imageList.some(
+              (img: any) => img.status === "uploading"
+            );
+            return (
+              <Upload
+                listType="picture-card"
+                maxCount={1}
+                beforeUpload={() => false}
+                onChange={(e) => handleImageChange(e.fileList)}
+                fileList={imageList}
+                showUploadList={{
+                  showPreviewIcon: true,
+                  showRemoveIcon: true,
+                }}
+                disabled={isUploading}
+              >
+                {isUploading || imageList.length >= 1 ? null : (
+                  <div>
+                    <PlusOutlined />
+                    <div style={{ marginTop: 8 }}>Tải ảnh</div>
+                  </div>
+                )}
+              </Upload>
+            );
+          })()}
         </Form.Item>
 
         <div>
