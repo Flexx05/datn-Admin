@@ -140,11 +140,14 @@ const VoucherEdit = () => {
         return;
       }
 
-      const isStartDateEditable = !(
-        record?.voucherStatus === "active" ||
-        dayjs(record?.startDate).isBefore(now, "minute")
-      );
-      if (isStartDateEditable && start.isBefore(now)) {
+      const now = dayjs();
+      // Nếu voucher chưa có hiệu lực thì cho phép chỉnh,
+      // nhưng không được chọn thời gian < thời gian hiện tại thực tế
+      const isFutureVoucher =
+        record?.voucherStatus !== "active" &&
+        dayjs(record?.startDate).isAfter(now);
+
+      if (isFutureVoucher && start.isBefore(now, "minute")) {
         formProps.form?.setFields([
           {
             name: "dateRange",
@@ -153,6 +156,7 @@ const VoucherEdit = () => {
         ]);
         return;
       }
+
 
       values.startDate = start.toISOString();
       values.endDate = end.toISOString();
