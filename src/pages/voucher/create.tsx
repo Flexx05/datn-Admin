@@ -395,44 +395,54 @@ const VoucherCreate = () => {
               },
               {
                 type: "number",
-                min: 0,
-                message: "Giá trị đơn tối thiểu phải lớn hơn hoặc bằng 0",
-              },
-              {
-                type: "number",
                 max: 100000000,
                 message:
                   "Giá trị đơn tối thiểu không được vượt quá 100.000.000VNĐ",
               },
               {
                 validator: (_, value) => {
-                  const discountType = form?.getFieldValue("discountType");
-                  const discountValue = form?.getFieldValue("discountValue");
-                  const maxDiscount = form?.getFieldValue("maxDiscount");
+                  const voucherType =
+                    formProps.form?.getFieldValue("voucherType");
+                  const discountType =
+                    formProps.form?.getFieldValue("discountType");
+                  const discountValue =
+                    formProps.form?.getFieldValue("discountValue");
+                  const maxDiscount =
+                    formProps.form?.getFieldValue("maxDiscount");
 
-                  if (discountType === "fixed") {
-                    if (
-                      typeof value === "number" &&
-                      typeof discountValue === "number"
-                    ) {
-                      if (value <= discountValue) {
-                        return Promise.reject(
-                          "Giá trị đơn tối thiểu phải lớn hơn số tiền giảm"
-                        );
-                      }
-                    }
+                  if (typeof value === "number" && value < 0) {
+                    return Promise.reject(
+                      "Giá trị đơn tối thiểu không được nhỏ hơn 0"
+                    );
                   }
 
-                  if (discountType === "percent") {
+                  if (voucherType === "product") {
+                    if (typeof value === "number" && value <= 0) {
+                      return Promise.reject(
+                        "Đơn tối thiểu cho voucher sản phẩm phải lớn hơn 0"
+                      );
+                    }
+
                     if (
+                      discountType === "fixed" &&
                       typeof value === "number" &&
-                      typeof maxDiscount === "number"
+                      typeof discountValue === "number" &&
+                      value <= discountValue
                     ) {
-                      if (value < maxDiscount) {
-                        return Promise.reject(
-                          "Giá trị đơn tối thiểu phải lớn hơn hoặc bằng mức giảm tối đa"
-                        );
-                      }
+                      return Promise.reject(
+                        "Giá trị đơn tối thiểu cho voucher sản phẩm phải lớn hơn số tiền giảm"
+                      );
+                    }
+
+                    if (
+                      discountType === "percent" &&
+                      typeof value === "number" &&
+                      typeof maxDiscount === "number" &&
+                      value < maxDiscount
+                    ) {
+                      return Promise.reject(
+                        "Giá trị đơn tối thiểu cho voucher sản phẩm phải lớn hơn hoặc bằng mức giảm tối đa"
+                      );
                     }
                   }
 

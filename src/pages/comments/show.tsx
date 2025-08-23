@@ -292,7 +292,21 @@ export const CommentShow = () => {
               <Form.Item
                 name="adminReply"
                 label="Nội dung phản hồi"
-                rules={[{ required: true, message: "Vui lòng nhập phản hồi!" }]}
+                rules={[
+                  { required: true, message: "Vui lòng nhập phản hồi!" },
+                  {
+                    validator: (_, value) => {
+                      if (!value || !value.trim()) {
+                        return Promise.reject(
+                          new Error(
+                            "Phản hồi không được để trống hoặc chỉ toàn khoảng trắng!"
+                          )
+                        );
+                      }
+                      return Promise.resolve();
+                    },
+                  },
+                ]}
               >
                 <Input.TextArea
                   rows={4}

@@ -298,6 +298,9 @@ export const CommentList = () => {
           dataIndex="createdAt"
           title="Thời gian tạo"
           render={(value: string) => new Date(value).toLocaleString()}
+          sorter={(a: any, b: any) =>
+            new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+          }
         />
         <Table.Column<IComment>
           title="Thao tác"
