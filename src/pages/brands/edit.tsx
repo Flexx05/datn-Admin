@@ -7,6 +7,7 @@ import axios from "axios";
 import { useEffect, useState } from "react";
 import { CLOUDINARY_URL } from "../../config/dataProvider";
 import Loader from "../../utils/loading";
+import { SaveButton } from "../../utils/ButtonForManagement";
 
 export const BrandEdit = () => {
   const { formProps, saveButtonProps, queryResult, formLoading } = useForm({
@@ -101,7 +102,7 @@ export const BrandEdit = () => {
 
   return (
     <Edit
-      saveButtonProps={saveButtonProps}
+      saveButtonProps={SaveButton("Lưu thương hiệu", saveButtonProps)}
       title="Chỉnh sửa thương hiệu"
       isLoading={false}
       canDelete={false}

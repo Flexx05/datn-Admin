@@ -25,6 +25,7 @@ import { IBrand } from "../../interface/brand";
 import { axiosInstance } from "../../utils/axiosInstance";
 import Loader from "../../utils/loading";
 import { useAuth } from "../../contexts/auth/AuthContext";
+import { CreateButton } from "../../utils/ButtonForManagement";
 
 export const BrandList = () => {
   const [filterActive, setFilterActive] = useState<boolean>(true);
@@ -126,7 +127,10 @@ export const BrandList = () => {
   );
 
   return (
-    <List title={"Quản lý thương hiệu"}>
+    <List
+      title={"Quản lý thương hiệu"}
+      createButtonProps={CreateButton("Thêm thương hiệu")}
+    >
       <Tabs
         activeKey={filterActive ? "active" : "trash"}
         onChange={handleTabChange}
