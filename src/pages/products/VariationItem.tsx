@@ -222,7 +222,7 @@ export const VariationItem: React.FC<VariationItemProps> = ({
           name={[field.name, "stock"]}
           rules={[{ required: true, message: "Vui lòng nhập tồn kho!" }]}
         >
-          <InputNumber placeholder="Nhập tồn kho" min={0} max={10000} />
+          <InputNumber placeholder="Nhập tồn kho" min={0} max={1000000} />
         </Form.Item>
       </div>
     </div>

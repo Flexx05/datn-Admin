@@ -419,6 +419,7 @@ const Messages = () => {
             conversationId={id || ""}
             disableStatus={closedConversation}
             buttonType="dashed"
+            hiddenStatus={user?.role !== "admin"}
           />
           {conversation?.assignedTo === null ? (
             user?.role === "admin" ? (

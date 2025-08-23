@@ -7,12 +7,14 @@ type Props = {
   conversationId: string;
   disableStatus?: boolean;
   buttonType?: "link" | "text" | "default" | "primary" | "dashed";
+  hiddenStatus?: boolean;
 };
 
 const CloseConversation = ({
   conversationId,
   buttonType,
   disableStatus,
+  hiddenStatus,
 }: Props) => {
   const invalidate = useInvalidate();
   const handleCloseConversation = async () => {
@@ -37,7 +39,12 @@ const CloseConversation = ({
         okText="Kết thúc"
         cancelText="Hủy"
       >
-        <Button type={buttonType} danger disabled={disableStatus}>
+        <Button
+          type={buttonType}
+          danger
+          disabled={disableStatus}
+          hidden={hiddenStatus}
+        >
           Kết thúc
         </Button>
       </Popconfirm>
