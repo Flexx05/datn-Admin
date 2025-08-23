@@ -26,10 +26,11 @@ export const VariationItem: React.FC<VariationItemProps> = ({
 }) => {
   const handleImageChange = async (newFileList: UploadFile[]) => {
     // Giới hạn 1 ảnh
-    const fileList = newFileList.slice(0, 1).map((file: any) => ({
+    let fileList = newFileList.slice(0, 1).map((file: any) => ({
       ...file,
       status: file.status || "uploading",
     }));
+
     // Nếu xóa ảnh (fileList rỗng)
     if (!fileList.length) {
       const currentVariations = form.getFieldValue("variation") || [];
@@ -37,40 +38,51 @@ export const VariationItem: React.FC<VariationItemProps> = ({
       form.setFieldsValue({ variation: currentVariations });
       return;
     }
+
     const file = fileList[0];
+
     if (file && file.originFileObj && !file.url) {
-      if (!file.originFileObj.type.startsWith("image/"))
-        message.error("Vui lòng tải lên ảnh hợp lệ.");
+      // Check loại file hợp lệ
+      if (!file.originFileObj.type.startsWith("image/")) {
+        message.error("❌ Vui lòng tải lên ảnh hợp lệ.");
+        return; // ❌ Không cập nhật vào variation
+      }
+
       try {
         const formData = new FormData();
         formData.append("file", file.originFileObj);
         formData.append("upload_preset", "Binova_Upload");
+
         const { data } = await axios.post(CLOUDINARY_URL, formData);
+
         let fileUrl = data.secure_url;
         if (file.originFileObj.type.startsWith("image/")) {
           fileUrl = fileUrl.replace("/upload/", "/upload/f_webp/");
         }
+
+        // Cập nhật fileList khi upload thành công
         fileList[0] = {
           ...fileList[0],
           url: fileUrl,
           status: "done",
         };
+
         const currentVariations = form.getFieldValue("variation") || [];
         currentVariations[field.name]["image"] = fileList;
         form.setFieldsValue({ variation: currentVariations });
+
         message.success("🎉 Tải ảnh biến thể thành công!");
       } catch (error) {
-        fileList[0] = {
-          ...fileList[0],
-          status: "error",
-        };
+        // ❌ Nếu lỗi thì loại bỏ file khỏi danh sách
+        fileList = [];
         const currentVariations = form.getFieldValue("variation") || [];
-        currentVariations[field.name]["image"] = fileList;
+        currentVariations[field.name]["image"] = [];
         form.setFieldsValue({ variation: currentVariations });
+
         message.error("❌ Lỗi khi upload ảnh biến thể.");
       }
     } else {
-      // Nếu chỉ chọn ảnh đã có (không phải upload mới)
+      // Nếu chọn lại ảnh đã có sẵn (không upload mới)
       const currentVariations = form.getFieldValue("variation") || [];
       currentVariations[field.name]["image"] = fileList;
       form.setFieldsValue({ variation: currentVariations });

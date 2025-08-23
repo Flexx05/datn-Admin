@@ -51,10 +51,22 @@ export const ProductCreate = () => {
   const colorMode = mode === "light" ? "light" : "dark";
 
   const handleUpload = async (newFileList: UploadFile[]) => {
-    const updatedFileList = newFileList.slice(0, 5).map((file) => ({
+    // Chỉ cho phép tối đa 5 file và lọc ra file hợp lệ (ảnh)
+    const validFiles = newFileList.slice(0, 5).filter((file) => {
+      const originFile = file.originFileObj as File;
+      if (originFile && !originFile.type.startsWith("image/")) {
+        message.error(`❌ ${file.name} không phải là ảnh, vui lòng chọn lại.`);
+        return false; // bỏ file không phải ảnh
+      }
+      return true;
+    });
+
+    // Gán trạng thái "uploading" cho file mới
+    let updatedFileList = validFiles.map((file) => ({
       ...file,
       status: file.status || "uploading",
     }));
+
     setFileList(updatedFileList);
 
     const newUploadedUrls: string[] = [];
@@ -62,11 +74,6 @@ export const ProductCreate = () => {
     for (let i = 0; i < updatedFileList.length; i++) {
       const file = updatedFileList[i];
       const originFile = file.originFileObj as File;
-
-      if (!originFile.type.startsWith("image/")) {
-        message.error("Vui lòng chỉ tải lên ảnh.");
-        return;
-      }
 
       if (!file.url && originFile) {
         try {
@@ -77,9 +84,7 @@ export const ProductCreate = () => {
           const { data } = await axios.post(CLOUDINARY_URL, formData);
 
           let fileUrl = data.secure_url;
-
           if (originFile.type.startsWith("image/")) {
-            // Chuyển URL sang định dạng WebP bằng cách thêm `.webp` và /upload/f_auto/ nếu cần
             fileUrl = fileUrl.replace("/upload/", "/upload/f_webp/");
           }
 
@@ -90,16 +95,15 @@ export const ProductCreate = () => {
           };
           newUploadedUrls.push(fileUrl);
         } catch (error) {
-          updatedFileList[i] = {
-            ...updatedFileList[i],
-            status: "error",
-          };
+          // Nếu upload lỗi thì loại file ra khỏi danh sách
+          updatedFileList = updatedFileList.filter((f) => f.uid !== file.uid);
           message.error(`❌ Lỗi khi upload file: ${file.name}`);
         }
       } else if (file.url) {
         newUploadedUrls.push(file.url);
       }
     }
+
     setFileList(updatedFileList);
     setUploadedImageUrls(newUploadedUrls);
   };
