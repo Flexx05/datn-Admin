@@ -41,10 +41,9 @@ interface ReturnRequest {
 interface Product {
   _id: string;
   name: string;
-  image: string[]; // API trả về mảng ảnh
+  image: string[];
 }
 
-// Trạng thái yêu cầu hoàn hàng
 const returnStatusMap: Record<number, { text: string; color: string }> = {
   0: { text: "ĐANG CHỜ", color: "orange" },
   1: { text: "ĐÃ DUYỆT", color: "blue" },
@@ -58,6 +57,7 @@ export const ReturnRequestDetail: React.FC = () => {
   const [returnRequest, setReturnRequest] = useState<ReturnRequest | null>(null);
   const [products, setProducts] = useState<Record<string, Product>>({});
   const [loading, setLoading] = useState<boolean>(true);
+  const [productsLoading, setProductsLoading] = useState<boolean>(false);
   const [actionLoading, setActionLoading] = useState<boolean>(false);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
 
@@ -65,13 +65,13 @@ export const ReturnRequestDetail: React.FC = () => {
   useEffect(() => {
     const fetchReturnRequest = async () => {
       try {
-        const response = await axiosInstance.get(`${API_URL}/return-requests/${id}`);
-        console.log("Request Data:", response.data);
+        const response = await axiosInstance.get(`${API_URL}/return-requests/${id} `);
+        console.log("Return Request Response:", response.data); // Debug
         setReturnRequest(response.data.data);
         setLoading(false);
       } catch (error: any) {
         message.error("Lỗi khi tải chi tiết yêu cầu hoàn hàng");
-        console.error(error);
+        console.error("Fetch Return Request Error:", error);
         setLoading(false);
       }
     };
@@ -80,12 +80,27 @@ export const ReturnRequestDetail: React.FC = () => {
 
   // Lấy thông tin sản phẩm theo productId
   useEffect(() => {
-    if (returnRequest?.products) {
+    if (returnRequest?.products?.length) {
       const fetchProducts = async () => {
+        setProductsLoading(true);
         try {
           const productPromises = returnRequest.products.map(async (product) => {
-            const response = await axiosInstance.get(`${API_URL}/product/id/${product.productId}`);
-            return { _id: product.productId, ...response.data.data };
+            try {
+              const response = await axiosInstance.get(`${API_URL}/product/id/${product.productId} `);
+              console.log(`Product ${product.productId} Response: `, response.data); // Debug
+              return {
+                _id: product.productId,
+                name: response.data?.name || `Sản phẩm ${product.productId} `,
+                image: response.data?.image || [],
+              };
+            } catch (error) {
+              console.error(`Error fetching product ${product.productId}: `, error); // Debug
+              return {
+                _id: product.productId,
+                name: `Sản phẩm ${product.productId} `,
+                image: [],
+              };
+            }
           });
           const productResults = await Promise.all(productPromises);
           const productMap = productResults.reduce((acc, product) => {
@@ -93,9 +108,12 @@ export const ReturnRequestDetail: React.FC = () => {
             return acc;
           }, {} as Record<string, Product>);
           setProducts(productMap);
+          console.log("Products State:", productMap); // Debug
         } catch (error: any) {
           message.error("Lỗi khi tải thông tin sản phẩm");
-          console.error(error);
+          console.error("Fetch Products Error:", error);
+        } finally {
+          setProductsLoading(false);
         }
       };
       fetchProducts();
@@ -104,16 +122,13 @@ export const ReturnRequestDetail: React.FC = () => {
 
   // Lắng nghe sự kiện socket để cập nhật realtime
   useEffect(() => {
-    const handleChange = () => {
-      const fetchReturnRequest = async () => {
-        try {
-          const response = await axiosInstance.get(`${API_URL}/return-requests/${id}`);
-          setReturnRequest(response.data.data);
-        } catch (error: any) {
-          console.error(error);
-        }
-      };
-      fetchReturnRequest();
+    const handleChange = async () => {
+      try {
+        const response = await axiosInstance.get(`${API_URL}/return-requests/${id}`);
+        setReturnRequest(response.data.data);
+      } catch (error: any) {
+        // Không hiển thị lỗi để tránh làm phiền người dùng
+      }
     };
     socket.on("return-request-status-changed", handleChange);
     return () => {
@@ -124,16 +139,22 @@ export const ReturnRequestDetail: React.FC = () => {
   // Xử lý thay đổi trạng thái yêu cầu hoàn hàng
   const handleChangeStatus = async (newStatus: number) => {
     setActionLoading(true);
+    const userRaw = localStorage.getItem("user");
+    const user = userRaw ? JSON.parse(userRaw) : null;
     try {
-      await axiosInstance.patch(
-        `${API_URL}/return-requests/${id}/status`,
-        { status: newStatus }
+      if(newStatus === 3){
+        await axiosInstance.patch(`${API_URL}/order/status/${returnRequest?.orderId?._id}`,
+        {
+          paymentStatus: 2,
+          userId: user?._id,
+        }
       );
+      }
+      await axiosInstance.patch(`${API_URL}/return-requests/${id}/status`, { status: newStatus });
       message.success("Cập nhật trạng thái yêu cầu hoàn hàng thành công");
       setReturnRequest((prev) => (prev ? { ...prev, status: newStatus } : prev));
     } catch (error: any) {
       message.error("Cập nhật trạng thái yêu cầu hoàn hàng thất bại");
-      console.error(error);
     } finally {
       setActionLoading(false);
     }
@@ -161,8 +182,6 @@ export const ReturnRequestDetail: React.FC = () => {
   if (!returnRequest) {
     return <div>Không tìm thấy yêu cầu hoàn hàng</div>;
   }
-  console.log(products);
-  
 
   return (
     <Show
@@ -223,46 +242,55 @@ export const ReturnRequestDetail: React.FC = () => {
 
         {/* Danh sách sản phẩm */}
         <Card title="Sản phẩm yêu cầu hoàn" bordered>
-          <List
-            dataSource={returnRequest.products}
-            renderItem={(product) => {
-              const productDetails = products[product.productId];
-              const imageUrl = productDetails?.image?.[0] || "";
-              return (
-                <List.Item>
-                  <List.Item.Meta
-                    avatar={
-                      imageUrl ? (
-                        <img
-                          src={imageUrl}
-                          alt={productDetails?.name || "Sản phẩm"}
-                          style={{ width: 50, height: 50, objectFit: "contain" }}
-                        />
-                      ) : (
-                        <Empty
-                          image={Empty.PRESENTED_IMAGE_SIMPLE}
-                          description={null}
-                          style={{ width: 50, height: 50 }}
-                        />
-                      )
-                    }
-                    title={productDetails?.name || `Mã sản phẩm: ${product.productId}`}
-                    description={
-                      <Space direction="vertical" size="small">
-                        <span>Số lượng: {product.quantity}</span>
-                        <span>
-                          Giá: <span style={{ color: "#d4380d" }}>{formatCurrency(product.price)}</span>
-                        </span>
-                      </Space>
-                    }
-                  />
-                </List.Item>
-              );
-            }}
-          />
+          {productsLoading ? (
+            <div>Đang tải sản phẩm...</div>
+          ) : returnRequest.products.length > 0 ? (
+            <List
+              dataSource={returnRequest.products}
+              renderItem={(product) => {
+                const productDetails = products[product.productId];
+                const imageUrl = productDetails?.image?.[0] || "";
+                return (
+                  <List.Item key={product._id}>
+                    <List.Item.Meta
+                      avatar={
+                        imageUrl ? (
+                          <img
+                            src={imageUrl}
+                            alt={productDetails?.name || "Sản phẩm"}
+                            style={{ width: 50, height: 50, objectFit: "contain" }}
+                            onError={(e) => {
+                              e.currentTarget.src = "/default-image.jpg"; // Hình ảnh dự phòng
+                            }}
+                          />
+                        ) : (
+                          <Empty
+                            image={Empty.PRESENTED_IMAGE_SIMPLE}
+                            description={null}
+                            style={{ width: 50, height: 50 }}
+                          />
+                        )
+                      }
+                      title={productDetails?.name || `Mã sản phẩm: ${product.productId}`}
+                      description={
+                        <Space direction="vertical" size="small">
+                          <span>Số lượng: {product.quantity}</span>
+                          <span>
+                            Giá: <span style={{ color: "#d4380d" }}>{formatCurrency(product.price)}</span>
+                          </span>
+                        </Space>
+                      }
+                    />
+                  </List.Item>
+                );
+              }}
+            />
+          ) : (
+            <Empty description="Không có sản phẩm nào trong yêu cầu hoàn hàng" />
+          )}
         </Card>
 
-        {/* Hiển thị hình ảnh minh chứng */}
+        {/* Hình ảnh minh chứng */}
         <Card title="Hình ảnh minh chứng" bordered>
           {returnRequest.images && returnRequest.images.length > 0 ? (
             <List
@@ -278,7 +306,10 @@ export const ReturnRequestDetail: React.FC = () => {
                       src={url}
                       alt={`Evidence ${index + 1}`}
                       className="max-w-full max-h-full object-contain"
-                      style={{ width: '80px', height: '80px' }}
+                      style={{ width: "80px", height: "80px" }}
+                      onError={(e) => {
+                        e.currentTarget.src = "/default-image.jpg"; // Hình ảnh dự phòng
+                      }}
                     />
                   </div>
                 </List.Item>
@@ -353,6 +384,28 @@ export const ReturnRequestDetail: React.FC = () => {
             </Space>
           </Card>
         )}
+        {returnRequest.status === 1 && (
+          <Card>
+            <Space>
+              <Popconfirm
+                title="Chấp nhận yêu cầu hoàn hàng?"
+                onConfirm={() => handleChangeStatus(3)}
+                okText="Chấp nhận"
+                cancelText="Hủy"
+                okButtonProps={{ loading: actionLoading }}
+              >
+                <Button
+                  type="primary"
+                  icon={<CheckOutlined />}
+                  loading={actionLoading}
+                >
+                  Hoàn tiền
+                </Button>
+              </Popconfirm>
+
+            </Space>
+          </Card>
+        )}
       </Space>
 
       {/* Modal xem trước ảnh */}
@@ -361,14 +414,30 @@ export const ReturnRequestDetail: React.FC = () => {
         open={!!previewImage}
         onCancel={() => setPreviewImage(null)}
         footer={null}
-        width={760}
+        width={700} // Tăng chiều rộng Modal
+        bodyStyle={{ padding: 16, maxHeight: "600px", overflow: "auto" }} // Giới hạn chiều cao và thêm cuộn
       >
         {previewImage && (
-          <div className="flex justify-center">
+          <div
+            className="flex justify-center items-center"
+            style={{
+              maxWidth: "100%",
+              maxHeight: "500px", // Giới hạn chiều cao container
+              overflow: "hidden", // Ngăn tràn
+            }}
+          >
             <img
               src={previewImage}
               alt="Image preview"
-              className="w-full max-h-[500px] object-contain"
+              style={{
+                maxWidth: "100%", // Đảm bảo không vượt quá container
+                maxHeight: "500px", // Giới hạn chiều cao
+                objectFit: "contain", // Giữ tỷ lệ hình ảnh
+                borderRadius: "8px", // Bo góc nhẹ
+              }}
+              onError={(e) => {
+                e.currentTarget.src = "/default-image.jpg"; // Hình ảnh dự phòng
+              }}
             />
           </div>
         )}
