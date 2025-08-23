@@ -415,12 +415,17 @@ const Messages = () => {
           )}
         </Typography.Title>
         <div style={{ display: "flex", gap: 8 }}>
-          <CloseConversation
-            conversationId={id || ""}
-            disableStatus={closedConversation}
-            buttonType="dashed"
-            hiddenStatus={user?.role !== "admin"}
-          />
+          {/* Nút kết thúc chỉ hiển thị cho staff khi đã đăng ký (assignedTo khác null), ẩn với admin */}
+          {conversation?.assignedTo &&
+            user?.role === "staff" &&
+            user?._id === conversation?.assignedTo?._id && (
+              <CloseConversation
+                conversationId={id || ""}
+                disableStatus={closedConversation}
+                buttonType="dashed"
+              />
+            )}
+          {/* Các nút phân công giữ nguyên logic */}
           {conversation?.assignedTo === null ? (
             user?.role === "admin" ? (
               <AssignConversationToStaff
@@ -440,6 +445,8 @@ const Messages = () => {
               conversationId={id || ""}
               buttonType="dashed"
               staffId={conversation?.assignedTo?._id || ""}
+              lastUpdated={conversation?.lastUpdated || ""}
+              assignedTo={conversation?.assignedTo?._id || ""}
             />
           )}
         </div>
