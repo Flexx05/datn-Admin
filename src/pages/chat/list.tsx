@@ -164,11 +164,13 @@ const ChatList = () => {
   };
 
   const handleSetFilterStatus = (status: string) => {
+    if (status === filterStatus) return;
     setFilterLoading(true);
     setFilterStatus(status);
   };
 
   const handleSetFilterChatType = (type: number) => {
+    if (type === filterChatType) return;
     setFilterLoading(true);
     setFilterChatType(type);
   };
