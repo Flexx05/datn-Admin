@@ -1,7 +1,7 @@
 import { useList } from "@refinedev/core";
-import { Table, Card, Avatar } from "antd";
+import { Table, Card, Avatar, Select } from "antd";
 import dayjs from "dayjs";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 
 const getRank = (rank: number): string => {
   if (rank === 3) return "Kim cương";
@@ -17,22 +17,28 @@ const CustomerLoyaltyRanking = () => {
     pagination: { mode: "off" },
   });
 
+  // thêm state để chọn số ngày
+  const [days, setDays] = useState(90);
+
   const ranking = useMemo(() => {
     if (!ordersData?.data) return [];
 
     // lọc đơn hợp lệ
     const validOrders = ordersData.data.filter(
-      (order: any) => order.status === 4 && order.paymentStatus === 1
+      (order: any) =>
+        order.status === 4 &&
+        order.paymentStatus === 1 &&
+        order.userId?.isActive === true &&
+        order.userId?.role === "user"
     );
 
-    // đơn trong 90 ngày gần nhất
+    // đơn trong X ngày gần nhất (theo state days)
     const recentOrders = validOrders.filter((order: any) =>
-      dayjs(order.createdAt).isAfter(dayjs().subtract(90, "day"))
+      dayjs(order.createdAt).isAfter(dayjs().subtract(days, "day"))
     );
 
     const customerMap: Record<string, any> = {};
 
-    // lifetime (toàn bộ đơn)
     validOrders.forEach((order: any) => {
       const userId = order.userId?._id || order.userId;
       if (!customerMap[userId]) {
@@ -42,8 +48,8 @@ const CustomerLoyaltyRanking = () => {
           email: order.userId?.email || "N/A",
           avatar: order.userId?.avatar,
           rank: order.userId?.rank ?? null,
-          total: 0, // 90 ngày
-          count: 0, // 90 ngày
+          total: 0, // theo X ngày
+          count: 0, // theo X ngày
           lastOrderDate: null, // toàn bộ
           lifetimeTotal: 0,
         };
@@ -60,7 +66,7 @@ const CustomerLoyaltyRanking = () => {
       }
     });
 
-    // tính 90 ngày
+    // tính theo X ngày
     recentOrders.forEach((order: any) => {
       const userId = order.userId?._id || order.userId;
       customerMap[userId].total += order.totalAmount;
@@ -69,20 +75,40 @@ const CustomerLoyaltyRanking = () => {
 
     return Object.values(customerMap)
       .sort((a, b) => b.total - a.total)
-      .slice(0, 5);
-  }, [ordersData]);
+      .slice(0, 10);
+  }, [ordersData, days]);
 
   return (
     <Card
-      title="Xếp hạng khách hàng thân thiết (90 ngày gần nhất)"
+      title="Xếp hạng khách hàng thân thiết"
       loading={isLoading}
+      extra={
+        <Select
+          value={days}
+          onChange={setDays}
+          style={{ width: 100 }}
+          options={[
+            { label: "7 ngày", value: 7 },
+            { label: "14 ngày", value: 14 },
+            { label: "30 ngày", value: 30 },
+            { label: "90 ngày", value: 90 },
+          ]}
+        />
+      }
     >
       <Table
         dataSource={ranking}
         rowKey="userId"
-        pagination={false}
+        pagination={{ pageSize: 5 }}
         scroll={{ x: true }}
         columns={[
+          {
+            title: "STT",
+            dataIndex: "index",
+            width: 60,
+            align: "center",
+            render: (_: any, __: any, index: number) => index + 1,
+          },
           {
             title: "Khách hàng",
             dataIndex: "name",
@@ -109,15 +135,15 @@ const CustomerLoyaltyRanking = () => {
             ),
           },
           {
-            title: "Số đơn (90 ngày)",
+            title: `Số đơn (${days} ngày)`,
             dataIndex: "count",
             align: "center",
-            width: 120,
+            width: 140,
           },
           {
-            title: "Tổng chi tiêu (90 ngày)",
+            title: `Tổng chi tiêu (${days} ngày)`,
             dataIndex: "total",
-            width: 160,
+            width: 180,
             render: (val) => val.toLocaleString("vi-VN") + "₫",
             align: "right",
           },
@@ -135,18 +161,7 @@ const CustomerLoyaltyRanking = () => {
             width: 180,
             render: (val) => {
               if (!val) return "Chưa có";
-              const formatted = dayjs(val).format("DD/MM/YYYY");
-              const isOld = dayjs(val).isBefore(dayjs().subtract(90, "day"));
-              return (
-                <span>
-                  {formatted}
-                  {isOld && (
-                    <span style={{ color: "red", marginLeft: 4, fontSize: 12 }}>
-                      (ngoài 90 ngày)
-                    </span>
-                  )}
-                </span>
-              );
+              return dayjs(val).format("DD/MM/YYYY");
             },
             align: "center",
           },
