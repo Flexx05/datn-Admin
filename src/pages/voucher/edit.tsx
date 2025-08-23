@@ -155,6 +155,7 @@ const VoucherEdit = () => {
         return;
       }
 
+
       values.startDate = start.toISOString();
       values.endDate = end.toISOString();
       delete values.dateRange;

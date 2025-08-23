@@ -30,7 +30,6 @@ import {
 import { socket } from "../../socket";
 import { axiosInstance } from "../../utils/axiosInstance";
 import Loader from "../../utils/loading";
-import CloseConversation from "./CloseConversation";
 import AssignConversation from "./AssignConversation";
 import AssignConversationToStaff from "./AssignConversationToStaff";
 import UnAssignConversation from "./UnAssignConversation";
@@ -482,16 +481,12 @@ const ChatList = () => {
                           ) : (
                             <UnAssignConversation
                               conversationId={id || ""}
-                              buttonType="link"
+                              buttonType="dashed"
                               staffId={conversation?.assignedTo?._id || ""}
+                              lastUpdated={conversation?.lastUpdated || ""}
+                              assignedTo={conversation?.assignedTo?._id || ""}
                             />
                           )}
-
-                          <CloseConversation
-                            conversationId={conversation._id}
-                            disableStatus={conversation.status === "closed"}
-                            buttonType="link"
-                          />
                         </div>
                       )}
                     >

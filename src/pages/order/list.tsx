@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import {
   CheckOutlined,
   CloseOutlined,
@@ -378,6 +377,7 @@ export const OrderList: React.FC = () => {
     };
 
     socket.on("order-status-changed", handleChange);
+    socket.on("payment-updated", handleChange);
     socket.on("new-notification", handleChange);
     return () => {
       socket.off("order-status-changed", handleChange);

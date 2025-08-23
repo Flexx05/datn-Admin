@@ -7,6 +7,7 @@ import axios from "axios";
 import { useState } from "react";
 import { CLOUDINARY_URL } from "../../config/dataProvider";
 import Loader from "../../utils/loading";
+import { SaveButton } from "../../utils/ButtonForManagement";
 
 export const BrandCreate = () => {
   const { formProps, saveButtonProps, formLoading } = useForm({
@@ -66,7 +67,7 @@ export const BrandCreate = () => {
 
   return (
     <Create
-      saveButtonProps={saveButtonProps}
+      saveButtonProps={SaveButton("Lưu thương hiệu", saveButtonProps)}
       title="Tạo thương hiệu"
       isLoading={false}
     >

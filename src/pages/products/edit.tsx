@@ -29,6 +29,7 @@ import { AttributeItem } from "./AttributeItem";
 import "./variation-animations.css";
 import { VariationItem } from "./VariationItem";
 import Loader from "../../utils/loading";
+import { SaveButton } from "../../utils/ButtonForManagement";
 
 export const ProductEdit = () => {
   const { formProps, saveButtonProps, queryResult, formLoading } = useForm({
@@ -95,35 +96,42 @@ export const ProductEdit = () => {
   }
 
   const handleUpload = async (newFileList: UploadFile[]) => {
-    // Tách file đã có URL (đã upload trước đó)
+    // Giữ lại file đã có URL (đã upload trước đó)
     const existingFiles = newFileList.filter((file) => file.url);
-    // Tách file chưa có URL (tức là mới thêm vào, cần upload)
+
+    // Lấy file mới (chưa upload)
     const newFiles = newFileList.filter((file) => !file.url);
-    // Gán trạng thái "uploading" cho file mới
-    const uploadingFiles = newFiles.map((file) => ({
+
+    // Chỉ nhận file là ảnh
+    const validNewFiles = newFiles.filter((file) => {
+      const originFile = file.originFileObj as File;
+      if (!originFile?.type.startsWith("image/")) {
+        message.error(`❌ ${file.name} không phải là ảnh, vui lòng chọn lại.`);
+        return false; // Loại bỏ file này
+      }
+      return true;
+    });
+
+    // Gán trạng thái "uploading" cho file hợp lệ
+    const uploadingFiles = validNewFiles.map((file) => ({
       ...file,
       status: "uploading" as const,
     }));
-    // Cập nhật fileList hiển thị (gồm file cũ + file mới đang upload)
-    const updatedFileList = [...existingFiles, ...uploadingFiles];
+
+    // Cập nhật fileList hiển thị
+    let updatedFileList = [...existingFiles, ...uploadingFiles];
     setFileList(updatedFileList);
 
-    // Cập nhật uploadedImageUrls đúng với fileList hiện tại
+    // Cập nhật uploadedImageUrls (chỉ lấy file done + có url)
     const currentUrls = updatedFileList
       .filter((file) => file.status === "done" && file.url)
-      .map((file) => file.url);
-    setUploadedImageUrls(
-      currentUrls.filter((url): url is string => typeof url === "string")
-    );
+      .map((file) => file.url as string);
+    setUploadedImageUrls(currentUrls);
 
+    // Upload từng file hợp lệ
     for (let i = 0; i < uploadingFiles.length; i++) {
       const file = uploadingFiles[i];
       const originFile = file.originFileObj as File;
-
-      if (!originFile?.type.startsWith("image/")) {
-        message.error("Vui lòng chỉ tải lên ảnh.");
-        continue;
-      }
 
       try {
         const formData = new FormData();
@@ -137,24 +145,22 @@ export const ProductEdit = () => {
           fileUrl = fileUrl.replace("/upload/", "/upload/f_webp/");
         }
 
-        updatedFileList[i + existingFiles.length] = {
-          ...updatedFileList[i + existingFiles.length],
-          url: fileUrl,
-          status: "done" as const,
-        };
-
-        // Cập nhật lại uploadedImageUrls khi upload xong
-        const newUrls = updatedFileList
-          .filter((file) => file.status === "done" && file.url)
-          .map((file) => file.url);
-        setUploadedImageUrls(
-          newUrls.filter((url): url is string => typeof url === "string")
+        updatedFileList = updatedFileList.map((f) =>
+          f.uid === file.uid
+            ? { ...f, url: fileUrl, status: "done" as const }
+            : f
         );
+
+        // Cập nhật lại state sau khi upload xong 1 file
+        setFileList([...updatedFileList]);
+
+        const newUrls = updatedFileList
+          .filter((f) => f.status === "done" && f.url)
+          .map((f) => f.url as string);
+        setUploadedImageUrls(newUrls);
       } catch (error) {
-        updatedFileList[i + existingFiles.length] = {
-          ...updatedFileList[i + existingFiles.length],
-          status: "error" as const,
-        };
+        updatedFileList = updatedFileList.filter((f) => f.uid !== file.uid); // loại bỏ file lỗi
+        setFileList([...updatedFileList]);
         message.error(`❌ Lỗi khi upload file: ${file.name}`);
       }
     }
@@ -335,10 +341,10 @@ export const ProductEdit = () => {
 
   return (
     <Edit
-      saveButtonProps={saveButtonProps}
       title="Chỉnh sửa sản phẩm"
       canDelete={false}
       isLoading={false}
+      saveButtonProps={SaveButton("Lưu sản phẩm", saveButtonProps)}
     >
       <Spin
         spinning={
