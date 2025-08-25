@@ -142,14 +142,44 @@ export const ReturnRequestDetail: React.FC = () => {
     const userRaw = localStorage.getItem("user");
     const user = userRaw ? JSON.parse(userRaw) : null;
     try {
-      if(newStatus === 3){
+      if (newStatus === 3) {
         await axiosInstance.patch(`${API_URL}/order/status/${returnRequest?.orderId?._id}`,
-        {
-          paymentStatus: 2,
-          userId: user?._id,
-        }
-      );
+          {
+            status: 4,
+            paymentStatus: 2,
+            userId: user?._id,
+          }
+        );
+        // Cập nhật tổng tiền hoàn và tổng đơn hàng
+        await axiosInstance.patch(
+          `${API_URL}/order/update-return-order/${returnRequest?.orderId?._id}`,
+          {}
+        );
+        await axiosInstance.post(
+          `${API_URL}/wallet/cancel-refund`,
+          {
+            orderId: returnRequest?.orderId?._id,
+            type: 0,
+            amount: returnRequest?.refundAmount,
+            status: 1,
+            description: `Hoàn tiền cho yêu cầu hoàn hàng đơn ${returnRequest?.orderId?.orderCode}: ${returnRequest?.reason}`,
+            returnRequestId: returnRequest?._id,
+          }
+        );
+
       }
+      if (newStatus === 4) {
+        await axiosInstance.patch(
+          `${API_URL}/order/status/${returnRequest?.orderId?._id}`,
+          {
+            status: 4,
+            paymentStatus: 1,
+            userId: user?._id,
+          }
+        );
+        await axiosInstance.patch(`${API_URL}/order/update-item-status/${returnRequest?.orderId?._id}`, { items: [] });
+      }
+
       await axiosInstance.patch(`${API_URL}/return-requests/${id}/status`, { status: newStatus });
       message.success("Cập nhật trạng thái yêu cầu hoàn hàng thành công");
       setReturnRequest((prev) => (prev ? { ...prev, status: newStatus } : prev));

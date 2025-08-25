@@ -403,13 +403,27 @@ export const OrderList: React.FC = () => {
 
       // If status is 3 (Đã hoàn tiền), process refund and update order's totalAmount
       if (newStatus === 3) {
+        // await axiosInstance.patch(
+        //   `${API_URL}/order/status/${record.orderId._id}`,
+        //   {
+        //     paymentStatus: 2,
+        //     userId: user?._id,
+        //   }
+        // );
         await axiosInstance.patch(
           `${API_URL}/order/status/${record.orderId._id}`,
           {
+            status: 4,
             paymentStatus: 2,
             userId: user?._id,
           }
         );
+        // Cập nhật tổng tiền hoàn và tổng đơn hàng
+        await axiosInstance.patch(
+          `${API_URL}/order/update-return-order/${record.orderId._id}`,
+          {}
+        );
+
         const refundResponse = await axiosInstance.post(
           `${API_URL}/wallet/cancel-refund`,
           {
@@ -437,6 +451,7 @@ export const OrderList: React.FC = () => {
             userId: user?._id,
           }
         );
+        await axiosInstance.patch(`${API_URL}/order/update-item-status/${record?.orderId?._id}`,{items: []});
       }
 
       // Update return request status
