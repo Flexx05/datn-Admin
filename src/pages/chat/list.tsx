@@ -133,14 +133,17 @@ const ChatList = () => {
     };
   }, [invalidate, refetch]);
 
-  const handleChangeChatType = async (chatType: number) => {
+  const handleChangeChatType = async (
+    conversationId: string,
+    chatType: number
+  ) => {
     try {
-      await axiosInstance.patch(`conversation/chat-type/${id}`, {
+      await axiosInstance.patch(`conversation/chat-type/${conversationId}`, {
         chatType,
       });
       invalidate({
         resource: "conversation",
-        id,
+        id: conversationId,
         invalidates: ["list", "detail"],
       });
     } catch (error: any) {
@@ -209,7 +212,7 @@ const ChatList = () => {
             backgroundColor: color,
             textAlign: "left",
           }}
-          onClick={() => handleSetFilterChatType(Number(key))}
+          onClick={() => onChange(Number(key))}
         >
           {label}
         </Button>
@@ -251,7 +254,7 @@ const ChatList = () => {
           {/* Phân loại kiểu đoạn chat */}
           <Popover
             trigger={"click"}
-            content={getPopoverContent(setFilterChatType, {
+            content={getPopoverContent(handleSetFilterChatType, {
               0: { label: "Tất cả", color: "#a4a4a4ff" },
               ...chatTypeMap,
             })}
@@ -446,7 +449,11 @@ const ChatList = () => {
                             </Button>
 
                             <Popover
-                              content={getPopoverContent(handleChangeChatType)}
+                              content={() =>
+                                getPopoverContent((type) =>
+                                  handleChangeChatType(conversation._id, type)
+                                )
+                              }
                               title="Phân loại"
                               trigger="click"
                               placement="rightTop"
